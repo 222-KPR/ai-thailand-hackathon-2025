@@ -1,30 +1,27 @@
 # AI4Thai Vision Service - Docker Configuration
-# Multi-stage build for optimized production image
+# Multi-stage build optimized for H100 16GB VRAM
 
-# Base image with Python support (CPU-only for GitLab deployment)
+# Minimal base image
 FROM python:3.9-slim-bullseye as base
 
-# Set environment variables
+# Set environment variables for optimization
 ENV PYTHONUNBUFFERED=1
 ENV PYTHONDONTWRITEBYTECODE=1
 ENV DEBIAN_FRONTEND=noninteractive
+ENV PIP_NO_CACHE_DIR=1
+ENV PIP_DISABLE_PIP_VERSION_CHECK=1
 
-# Install system dependencies
-RUN apt-get update && apt-get install -y \
-    build-essential \
+# Install minimal system dependencies
+RUN apt-get update && apt-get install -y --no-install-recommends \
     curl \
-    wget \
-    git \
     libglib2.0-0 \
-    libsm6 \
-    libxext6 \
-    libxrender-dev \
     libgomp1 \
     libgl1-mesa-glx \
-    && rm -rf /var/lib/apt/lists/*
+    && rm -rf /var/lib/apt/lists/* \
+    && apt-get clean
 
 # Create non-root user
-RUN useradd --create-home --shell /bin/bash app
+RUN useradd --create-home --shell /bin/bash --uid 1000 app
 
 # Set working directory
 WORKDIR /app
@@ -32,23 +29,19 @@ WORKDIR /app
 # Copy requirements first for better caching
 COPY requirements.txt .
 
-# Install Python dependencies
-RUN pip install --no-cache-dir --upgrade pip && \
-    pip install --no-cache-dir -r requirements.txt
+# Install Python dependencies with optimizations
+RUN pip install --no-cache-dir --upgrade pip setuptools wheel && \
+    pip install --no-cache-dir -r requirements.txt && \
+    pip cache purge
 
-# Development stage
+# Development stage (minimal)
 FROM base as development
 
-# Install development dependencies
-RUN pip install --no-cache-dir \
-    jupyter \
-    ipython \
-    notebook
+# Copy only necessary source code
+COPY app.py .
+COPY services/ ./services/
 
-# Copy source code
-COPY . .
-
-# Change ownership to app user
+# Change ownership
 RUN chown -R app:app /app
 
 # Switch to non-root user
@@ -60,46 +53,54 @@ EXPOSE 8001
 # Development command
 CMD ["uvicorn", "app:app", "--host", "0.0.0.0", "--port", "8001", "--reload"]
 
-# Production stage
+# Production stage (minimal)
 FROM base as production
 
-# Copy source code
-COPY . .
+# Copy only essential files
+COPY app.py .
+COPY services/ ./services/
 
-# Create necessary directories
-RUN mkdir -p /app/models /app/logs /app/temp && \
+# Create minimal directories
+RUN mkdir -p /app/models /app/logs && \
     chown -R app:app /app
 
 # Switch to non-root user
 USER app
 
-# Download and cache models (optional - can be done at runtime)
-# RUN python -c "from models.model_registry import ModelRegistry; ModelRegistry.download_models()"
-
 # Expose port
 EXPOSE 2001
 
-# Health check
-HEALTHCHECK --interval=30s --timeout=30s --start-period=60s --retries=3 \
+# Health check with shorter timeout
+HEALTHCHECK --interval=30s --timeout=15s --start-period=30s --retries=2 \
     CMD curl -f http://localhost:2001/health || exit 1
 
-# Production command
-CMD ["gunicorn", "app:app", "-w", "1", "-k", "uvicorn.workers.UvicornWorker", "--bind", "0.0.0.0:2001", "--timeout", "120"]
+# Optimized production command for H100
+CMD ["gunicorn", "app:app", "-w", "1", "-k", "uvicorn.workers.UvicornWorker", "--bind", "0.0.0.0:2001", "--timeout", "300", "--max-requests", "100", "--preload"]
 
-# GPU-optimized production stage
-FROM production as gpu-production
+# H100-optimized stage for 16GB VRAM
+FROM production as h100-optimized
 
-# Install additional GPU optimizations
 USER root
+
+# Install H100-specific optimizations
 RUN pip install --no-cache-dir \
-    nvidia-ml-py3 \
-    pynvml
+    nvidia-ml-py3==12.535.108 \
+    && pip cache purge
 
 USER app
 
-# GPU-specific environment variables
+# H100 16GB VRAM optimized environment
 ENV CUDA_VISIBLE_DEVICES=0
-ENV TORCH_CUDA_ARCH_LIST="6.0;6.1;7.0;7.5;8.0;8.6"
+ENV TORCH_CUDA_ARCH_LIST="9.0"
+ENV PYTORCH_CUDA_ALLOC_CONF=max_split_size_mb:2048
+ENV CUDA_LAUNCH_BLOCKING=0
+ENV TORCH_CUDNN_V8_API_ENABLED=1
 
-# GPU production command with optimizations
-CMD ["gunicorn", "app:app", "-w", "1", "-k", "uvicorn.workers.UvicornWorker", "--bind", "0.0.0.0:2001", "--timeout", "120", "--preload"]
+# Memory optimization for 16GB VRAM
+ENV MODEL_MAX_LENGTH=512
+ENV MAX_BATCH_SIZE=1
+ENV GRADIENT_CHECKPOINTING=true
+ENV USE_FLASH_ATTENTION=true
+
+# H100 production command with memory optimizations
+CMD ["gunicorn", "app:app", "-w", "1", "-k", "uvicorn.workers.UvicornWorker", "--bind", "0.0.0.0:2001", "--timeout", "300", "--max-requests", "50", "--preload", "--worker-tmp-dir", "/dev/shm"]

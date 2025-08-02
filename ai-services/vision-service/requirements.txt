@@ -1,42 +1,36 @@
-# AI4Thai Vision Service - Pest Detection Dependencies
+# AI4Thai Vision Service - H100 16GB Optimized Dependencies
 
-# Web Framework
+# Web Framework (minimal versions)
 fastapi==0.104.1
 uvicorn[standard]==0.24.0
 python-multipart==0.0.6
 
-# Machine Learning - YOLO & LLaVA
+# Machine Learning - Optimized for H100 16GB VRAM
 ultralytics==8.2.93
-torch>=2.0.0
-torchvision>=0.15.0
-transformers>=4.35.0
-accelerate>=0.24.0
-# bitsandbytes>=0.41.0  # Commented out as it requires CUDA
+torch>=2.1.0,<2.3.0  # Stable version for H100
+torchvision>=0.16.0,<0.18.0
+transformers>=4.35.0,<4.40.0  # Pin to avoid breaking changes
+accelerate>=0.24.0,<0.30.0
 
-# Image Processing
+# Image Processing (minimal)
 Pillow==10.1.0
-opencv-python-headless==4.8.1.78  # Headless version for server deployment
+opencv-python-headless==4.8.1.78
 numpy==1.24.4
 
-# HTTP and API
+# HTTP and API (minimal)
 httpx==0.25.2
 aiofiles==23.2.1
 
-# Configuration and Environment
+# Configuration (minimal)
 pydantic==2.5.0
 pydantic-settings==2.1.0
 python-dotenv==1.0.0
 
-# Logging
+# Logging (minimal)
 structlog==23.2.0
 
-# Utilities
-click==8.1.7
+# Utilities (essential only)
 psutil==5.9.6
 
-# Development and Testing
-pytest==7.4.3
-pytest-asyncio==0.21.1
-
-# Production
+# Production server
 gunicorn==21.2.0

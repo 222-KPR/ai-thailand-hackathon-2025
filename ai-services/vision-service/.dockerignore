@@ -1,0 +1,104 @@
+# AI4Thai Vision Service - Docker Ignore
+# Optimize Docker build context and reduce image size
+
+# Version control
+.git
+.gitignore
+.gitattributes
+
+# Documentation
+README.md
+*.md
+docs/
+examples/
+
+# Python cache and temp files
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Virtual environments
+venv/
+env/
+ENV/
+.venv/
+
+# IDE and editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+.nox/
+
+# Jupyter Notebooks
+.ipynb_checkpoints
+*.ipynb
+
+# Model files (will be downloaded at runtime)
+models/
+*.pth
+*.pt
+*.bin
+*.safetensors
+*.onnx
+*.h5
+
+# Logs
+logs/
+*.log
+
+# Temporary files
+temp/
+tmp/
+.tmp/
+
+# Configuration files (secrets)
+.env
+.env.local
+.env.production
+*.key
+*.pem
+
+# Large test files
+test_images/
+sample_data/
+benchmarks/
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Docker files (avoid recursive copying)
+Dockerfile*
+docker-compose*.yml
+.dockerignore

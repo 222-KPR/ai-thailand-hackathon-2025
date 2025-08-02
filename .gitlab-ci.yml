@@ -16,7 +16,7 @@ variables:
   PROMETHEUS_PORT: "9090"
   GRAFANA_PORT: "3001"
 
-# Build AI Services Images
+# Build AI Services Images - Optimized for H100 16GB VRAM
 build-ai-services:
   stage: build
   image: docker:24.0.5
@@ -25,25 +25,37 @@ build-ai-services:
   before_script:
     - docker info
     - cd ai-services/deployment
+    # Enable Docker BuildKit for optimized builds
+    - export DOCKER_BUILDKIT=1
+    - export BUILDKIT_PROGRESS=plain
   script:
-    # Build Vision Service
-    - echo "Building Vision Service..."
-    - docker build -t team10-vision-service:$CI_COMMIT_SHA ../vision-service/
+    # Build Vision Service with H100 optimization
+    - echo "Building Vision Service for H100 16GB VRAM..."
+    - docker build --target h100-optimized --compress -t team10-vision-service:$CI_COMMIT_SHA ../vision-service/
     - docker tag team10-vision-service:$CI_COMMIT_SHA team10-vision-service:latest
 
-    # Build Queue Worker
+    # Build Queue Worker (optimized)
     - echo "Building Queue Worker..."
-    - docker build -t team10-queue-worker:$CI_COMMIT_SHA ../queue-worker/
+    - docker build --target production --compress -t team10-queue-worker:$CI_COMMIT_SHA ../queue-worker/
     - docker tag team10-queue-worker:$CI_COMMIT_SHA team10-queue-worker:latest
 
-    # Save images for deployment stage
-    - docker save team10-vision-service:latest | gzip > vision-service.tar.gz
-    - docker save team10-queue-worker:latest | gzip > queue-worker.tar.gz
+    # Optimize images by removing intermediate layers
+    - docker image prune -f
+
+    # Save compressed images with better compression
+    - echo "Creating optimized artifacts..."
+    - docker save team10-vision-service:latest | gzip -9 > vision-service.tar.gz
+    - docker save team10-queue-worker:latest | gzip -9 > queue-worker.tar.gz
+
+    # Display artifact sizes
+    - echo "Artifact sizes:"
+    - ls -lh *.tar.gz
   artifacts:
     paths:
       - ai-services/deployment/vision-service.tar.gz
       - ai-services/deployment/queue-worker.tar.gz
-    expire_in: 1 hour
+    expire_in: 30m  # Reduced from 1 hour to minimize storage
+    when: on_success
   only:
     - tags
   except:
@@ -77,14 +89,16 @@ deploy-ai-services:
     # Clean up old containers and volumes (optional)
     - docker container prune -f || true
 
-    # Set environment variables for deployment
+    # Set environment variables for H100 16GB deployment
     - export VISION_SERVICE_PORT=$VISION_SERVICE_PORT
     - export QUEUE_WORKER_PORT=$QUEUE_WORKER_PORT
     - export VISION_LB_PORT=$VISION_LB_PORT
     - export REDIS_PORT=$REDIS_PORT
     - export PROMETHEUS_PORT=$PROMETHEUS_PORT
     - export GRAFANA_PORT=$GRAFANA_PORT
-    - export BUILD_TARGET=production
+    - export BUILD_TARGET=h100-optimized
+    - export VISION_MEMORY_LIMIT=8G
+    - export VISION_MEMORY_RESERVATION=4G
 
     # Deploy AI services
     - echo "Deploying AI services..."

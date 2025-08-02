@@ -4,17 +4,17 @@
 version: '3.8'
 
 services:
-  # Vision Service - Pest Detection + Disease Detection
+  # Vision Service - Pest Detection + Disease Detection (H100 16GB Optimized)
   vision-service:
     build:
       context: ../vision-service
       dockerfile: Dockerfile
-      target: ${BUILD_TARGET:-production}
+      target: ${BUILD_TARGET:-h100-optimized}
     container_name: team10-vision-service
     ports:
       - "${VISION_SERVICE_PORT:-2001}:2001"
     environment:
-      # Model Configuration
+      # Model Configuration - H100 16GB Optimized
       - MODEL_CACHE_DIR=/app/models
       - HUGGINGFACE_HUB_CACHE=/app/models/hub
       - TRANSFORMERS_CACHE=/app/models/transformers
@@ -27,21 +27,31 @@ services:
       - SERVICE_HOST=0.0.0.0
       - SERVICE_PORT=2001
       - MAX_WORKERS=1
-      - WORKER_TIMEOUT=300  # Extended for LLaVA model
+      - WORKER_TIMEOUT=300
 
-      # Model Settings
+      # Model Settings - Memory Optimized
       - PEST_DETECTION_MODEL=underdogquality/yolo11s-pest-detection
       - DISEASE_DETECTION_MODEL=YuchengShi/LLaVA-v1.5-7B-Plant-Leaf-Diseases-Detection
       - CONFIDENCE_THRESHOLD=0.01
-      - MAX_IMAGE_SIZE=10485760  # 10MB
+      - MAX_IMAGE_SIZE=5242880  # Reduced to 5MB for memory efficiency
+      - MAX_BATCH_SIZE=1
 
-      # GPU Configuration
+      # H100 16GB GPU Configuration
       - CUDA_VISIBLE_DEVICES=${CUDA_VISIBLE_DEVICES:-0}
-      - TORCH_CUDA_ARCH_LIST="6.0;6.1;7.0;7.5;8.0;8.6"
+      - TORCH_CUDA_ARCH_LIST="9.0"
+      - PYTORCH_CUDA_ALLOC_CONF=max_split_size_mb:2048,expandable_segments:True
+      - CUDA_LAUNCH_BLOCKING=0
+      - TORCH_CUDNN_V8_API_ENABLED=1
 
-      # Performance
-      - OMP_NUM_THREADS=4
-      - MKL_NUM_THREADS=4
+      # Memory Optimization for 16GB VRAM
+      - MODEL_MAX_LENGTH=512
+      - GRADIENT_CHECKPOINTING=true
+      - USE_FLASH_ATTENTION=true
+      - TORCH_COMPILE=false  # Disable for stability
+
+      # Performance - Conservative for Memory
+      - OMP_NUM_THREADS=2
+      - MKL_NUM_THREADS=2
 
       # Logging
       - LOG_LEVEL=${LOG_LEVEL:-INFO}
@@ -61,15 +71,15 @@ services:
     deploy:
       resources:
         limits:
-          memory: ${VISION_MEMORY_LIMIT:-12G}  # Increased for dual models
+          memory: ${VISION_MEMORY_LIMIT:-8G}  # Reduced for H100 16GB optimization
         reservations:
-          memory: ${VISION_MEMORY_RESERVATION:-6G}
+          memory: ${VISION_MEMORY_RESERVATION:-4G}  # Reduced reservation
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:2001/health"]
       interval: 30s
       timeout: 15s
-      retries: 3
-      start_period: 120s  # Extended for model loading
+      retries: 2  # Reduced retries
+      start_period: 60s  # Reduced startup time
     restart: unless-stopped
 
   # Queue Worker Service - Vision Job Processing
