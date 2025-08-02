@@ -1,0 +1,31 @@
+# Development Docker for AI4Thai Crop Guardian Frontend
+FROM rust:1.75-slim
+
+# Install system dependencies
+RUN apt-get update && apt-get install -y \
+    pkg-config \
+    libssl-dev \
+    curl \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install WebAssembly target
+RUN rustup target add wasm32-unknown-unknown
+
+# Install trunk and wasm-pack
+RUN cargo install trunk wasm-pack
+
+# Create app directory
+WORKDIR /app
+
+# Copy workspace files (for shared dependencies)
+COPY ../Cargo.toml /workspace/Cargo.toml
+COPY ../shared /workspace/shared
+
+# Set workspace root
+ENV CARGO_MANIFEST_DIR=/workspace
+
+# Expose port for trunk dev server
+EXPOSE 8080
+
+# Default command (can be overridden)
+CMD ["trunk", "serve", "--address", "0.0.0.0", "--port", "8080"]
