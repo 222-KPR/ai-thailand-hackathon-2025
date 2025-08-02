@@ -66,6 +66,10 @@ thiserror = { workspace = true }
 # Logging
 log = "0.4"
 wasm-logger = "0.2"
+console_error_panic_hook = "0.1"
+
+# Additional utilities
+regex = "1.0"
 
 # Local dependencies
 shared = { path = "../shared" }
