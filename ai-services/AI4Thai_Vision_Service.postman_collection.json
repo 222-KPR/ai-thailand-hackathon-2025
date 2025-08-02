@@ -1,0 +1,484 @@
+{
+	"info": {
+		"_postman_id": "ai4thai-vision-service",
+		"name": "AI4Thai Vision Service API",
+		"description": "Comprehensive API testing collection for AI4Thai Vision Service - agricultural pest detection and disease identification service",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "ai4thai-team"
+	},
+	"item": [
+		{
+			"name": "Health Checks",
+			"item": [
+				{
+					"name": "Basic Health Check",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/health",
+							"host": ["{{base_url}}"],
+							"path": ["health"]
+						},
+						"description": "Basic health check endpoint to verify service is running"
+					},
+					"response": []
+				},
+				{
+					"name": "Detailed Health Check",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/health/detailed",
+							"host": ["{{base_url}}"],
+							"path": ["health", "detailed"]
+						},
+						"description": "Detailed health check with model status and capabilities"
+					},
+					"response": []
+				},
+				{
+					"name": "Disease Detection Health",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/health/disease",
+							"host": ["{{base_url}}"],
+							"path": ["health", "disease"]
+						},
+						"description": "Health check specifically for disease detection service"
+					},
+					"response": []
+				}
+			],
+			"description": "Health check endpoints for monitoring service status"
+		},
+		{
+			"name": "Service Information",
+			"item": [
+				{
+					"name": "Get Service Info",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/info",
+							"host": ["{{base_url}}"],
+							"path": ["info"]
+						},
+						"description": "Get comprehensive service information including models, capabilities, and endpoints"
+					},
+					"response": []
+				},
+				{
+					"name": "Root Service Overview",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/",
+							"host": ["{{base_url}}"],
+							"path": [""]
+						},
+						"description": "Root endpoint with service overview and usage information"
+					},
+					"response": []
+				}
+			],
+			"description": "Service information and documentation endpoints"
+		},
+		{
+			"name": "Pest Detection",
+			"item": [
+				{
+					"name": "Detect Pests - Basic",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "image",
+									"type": "file",
+									"src": []
+								},
+								{
+									"key": "confidence_threshold",
+									"value": "0.01",
+									"type": "text"
+								},
+								{
+									"key": "return_details",
+									"value": "false",
+									"type": "text"
+								}
+							]
+						},
+						"url": {
+							"raw": "{{base_url}}/detect/pests",
+							"host": ["{{base_url}}"],
+							"path": ["detect", "pests"]
+						},
+						"description": "Basic pest detection using YOLO11s model with default settings"
+					},
+					"response": []
+				},
+				{
+					"name": "Detect Pests - With Details",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "image",
+									"type": "file",
+									"src": []
+								},
+								{
+									"key": "confidence_threshold",
+									"value": "0.5",
+									"type": "text"
+								},
+								{
+									"key": "return_details",
+									"value": "true",
+									"type": "text"
+								}
+							]
+						},
+						"url": {
+							"raw": "{{base_url}}/detect/pests",
+							"host": ["{{base_url}}"],
+							"path": ["detect", "pests"]
+						},
+						"description": "Pest detection with detailed results including bounding boxes and confidence scores"
+					},
+					"response": []
+				},
+				{
+					"name": "Analyze (Pest Detection Alias)",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "image",
+									"type": "file",
+									"src": []
+								},
+								{
+									"key": "confidence_threshold",
+									"value": "0.3",
+									"type": "text"
+								},
+								{
+									"key": "include_details",
+									"value": "true",
+									"type": "text"
+								}
+							]
+						},
+						"url": {
+							"raw": "{{base_url}}/analyze",
+							"host": ["{{base_url}}"],
+							"path": ["analyze"]
+						},
+						"description": "Alternative endpoint for pest detection (alias for /detect/pests)"
+					},
+					"response": []
+				}
+			],
+			"description": "Pest detection endpoints using YOLO11s model"
+		},
+		{
+			"name": "Disease Detection",
+			"item": [
+				{
+					"name": "Detect Disease - Default Prompt",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "image",
+									"type": "file",
+									"src": []
+								}
+							]
+						},
+						"url": {
+							"raw": "{{base_url}}/detect/disease",
+							"host": ["{{base_url}}"],
+							"path": ["detect", "disease"]
+						},
+						"description": "Disease detection using LLaVA model with default analysis prompt"
+					},
+					"response": []
+				},
+				{
+					"name": "Detect Disease - Custom Prompt",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "image",
+									"type": "file",
+									"src": []
+								},
+								{
+									"key": "custom_prompt",
+									"value": "Analyze this leaf image for any signs of disease. Provide detailed information about the type of disease, severity, and treatment recommendations in both English and Thai.",
+									"type": "text"
+								}
+							]
+						},
+						"url": {
+							"raw": "{{base_url}}/detect/disease",
+							"host": ["{{base_url}}"],
+							"path": ["detect", "disease"]
+						},
+						"description": "Disease detection with custom analysis prompt for specific requirements"
+					},
+					"response": []
+				}
+			],
+			"description": "Disease detection endpoints using LLaVA vision-language model"
+		},
+		{
+			"name": "Comprehensive Analysis",
+			"item": [
+				{
+					"name": "Comprehensive Analysis - Basic",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "image",
+									"type": "file",
+									"src": []
+								},
+								{
+									"key": "pest_confidence",
+									"value": "0.01",
+									"type": "text"
+								},
+								{
+									"key": "pest_details",
+									"value": "false",
+									"type": "text"
+								}
+							]
+						},
+						"url": {
+							"raw": "{{base_url}}/analyze/comprehensive",
+							"host": ["{{base_url}}"],
+							"path": ["analyze", "comprehensive"]
+						},
+						"description": "Comprehensive analysis combining both pest and disease detection with basic settings"
+					},
+					"response": []
+				},
+				{
+					"name": "Comprehensive Analysis - Detailed",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "image",
+									"type": "file",
+									"src": []
+								},
+								{
+									"key": "pest_confidence",
+									"value": "0.3",
+									"type": "text"
+								},
+								{
+									"key": "pest_details",
+									"value": "true",
+									"type": "text"
+								},
+								{
+									"key": "disease_prompt",
+									"value": "Please analyze this agricultural image for both pest presence and plant diseases. Provide comprehensive treatment recommendations suitable for Thai farming conditions.",
+									"type": "text"
+								}
+							]
+						},
+						"url": {
+							"raw": "{{base_url}}/analyze/comprehensive",
+							"host": ["{{base_url}}"],
+							"path": ["analyze", "comprehensive"]
+						},
+						"description": "Detailed comprehensive analysis with custom disease prompt and pest detection details"
+					},
+					"response": []
+				}
+			],
+			"description": "Comprehensive analysis endpoints combining pest and disease detection"
+		},
+		{
+			"name": "Error Testing",
+			"item": [
+				{
+					"name": "Invalid Image Format",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "image",
+									"type": "file",
+									"src": []
+								}
+							]
+						},
+						"url": {
+							"raw": "{{base_url}}/detect/pests",
+							"host": ["{{base_url}}"],
+							"path": ["detect", "pests"]
+						},
+						"description": "Test error handling with invalid image format (upload a text file or non-image)"
+					},
+					"response": []
+				},
+				{
+					"name": "Missing Image Parameter",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "confidence_threshold",
+									"value": "0.5",
+									"type": "text"
+								}
+							]
+						},
+						"url": {
+							"raw": "{{base_url}}/detect/pests",
+							"host": ["{{base_url}}"],
+							"path": ["detect", "pests"]
+						},
+						"description": "Test error handling when image parameter is missing"
+					},
+					"response": []
+				},
+				{
+					"name": "Invalid Confidence Threshold",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "image",
+									"type": "file",
+									"src": []
+								},
+								{
+									"key": "confidence_threshold",
+									"value": "invalid_value",
+									"type": "text"
+								}
+							]
+						},
+						"url": {
+							"raw": "{{base_url}}/detect/pests",
+							"host": ["{{base_url}}"],
+							"path": ["detect", "pests"]
+						},
+						"description": "Test error handling with invalid confidence threshold value"
+					},
+					"response": []
+				}
+			],
+			"description": "Error handling and edge case testing"
+		}
+	],
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					"// Set timestamp for requests",
+					"pm.globals.set('timestamp', new Date().toISOString());"
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					"// Common test assertions for all requests",
+					"pm.test('Response time is acceptable', function () {",
+					"    pm.expect(pm.response.responseTime).to.be.below(30000); // 30 seconds max",
+					"});",
+					"",
+					"pm.test('Response has timestamp', function () {",
+					"    const jsonData = pm.response.json();",
+					"    pm.expect(jsonData).to.have.property('timestamp');",
+					"});",
+					"",
+					"// Test for successful responses",
+					"if (pm.response.code === 200) {",
+					"    pm.test('Successful response structure', function () {",
+					"        const jsonData = pm.response.json();",
+					"        pm.expect(jsonData).to.have.property('success');",
+					"        if (jsonData.success === true) {",
+					"            pm.expect(jsonData).to.have.property('data');",
+					"        }",
+					"    });",
+					"}",
+					"",
+					"// Test for error responses",
+					"if (pm.response.code >= 400) {",
+					"    pm.test('Error response has detail', function () {",
+					"        const jsonData = pm.response.json();",
+					"        pm.expect(jsonData).to.have.property('detail');",
+					"    });",
+					"}"
+				]
+			}
+		}
+	],
+	"variable": [
+		{
+			"key": "base_url",
+			"value": "http://localhost:2001",
+			"type": "string",
+			"description": "Base URL for the Vision Service API"
+		},
+		{
+			"key": "production_url",
+			"value": "http://your-production-server:2001",
+			"type": "string",
+			"description": "Production URL for the Vision Service API"
+		}
+	]
+}

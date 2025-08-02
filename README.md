@@ -35,9 +35,20 @@ Frontend PWA         API Gateway         Chat Storage
 
 ### AI Services (Deployed Separately)
 ```
-Vision Service    Queue Worker     Background Tasks
-(Python/FastAPI) (Python/Celery) (Celery Worker/Beat)
-     :2001           :2003              + Redis
+Vision Service       Queue Worker      Background Processing
+(Python/FastAPI)   (Python/FastAPI)   (Celery Workers/Beat)
+     :2001             :2003                + Redis
+                                           :6379
+      |                   |                   |
+┌─────────────────────────────────────────────────┐
+│  Comprehensive Plant Health Analysis Platform  │
+├─────────────────────────────────────────────────┤
+│ • YOLO11s Pest Detection                       │
+│ • LLaVA Disease Identification                 │
+│ • Async Job Processing                         │
+│ • Thai Language Support                       │
+│ • Treatment Recommendations                    │
+└─────────────────────────────────────────────────┘
 ```
 
 ## 🚀 Quick Start
@@ -207,15 +218,42 @@ All services use standardized team10 volumes:
 
 ## 📊 API Reference
 
-### POST `/v1/chat`
-Unified endpoint for crop analysis and advisory.
+### Vision Service API (Port 2001)
 
-**Request**: `multipart/form-data`
-- `image`: Image file
-- `crop_type`: Crop type (e.g., "rice", "cassava")
-- `query`: User query (e.g., "Check for diseases")
+#### Pest Detection
+- **POST** `/detect/pests` - Detect pests using YOLO11s model
+- **POST** `/analyze` - Alias for pest detection
+- **Parameters**: `image`, `confidence_threshold` (0.01), `return_details` (false)
 
-**Response**: `{"answer": "Analysis result..."}`
+#### Disease Detection
+- **POST** `/detect/disease` - Detect diseases using LLaVA model
+- **Parameters**: `image`, `custom_prompt` (optional)
+
+#### Comprehensive Analysis
+- **POST** `/analyze/comprehensive` - Combined pest and disease detection
+- **Parameters**: `image`, `pest_confidence`, `pest_details`, `disease_prompt`
+
+#### Health & Info
+- **GET** `/health` - Basic health check
+- **GET** `/health/detailed` - Detailed health with model status
+- **GET** `/info` - Service capabilities and model information
+- **GET** `/` - Service overview
+
+### Queue Worker API (Port 2003)
+
+#### Async Processing
+- **POST** `/analyze/pest` - Queue pest detection job
+- **POST** `/analyze/disease` - Queue disease detection job
+- **POST** `/analyze/comprehensive` - Queue comprehensive analysis
+
+#### Job Management
+- **GET** `/jobs/{job_id}` - Get job status and results
+- **DELETE** `/jobs/{job_id}` - Cancel pending job
+
+#### Monitoring
+- **GET** `/queue/stats` - Queue and worker statistics
+- **GET** `/images/stats` - Image storage statistics
+- **POST** `/maintenance/cleanup` - Trigger cleanup of old data
 
 ## 🔍 AI Services
 
