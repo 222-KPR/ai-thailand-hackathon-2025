@@ -1,0 +1,37 @@
+[package]
+name = "ai-vision-backend"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+# Workspace dependencies
+tokio = { workspace = true }
+axum = { workspace = true }
+axum-extra = { workspace = true }
+tower = { workspace = true }
+tower-http = { workspace = true, features = ["cors", "trace", "fs"] }
+serde = { workspace = true }
+serde_json = { workspace = true }
+sqlx = { workspace = true }
+redis = { workspace = true }
+anyhow = { workspace = true }
+thiserror = { workspace = true }
+tracing = { workspace = true }
+tracing-subscriber = { workspace = true }
+config = { workspace = true }
+uuid = { workspace = true }
+chrono = { workspace = true }
+reqwest = { workspace = true }
+
+# Backend specific
+jsonwebtoken = "9.0"
+bcrypt = "0.15"
+validator = { version = "0.18", features = ["derive"] }
+multipart = "0.18"
+
+# Local dependencies
+shared = { path = "../shared" }
+
+[dev-dependencies]
+mockall = { workspace = true }
+tempfile = "3.0"

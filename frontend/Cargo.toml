@@ -1,0 +1,29 @@
+[package]
+name = "ai-vision-frontend"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+# Workspace dependencies
+serde = { workspace = true }
+serde_json = { workspace = true }
+uuid = { workspace = true }
+chrono = { workspace = true }
+
+# Frontend specific
+yew = { version = "0.21", features = ["csr"] }
+web-sys = "0.3"
+wasm-bindgen = "0.2"
+wasm-bindgen-futures = "0.4"
+js-sys = "0.3"
+gloo = { version = "0.11", features = ["net", "storage"] }
+yew-router = "0.18"
+
+# Local dependencies
+shared = { path = "../shared" }
+
+[dev-dependencies]
+wasm-bindgen-test = "0.3"
