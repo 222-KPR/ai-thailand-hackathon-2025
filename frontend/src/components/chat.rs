@@ -1,47 +1,45 @@
 use yew::prelude::*;
-use yewdux::prelude::*;
-use web_sys::{HtmlInputElement, HtmlTextAreaElement};
+use web_sys::HtmlTextAreaElement;
+use wasm_bindgen::JsCast;
 use chrono::Utc;
-use shared::{ChatMessage, Language};
+use shared::ChatMessage;
 
-use crate::store::{AppState, AppAction};
+use crate::app::AppState;
 use crate::i18n::I18nContext;
 use crate::components::{
     message::MessageBubble,
     welcome::WelcomeMessage,
-    image::ImageUpload,
 };
-use crate::services::api::ApiService;
 
 #[function_component(ChatInterface)]
 pub fn chat_interface() -> Html {
-    let (state, dispatch) = use_store::<AppState>();
+    let state = use_context::<UseStateHandle<AppState>>().expect("AppState not found");
     let i18n = use_context::<I18nContext>().expect("I18nContext not found");
     
     let input_ref = use_node_ref();
     let messages_container_ref = use_node_ref();
     
     let input_value = use_state(|| String::new());
-    let show_image_upload = use_state(|| false);
     
     // Auto-scroll to bottom when new messages arrive
     {
         let messages_container_ref = messages_container_ref.clone();
         let messages_len = state.messages.len();
         
-        use_effect_with_deps(move |_| {
+        use_effect_with(messages_len, move |_| {
             if let Some(container) = messages_container_ref.cast::<web_sys::Element>() {
                 container.set_scroll_top(container.scroll_height());
             }
-        }, messages_len);
+        });
     }
     
     let send_message = {
-        let dispatch = dispatch.clone();
+        let state = state.clone();
         let input_value = input_value.clone();
         let input_ref = input_ref.clone();
         
-        Callback::from(move |_: SubmitEvent| {
+        Callback::from(move |e: SubmitEvent| {
+            e.prevent_default();
             let message_text = (*input_value).clone().trim().to_string();
             
             if !message_text.is_empty() {
@@ -51,40 +49,25 @@ pub fn chat_interface() -> Html {
                     content: message_text.clone(),
                     timestamp: Utc::now(),
                 };
-                dispatch.apply(AppAction::AddMessage(user_message));
+                
+                let mut new_state = (*state).clone();
+                new_state.messages.push(user_message);
+                
+                // Add a bot response (placeholder for now)
+                let bot_message = ChatMessage {
+                    role: "assistant".to_string(),
+                    content: format!("ขอบคุณสำหรับข้อความ: \"{}\" - ระบบ AI กำลังพัฒนาและจะตอบกลับเร็วๆ นี้", message_text),
+                    timestamp: Utc::now(),
+                };
+                new_state.messages.push(bot_message);
+                
+                state.set(new_state);
                 
                 // Clear input
                 input_value.set(String::new());
                 if let Some(input) = input_ref.cast::<HtmlTextAreaElement>() {
                     input.set_value("");
                 }
-                
-                // Send to API and get response
-                let dispatch_clone = dispatch.clone();
-                wasm_bindgen_futures::spawn_local(async move {
-                    dispatch_clone.apply(AppAction::SetLoading(true));
-                    
-                    match ApiService::send_chat_message(&message_text, &state.conversation_id).await {
-                        Ok(response) => {
-                            let bot_message = ChatMessage {
-                                role: "assistant".to_string(),
-                                content: response,
-                                timestamp: Utc::now(),
-                            };
-                            dispatch_clone.apply(AppAction::AddMessage(bot_message));
-                        }
-                        Err(err) => {
-                            let error_message = ChatMessage {
-                                role: "assistant".to_string(),
-                                content: format!("เกิดข้อผิดพลาด: {}", err),
-                                timestamp: Utc::now(),
-                            };
-                            dispatch_clone.apply(AppAction::AddMessage(error_message));
-                        }
-                    }
-                    
-                    dispatch_clone.apply(AppAction::SetLoading(false));
-                });
             }
         })
     };
@@ -102,22 +85,10 @@ pub fn chat_interface() -> Html {
         Callback::from(move |e: KeyboardEvent| {
             if e.key() == "Enter" && !e.shift_key() {
                 e.prevent_default();
-                send_message.emit(SubmitEvent::new("submit").unwrap());
+                // Trigger the send message directly
+                let event = web_sys::Event::new("submit").unwrap();
+                send_message.emit(SubmitEvent::from(event.unchecked_into::<web_sys::SubmitEvent>()));
             }
-        })
-    };
-    
-    let toggle_image_upload = {
-        let show_image_upload = show_image_upload.clone();
-        Callback::from(move |_: MouseEvent| {
-            show_image_upload.set(!*show_image_upload);
-        })
-    };
-    
-    let on_image_uploaded = {
-        let show_image_upload = show_image_upload.clone();
-        Callback::from(move |_| {
-            show_image_upload.set(false);
         })
     };
     
@@ -130,11 +101,11 @@ pub fn chat_interface() -> Html {
                     } else {
                         html! {
                             <div class="messages-list">
-                                {state.messages.iter().map(|message| {
+                                {state.messages.iter().enumerate().map(|(i, message)| {
                                     let is_bot = message.role == "assistant" || message.role == "system";
                                     html! {
                                         <MessageBubble
-                                            key={format!("{}-{}", message.timestamp, message.role)}
+                                            key={format!("{}-{}", i, message.role)}
                                             message={message.clone()}
                                             is_bot={is_bot}
                                         />
@@ -166,16 +137,6 @@ pub fn chat_interface() -> Html {
                     }}
                 </div>
                 
-                {if *show_image_upload {
-                    html! {
-                        <div class="image-upload-section">
-                            <ImageUpload on_uploaded={on_image_uploaded} />
-                        </div>
-                    }
-                } else {
-                    html! {}
-                }}
-                
                 <div class="chat-input-section">
                     {if let Some(error) = &state.error_message {
                         html! {
@@ -185,9 +146,11 @@ pub fn chat_interface() -> Html {
                                 <button 
                                     class="error-close"
                                     onclick={
-                                        let dispatch = dispatch.clone();
+                                        let state = state.clone();
                                         Callback::from(move |_: MouseEvent| {
-                                            dispatch.apply(AppAction::SetError(None));
+                                            let mut new_state = (*state).clone();
+                                            new_state.error_message = None;
+                                            state.set(new_state);
                                         })
                                     }
                                 >
@@ -204,8 +167,7 @@ pub fn chat_interface() -> Html {
                             <div class="input-actions-left">
                                 <button
                                     type="button"
-                                    class={classes!("btn", "btn-icon", if *show_image_upload { "active" } else { "" })}
-                                    onclick={toggle_image_upload}
+                                    class="btn btn-icon"
                                     title={i18n.t("chat.upload_image")}
                                 >
                                     {"📷"}
