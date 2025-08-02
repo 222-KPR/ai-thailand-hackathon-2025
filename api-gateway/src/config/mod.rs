@@ -1,4 +1,3 @@
-pub mod database;
 pub mod external_apis;
 pub mod redis;
 pub mod services;
@@ -10,9 +9,7 @@ use std::env;
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct AppConfig {
     pub server: ServerConfig,
-    pub database: database::DatabaseConfig,
     pub redis: redis::RedisConfig,
-    pub auth: AuthConfig,
     pub services: services::ServicesConfig,
     pub external_apis: external_apis::ExternalApisConfig,
     pub logging: LoggingConfig,
@@ -57,28 +54,6 @@ impl Default for ServerConfig {
             port: 3000,
             workers: None,
             max_connections: None,
-        }
-    }
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct AuthConfig {
-    pub jwt_secret: String,
-    pub jwt_expiration_hours: u64,
-    pub refresh_token_expiration_days: u64,
-    pub password_salt_rounds: u32,
-    pub session_timeout_minutes: u64,
-}
-
-impl Default for AuthConfig {
-    fn default() -> Self {
-        Self {
-            jwt_secret: env::var("JWT_SECRET")
-                .unwrap_or_else(|_| "your-super-secret-jwt-key".to_string()),
-            jwt_expiration_hours: 24,
-            refresh_token_expiration_days: 30,
-            password_salt_rounds: 12,
-            session_timeout_minutes: 60,
         }
     }
 }

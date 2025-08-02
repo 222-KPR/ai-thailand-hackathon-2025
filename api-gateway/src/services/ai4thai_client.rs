@@ -1,10 +1,9 @@
 use crate::config::external_apis::AI4ThaiConfig;
 use crate::{AppError, AppResult};
-use reqwest::{Client, multipart};
+use reqwest::{multipart, Client};
 use serde::{Deserialize, Serialize};
 use std::time::{Duration, Instant};
-use tracing::{info, warn, error, instrument};
-use uuid::Uuid;
+use tracing::{error, info, instrument, warn};
 
 /// AI4Thai API client for speech services
 #[derive(Clone)]
@@ -19,7 +18,7 @@ impl AI4ThaiClient {
             .timeout(config.timeout())
             .user_agent("AI4Thai-Crop-Guardian/1.0")
             .build()
-            .map_err(|e| AppError::ExternalApi(format!("Failed to create HTTP client: {}", e)))?;
+            .map_err(|e| AppError::ExternalApi(format!("Failed to create HTTP client: {e}")))?;
 
         Ok(Self { client, config })
     }
@@ -34,12 +33,12 @@ impl AI4ThaiClient {
         options: Option<TTSOptions>,
     ) -> AppResult<TTSResponse> {
         let start_time = Instant::now();
-        
+
         // Validate input
         if text.is_empty() {
             return Err(AppError::Validation("Text cannot be empty".to_string()));
         }
-        
+
         if text.len() > self.config.tts.max_text_length {
             return Err(AppError::Validation(format!(
                 "Text length {} exceeds maximum of {}",
@@ -49,9 +48,11 @@ impl AI4ThaiClient {
         }
 
         let voice = voice.unwrap_or_else(|| self.config.tts.get_voice_for_language(language));
-        
+
         if !self.config.tts.is_voice_supported(voice) {
-            return Err(AppError::Validation(format!("Unsupported voice: {}", voice)));
+            return Err(AppError::Validation(format!(
+                "Unsupported voice: {voice}"
+            )));
         }
 
         // Prepare request
@@ -72,13 +73,13 @@ impl AI4ThaiClient {
         // Make API request
         let response = self
             .client
-            .post(&self.config.tts_endpoint())
+            .post(self.config.tts_endpoint())
             .header("Authorization", format!("Bearer {}", self.config.api_key))
             .header("Content-Type", "application/json")
             .json(&request_body)
             .send()
             .await
-            .map_err(|e| AppError::ExternalApi(format!("TTS API request failed: {}", e)))?;
+            .map_err(|e| AppError::ExternalApi(format!("TTS API request failed: {e}")))?;
 
         let processing_time = start_time.elapsed();
 
@@ -87,15 +88,14 @@ impl AI4ThaiClient {
             let error_text = response.text().await.unwrap_or_default();
             error!("TTS API error: {} - {}", status, error_text);
             return Err(AppError::ExternalApi(format!(
-                "TTS API returned error {}: {}",
-                status, error_text
+                "TTS API returned error {status}: {error_text}"
             )));
         }
 
         let tts_response: TTSApiResponse = response
             .json()
             .await
-            .map_err(|e| AppError::ExternalApi(format!("Failed to parse TTS response: {}", e)))?;
+            .map_err(|e| AppError::ExternalApi(format!("Failed to parse TTS response: {e}")))?;
 
         info!(
             "TTS request completed successfully in {:.2}ms",
@@ -121,12 +121,14 @@ impl AI4ThaiClient {
         options: Option<ASROptions>,
     ) -> AppResult<ASRResponse> {
         let start_time = Instant::now();
-        
+
         // Validate input
         if audio_data.is_empty() {
-            return Err(AppError::Validation("Audio data cannot be empty".to_string()));
+            return Err(AppError::Validation(
+                "Audio data cannot be empty".to_string(),
+            ));
         }
-        
+
         if audio_data.len() > self.config.asr.max_file_size_bytes() as usize {
             return Err(AppError::Validation(format!(
                 "Audio file size {} exceeds maximum of {} bytes",
@@ -136,11 +138,13 @@ impl AI4ThaiClient {
         }
 
         let options = options.unwrap_or_default();
-        
+
         // Validate language if specified
         if let Some(lang) = language {
             if !self.config.asr.is_supported_language(lang) {
-                return Err(AppError::Validation(format!("Unsupported language: {}", lang)));
+                return Err(AppError::Validation(format!(
+                    "Unsupported language: {lang}"
+                )));
             }
         }
 
@@ -151,10 +155,12 @@ impl AI4ThaiClient {
         );
 
         // Create multipart form
-        let mut form = multipart::Form::new()
-            .part("audio", multipart::Part::bytes(audio_data.to_vec())
+        let mut form = multipart::Form::new().part(
+            "audio",
+            multipart::Part::bytes(audio_data.to_vec())
                 .file_name("audio.wav")
-                .mime_str("audio/wav")?);
+                .mime_str("audio/wav")?,
+        );
 
         if let Some(lang) = language {
             form = form.text("language", lang.to_string());
@@ -175,12 +181,12 @@ impl AI4ThaiClient {
         // Make API request
         let response = self
             .client
-            .post(&self.config.asr_endpoint())
+            .post(self.config.asr_endpoint())
             .header("Authorization", format!("Bearer {}", self.config.api_key))
             .multipart(form)
             .send()
             .await
-            .map_err(|e| AppError::ExternalApi(format!("ASR API request failed: {}", e)))?;
+            .map_err(|e| AppError::ExternalApi(format!("ASR API request failed: {e}")))?;
 
         let processing_time = start_time.elapsed();
 
@@ -189,15 +195,14 @@ impl AI4ThaiClient {
             let error_text = response.text().await.unwrap_or_default();
             error!("ASR API error: {} - {}", status, error_text);
             return Err(AppError::ExternalApi(format!(
-                "ASR API returned error {}: {}",
-                status, error_text
+                "ASR API returned error {status}: {error_text}"
             )));
         }
 
         let asr_response: ASRApiResponse = response
             .json()
             .await
-            .map_err(|e| AppError::ExternalApi(format!("Failed to parse ASR response: {}", e)))?;
+            .map_err(|e| AppError::ExternalApi(format!("Failed to parse ASR response: {e}")))?;
 
         info!(
             "ASR request completed successfully in {:.2}ms, transcribed {} characters",
@@ -218,7 +223,7 @@ impl AI4ThaiClient {
     #[instrument(skip(self))]
     pub async fn health_check(&self) -> bool {
         let health_url = format!("{}/health", self.config.api_url);
-        
+
         match self
             .client
             .get(&health_url)
@@ -247,14 +252,14 @@ impl AI4ThaiClient {
     #[instrument(skip(self))]
     pub async fn get_usage_stats(&self) -> AppResult<UsageStats> {
         let stats_url = format!("{}/usage/stats", self.config.api_url);
-        
+
         let response = self
             .client
             .get(&stats_url)
             .header("Authorization", format!("Bearer {}", self.config.api_key))
             .send()
             .await
-            .map_err(|e| AppError::ExternalApi(format!("Failed to get usage stats: {}", e)))?;
+            .map_err(|e| AppError::ExternalApi(format!("Failed to get usage stats: {e}")))?;
 
         if !response.status().is_success() {
             return Err(AppError::ExternalApi(format!(
@@ -266,7 +271,7 @@ impl AI4ThaiClient {
         let stats: UsageStats = response
             .json()
             .await
-            .map_err(|e| AppError::ExternalApi(format!("Failed to parse usage stats: {}", e)))?;
+            .map_err(|e| AppError::ExternalApi(format!("Failed to parse usage stats: {e}")))?;
 
         Ok(stats)
     }
@@ -384,6 +389,6 @@ pub struct UsageQuota {
 // Error handling for multipart form creation
 impl From<reqwest::Error> for AppError {
     fn from(err: reqwest::Error) -> Self {
-        AppError::ExternalApi(format!("HTTP request error: {}", err))
+        AppError::ExternalApi(format!("HTTP request error: {err}"))
     }
 }

@@ -1,34 +1,72 @@
+# Trunk Configuration for AI4Thai Crop Guardian Frontend
+# WebAssembly build configuration with optimization
+
 [build]
+# Build target
 target = "index.html"
+
+# Output directory
 dist = "dist"
+
+# Public URL for assets
 public_url = "/"
 
-[[assets]]
-file = "static/styles.css"
+# Enable optimization
+minify = "on_release"
 
-[[assets]]
-file = "static/manifest.json"
+# WebAssembly optimization
+[build.rust]
+# Enable WebAssembly optimization
+wasm-opt = ["-Oz", "--enable-bulk-memory"]
 
-[[assets]]
-file = "static/sw.js"
-
-[watch]
-watch = ["src", "static"]
-ignore = ["dist"]
-
-[serve]
-address = "127.0.0.1"
-port = 8080
-open = false
-
-[clean]
-dist = "dist"
-
+# Build hooks for additional processing
 [[hooks]]
 stage = "pre_build"
-command = "wasm-pack"
-command_arguments = ["--version"]
+command = "echo"
+command_arguments = ["Starting AI4Thai frontend build..."]
 
-[tools]
-sass = "2.0.0"
-wasm-bindgen = "0.2.100"
+[[hooks]]
+stage = "post_build"
+command = "echo"
+command_arguments = ["AI4Thai frontend build completed!"]
+
+# Development server configuration
+[serve]
+# Bind to all interfaces for Docker
+addresses = ["0.0.0.0"]
+
+# Development port
+port = 8080
+
+# Auto-open browser (disabled for Docker)
+open = false
+
+# Enable hot reload
+reload = true
+
+# Watch additional files
+[watch]
+# Watch for changes in these directories
+watch = ["src", "static", "styles"]
+
+# Ignore these patterns
+ignore = ["target", "dist", "node_modules"]
+
+# Asset processing
+[build.sass]
+# Enable SASS/SCSS processing
+style = "compressed"
+
+# Copy static assets
+[[build.copy_dir]]
+name = "static"
+dir = "static"
+
+# Environment-specific builds
+[env.development]
+# Development-specific settings
+RUST_LOG = "debug"
+
+[env.production]
+# Production-specific settings
+RUST_LOG = "warn"

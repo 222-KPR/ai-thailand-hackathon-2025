@@ -6,14 +6,15 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 AI4Thai Crop Guardian is a microservices application with a Rust backend and Python AI services:
 
-- **API Gateway** (Rust/Axum): Central entry point at `api-gateway/` - handles authentication, routing, and external API integration
-- **Vision Service** (Python/FastAPI): Computer vision for disease detection at `ai-services/vision-service/`
-- **LLM Service** (Python/FastAPI): Agricultural advisory using language models at `ai-services/llm-service/`
+- **API Gateway** (Rust/Axum): Main application backend at `api-gateway/` - handles routing, chat, and external API integration  
 - **Frontend** (Yew WebAssembly): Progressive web app at `frontend/`
 - **Shared** (Rust): Common types and utilities at `shared/`
-- **Queue Worker** (Rust): Background job processing at `queue-worker/`
 
-The project uses a Rust workspace with PostgreSQL and Redis for data storage and caching.
+**AI Services (deployed separately):**
+- **Vision Service** (Python/FastAPI): Computer vision for pest and disease detection at `ai-services/vision-service/`
+- **Queue Worker** (Python/Celery): Background vision job processing and image management at `ai-services/queue-worker/`
+
+The project uses a Rust workspace for the main application with Redis for chat storage. AI services are deployed separately and can use either self-hosted models or external AI4Thai APIs.
 
 ## 🚀 Development Commands
 
@@ -72,8 +73,11 @@ source venv/bin/activate
 # Vision service
 cd vision-service && python -m uvicorn app:app --reload --port 8001
 
-# LLM service  
-cd llm-service && python -m uvicorn app:app --reload --port 8002
+# Queue worker service  
+cd queue-worker && python -m uvicorn app:app --reload --port 8003
+
+# Queue worker background tasks
+cd queue-worker && celery -A tasks worker --loglevel=info
 ```
 
 ## 🔧 Key Configuration
@@ -87,27 +91,28 @@ cd llm-service && python -m uvicorn app:app --reload --port 8002
 - Frontend: 8080
 - API Gateway: 3000
 - Vision Service: 8001
-- LLM Service: 8002
-- PostgreSQL: 5432
+- Queue Worker: 8003
 - Redis: 6379
 
 ### Docker Services
 ```bash
-docker-compose up -d postgres redis  # Infrastructure only
-docker-compose up -d                 # All services
+# Main application (API Gateway + Frontend)
+docker-compose up -d
+
+# AI Services (Vision Service + Queue Worker)
+cd ai-services/deployment && docker-compose up -d
 ```
 
 ## 📁 Code Organization
 
 ### Rust Services Structure
-Each Rust service follows this pattern:
+The API Gateway follows this simplified pattern:
 ```
 src/
 ├── main.rs           # Entry point
 ├── lib.rs            # Library exports
 ├── config/           # Configuration modules
-├── handlers/         # HTTP handlers
-├── middleware/       # Custom middleware
+├── handlers/         # HTTP handlers  
 ├── models/           # Data models
 ├── services/         # Business logic
 └── utils/           # Utilities
@@ -154,11 +159,10 @@ Run `./scripts/setup-dev.sh` which installs:
 - trunk, wasm-pack, cargo-watch
 - Python virtual environment with all dependencies
 
-## 🗃️ Database & Migrations
+## 🗃️ Data Storage
 
-- PostgreSQL database with migrations in `api-gateway/migrations/`
-- Redis for caching and queue management
-- Database URL: `postgresql://postgres:password@localhost:5432/ai4thai`
+- Redis for chat storage, vision job queuing, and image caching
+- Redis URL: `redis://localhost:6379`
 
 ## 🤖 AI Services Architecture
 
@@ -166,4 +170,19 @@ The system supports two deployment modes:
 1. **External AI Services**: Uses AI4Thai API for quick demos
 2. **Local AI Services**: Runs HuggingFace models locally for development
 
-Vision service handles crop disease detection, LLM service provides agricultural advice in Thai language.
+### Vision Service Features
+- **Pest Detection**: Detects agricultural pests using YOLO11s model from `underdogquality/yolo11s-pest-detection`
+- **Disease Detection**: Identifies plant diseases using LLaVA vision-language model from `YuchengShi/LLaVA-v1.5-7B-Plant-Leaf-Diseases-Detection`
+- **Comprehensive Analysis**: Combined pest and disease detection in parallel
+- **Thai Language Support**: Results and recommendations in Thai for local farmers
+- **Treatment Recommendations**: AI-powered actionable advice for farmers
+- **Real-time Analysis**: Fast async processing with dual model support
+- **REST API**: Simple HTTP endpoints for integration
+
+### Queue Worker Features
+- **Background Processing**: Celery-based async job processing for vision tasks
+- **Image Management**: Validation, preprocessing, and temporary storage with TTL
+- **Job Tracking**: Full lifecycle management with status monitoring
+- **Parallel Processing**: Supports concurrent pest and disease detection
+- **Error Handling**: Automatic retries and comprehensive error reporting
+- **Redis Integration**: Uses Redis for job queues and image caching

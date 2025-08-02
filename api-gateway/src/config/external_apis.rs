@@ -59,19 +59,19 @@ impl AI4ThaiConfig {
     pub fn timeout(&self) -> Duration {
         Duration::from_secs(self.timeout_seconds)
     }
-    
+
     pub fn cache_duration(&self) -> Duration {
         Duration::from_secs(self.cache_duration_hours * 3600)
     }
-    
+
     pub fn is_configured(&self) -> bool {
         !self.api_key.is_empty() && !self.api_url.is_empty()
     }
-    
+
     pub fn tts_endpoint(&self) -> String {
         format!("{}/speech/text-to-speech", self.api_url)
     }
-    
+
     pub fn asr_endpoint(&self) -> String {
         format!("{}/speech/speech-to-text", self.api_url)
     }
@@ -117,7 +117,7 @@ impl AI4ThaiTTSConfig {
             _ => &self.default_voice_en,
         }
     }
-    
+
     pub fn is_voice_supported(&self, voice: &str) -> bool {
         self.supported_voices.contains(&voice.to_string())
     }
@@ -165,23 +165,23 @@ impl AI4ThaiASRConfig {
     pub fn max_audio_duration(&self) -> Duration {
         Duration::from_secs(self.max_audio_duration_seconds)
     }
-    
+
     pub fn max_file_size_bytes(&self) -> u64 {
         self.max_file_size_mb * 1024 * 1024
     }
-    
+
     pub fn is_supported_language(&self, language: &str) -> bool {
         self.supported_languages.contains(&language.to_lowercase())
     }
-    
+
     pub fn is_supported_format(&self, format: &str) -> bool {
         self.supported_formats.contains(&format.to_lowercase())
     }
-    
+
     pub fn is_supported_sample_rate(&self, sample_rate: u32) -> bool {
         self.sample_rates.contains(&sample_rate)
     }
-    
+
     pub fn get_optimal_sample_rate(&self) -> u32 {
         22050 // Optimal for speech recognition
     }
@@ -224,7 +224,7 @@ impl WeatherConfig {
     pub fn cache_duration(&self) -> Duration {
         Duration::from_secs(self.cache_duration_minutes * 60)
     }
-    
+
     pub fn is_configured(&self) -> bool {
         !self.api_key.is_empty() && !self.api_url.is_empty()
     }

@@ -54,11 +54,11 @@ impl ServiceConfig {
     pub fn timeout(&self) -> Duration {
         Duration::from_secs(self.timeout_seconds)
     }
-    
+
     pub fn health_check_interval(&self) -> Duration {
         Duration::from_secs(self.health_check_interval_seconds)
     }
-    
+
     pub fn health_check_url(&self) -> String {
         format!("{}{}", self.base_url, self.health_check_path)
     }
@@ -137,16 +137,16 @@ impl RetryConfig {
     pub fn initial_delay(&self) -> Duration {
         Duration::from_millis(self.initial_delay_ms)
     }
-    
+
     pub fn max_delay(&self) -> Duration {
         Duration::from_millis(self.max_delay_ms)
     }
-    
+
     /// Calculate delay for a given attempt (0-indexed)
     pub fn delay_for_attempt(&self, attempt: u32) -> Duration {
         let base_delay = self.initial_delay_ms as f64 * self.multiplier.powi(attempt as i32);
         let capped_delay = base_delay.min(self.max_delay_ms as f64);
-        
+
         let final_delay = if self.jitter {
             // Add ±25% jitter
             let jitter_factor = 1.0 + (rand::random::<f64>() - 0.5) * 0.5;
@@ -154,7 +154,19 @@ impl RetryConfig {
         } else {
             capped_delay
         };
-        
+
         Duration::from_millis(final_delay as u64)
+    }
+}
+
+impl ServicesConfig {
+    /// Get the vision service URL
+    pub fn vision_service_url(&self) -> String {
+        self.vision.base_url.clone()
+    }
+
+    /// Get the LLM service URL
+    pub fn llm_service_url(&self) -> String {
+        self.llm.base_url.clone()
     }
 }

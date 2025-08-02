@@ -30,6 +30,17 @@ pub enum DiseaseSeverity {
     Critical,
 }
 
+impl std::fmt::Display for DiseaseSeverity {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            DiseaseSeverity::Low => write!(f, "low"),
+            DiseaseSeverity::Medium => write!(f, "medium"),
+            DiseaseSeverity::High => write!(f, "high"),
+            DiseaseSeverity::Critical => write!(f, "critical"),
+        }
+    }
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub enum Language {
     Thai,
@@ -44,7 +55,7 @@ pub enum Language {
 pub struct VisionRequest {
     pub request_id: Uuid,
     #[validate(length(min = 1))]
-    pub image_data: String,     // base64 encoded
+    pub image_data: String, // base64 encoded
     pub crop_type: CropType,
     pub metadata: ImageMetadata,
     pub timestamp: DateTime<Utc>,
@@ -55,14 +66,14 @@ pub struct ImageMetadata {
     pub size_bytes: u64,
     pub width: u32,
     pub height: u32,
-    pub format: String,         // "jpeg", "png", etc.
+    pub format: String, // "jpeg", "png", etc.
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct VisionResponse {
     pub request_id: Uuid,
     pub disease: String,
-    pub confidence: f32,        // 0.0 - 1.0
+    pub confidence: f32, // 0.0 - 1.0
     pub severity: DiseaseSeverity,
     pub affected_areas: Vec<BoundingBox>,
     pub processing_time_ms: u64,
@@ -106,7 +117,7 @@ pub struct ChatContext {
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub struct ChatMessage {
-    pub role: String,           // "user", "assistant", "system"
+    pub role: String, // "user", "assistant", "system"
     pub content: String,
     pub timestamp: DateTime<Utc>,
 }
@@ -144,7 +155,7 @@ pub struct TreatmentStep {
     pub step_number: u32,
     pub description: String,
     pub materials_needed: Vec<Material>,
-    pub timing: String,         // "immediate", "after 3 days", etc.
+    pub timing: String, // "immediate", "after 3 days", etc.
     pub warnings: Vec<String>,
 }
 
@@ -164,12 +175,23 @@ pub enum TreatmentUrgency {
     Critical,
 }
 
+impl std::fmt::Display for TreatmentUrgency {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            TreatmentUrgency::Low => write!(f, "low"),
+            TreatmentUrgency::Medium => write!(f, "medium"),
+            TreatmentUrgency::High => write!(f, "high"),
+            TreatmentUrgency::Critical => write!(f, "critical"),
+        }
+    }
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct OrganicTreatment {
     pub method: String,
     pub ingredients: Vec<String>,
     pub preparation: String,
-    pub effectiveness: f32,     // 0.0 - 1.0 compared to chemical treatment
+    pub effectiveness: f32, // 0.0 - 1.0 compared to chemical treatment
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -201,18 +223,18 @@ pub struct TTSRequest {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct VoiceSettings {
-    pub voice_id: String,       // "th-female-1", "en-male-1", etc.
-    pub speed: f32,             // 0.5 - 2.0
-    pub pitch: f32,             // 0.5 - 2.0
-    pub volume: f32,            // 0.0 - 1.0
+    pub voice_id: String, // "th-female-1", "en-male-1", etc.
+    pub speed: f32,       // 0.5 - 2.0
+    pub pitch: f32,       // 0.5 - 2.0
+    pub volume: f32,      // 0.0 - 1.0
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct TTSResponse {
     pub request_id: Uuid,
-    pub audio_url: String,      // URL to generated audio file
+    pub audio_url: String, // URL to generated audio file
     pub duration_seconds: f32,
-    pub format: String,         // "mp3", "wav", etc.
+    pub format: String, // "mp3", "wav", etc.
     pub size_bytes: u64,
 }
 
@@ -220,16 +242,16 @@ pub struct TTSResponse {
 pub struct ASRRequest {
     pub request_id: Uuid,
     #[validate(length(min = 1))]
-    pub audio_data: String,     // base64 encoded audio
+    pub audio_data: String, // base64 encoded audio
     pub language: Language,
-    pub audio_format: String,   // "mp3", "wav", "webm", etc.
+    pub audio_format: String, // "mp3", "wav", "webm", etc.
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ASRResponse {
     pub request_id: Uuid,
     pub transcribed_text: String,
-    pub confidence: f32,        // 0.0 - 1.0
+    pub confidence: f32, // 0.0 - 1.0
     pub processing_time_ms: u64,
     pub detected_language: Language,
 }
@@ -238,7 +260,7 @@ pub struct ASRResponse {
 pub struct WeatherRequest {
     pub request_id: Uuid,
     pub location: GeoLocation,
-    pub forecast_days: u8,      // 1-7 days
+    pub forecast_days: u8, // 1-7 days
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -255,12 +277,12 @@ pub struct CurrentWeather {
     pub humidity_percent: f32,
     pub rainfall_mm: f32,
     pub wind_speed_kmh: f32,
-    pub conditions: String,     // "sunny", "rainy", "cloudy", etc.
+    pub conditions: String, // "sunny", "rainy", "cloudy", etc.
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct WeatherForecast {
-    pub date: String,           // YYYY-MM-DD
+    pub date: String, // YYYY-MM-DD
     pub temperature_min: f32,
     pub temperature_max: f32,
     pub rainfall_probability: f32, // 0.0 - 1.0
@@ -270,7 +292,7 @@ pub struct WeatherForecast {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct WeatherAlert {
-    pub severity: String,       // "low", "medium", "high", "extreme"
+    pub severity: String, // "low", "medium", "high", "extreme"
     pub title: String,
     pub description: String,
     pub start_time: DateTime<Utc>,
@@ -322,8 +344,8 @@ pub struct ServiceMetrics {
     pub requests_total: u64,
     pub requests_per_second: f32,
     pub average_response_time_ms: f32,
-    pub error_rate: f32,        // 0.0 - 1.0
-    pub uptime_percent: f32,    // 0.0 - 100.0
+    pub error_rate: f32,     // 0.0 - 1.0
+    pub uptime_percent: f32, // 0.0 - 100.0
 }
 
 // ============================================================================

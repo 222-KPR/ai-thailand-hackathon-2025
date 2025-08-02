@@ -1,86 +1,58 @@
-# AI4Thai Crop Guardian - Main Application Services
-# AI services deployed separately using ./scripts/deploy-ai-services.sh
+# AI4Thai Crop Guardian - Main Application
+# This compose file only runs the main application (API Gateway + Frontend)
+# For AI services, use ai-services/deployment/docker-compose.yml
 
 version: '3.8'
 
 services:
-  # PostgreSQL Database
-  postgres:
-    image: postgres:15-alpine
-    container_name: ai4thai-postgres
+  # Frontend - Yew WebAssembly PWA
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      target: production
+    container_name: ai4thai-frontend
+    ports:
+      - "${FRONTEND_PORT:-8080}:80"
     environment:
-      POSTGRES_DB: ai4thai
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-password}
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-      - ./api-gateway/migrations:/docker-entrypoint-initdb.d
-    ports:
-      - "${POSTGRES_PORT:-5432}:5432"
+      - API_GATEWAY_URL=http://api-gateway:3000
+    depends_on:
+      - api-gateway
     networks:
-      - ai4thai-network
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
+      - app-network
+    restart: unless-stopped
 
-  # Redis Cache & Queue
-  redis:
-    image: redis:7-alpine
-    container_name: ai4thai-redis
-    command: redis-server --appendonly yes
-    volumes:
-      - redis_data:/data
-    ports:
-      - "${REDIS_PORT:-6379}:6379"
-    networks:
-      - ai4thai-network
-    healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-
-  # API Gateway (Rust/Axum)
+  # API Gateway - Rust/Axum
   api-gateway:
     build:
       context: ./api-gateway
       dockerfile: Dockerfile
+      target: production
     container_name: ai4thai-api-gateway
     ports:
       - "${API_GATEWAY_PORT:-3000}:3000"
     environment:
-      # Database Configuration
-      - DATABASE_URL=postgresql://postgres:${POSTGRES_PASSWORD:-password}@postgres:5432/ai4thai
+      # External AI Services (for demo)
+      - AI4THAI_API_KEY=${AI4THAI_API_KEY}
+      - VISION_SERVICE_URL=${VISION_SERVICE_URL:-https://vision-api.ai4thai.com}
+      - LLM_SERVICE_URL=${LLM_SERVICE_URL:-https://llm-api.ai4thai.com}
+      
+      # Self-hosted AI Services (uncomment if self-hosting)
+      # - VISION_SERVICE_URL=http://vision-service:8001
+      # - LLM_SERVICE_URL=http://llm-service:8002
+      # - QUEUE_WORKER_URL=http://queue-worker:8003
+      
+      # Chat storage
       - REDIS_URL=redis://redis:6379
       
-      # AI Services (deployed separately)
-      - VISION_SERVICE_URL=${VISION_SERVICE_URL:-http://localhost:8001}
-      - LLM_SERVICE_URL=${LLM_SERVICE_URL:-http://localhost:8002}
-      
-      # External APIs
-      - WEATHER_API_KEY=${WEATHER_API_KEY}
-      - WEATHER_API_URL=${WEATHER_API_URL:-https://api.openweathermap.org/data/2.5}
-      
-      # Security
-      - JWT_SECRET=${JWT_SECRET:-demo-jwt-secret-change-in-production}
-      - CORS_ORIGINS=${CORS_ORIGINS:-http://localhost:8080}
-      
-      # Application Configuration
+      # Server config
+      - SERVER_HOST=0.0.0.0
+      - SERVER_PORT=3000
       - RUST_LOG=${RUST_LOG:-info}
-      - API_HOST=0.0.0.0
-      - API_PORT=3000
-    volumes:
-      - ./uploads:/app/uploads
-      - ./logs:/app/logs
     depends_on:
-      postgres:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
+      - redis
     networks:
-      - ai4thai-network
+      - app-network
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
       interval: 30s
@@ -88,122 +60,28 @@ services:
       retries: 3
     restart: unless-stopped
 
-  # Queue Worker (Rust)
-  queue-worker:
-    build:
-      context: ./queue-worker
-      dockerfile: Dockerfile
-    container_name: ai4thai-queue-worker
-    environment:
-      # Database Configuration
-      - DATABASE_URL=postgresql://postgres:${POSTGRES_PASSWORD:-password}@postgres:5432/ai4thai
-      - REDIS_URL=redis://redis:6379
-      
-      # AI Services (deployed separately)
-      - VISION_SERVICE_URL=${VISION_SERVICE_URL:-http://localhost:8001}
-      - LLM_SERVICE_URL=${LLM_SERVICE_URL:-http://localhost:8002}
-      
-      # Configuration
-      - RUST_LOG=${RUST_LOG:-info}
-      - WORKER_THREADS=${WORKER_THREADS:-2}
-    volumes:
-      - ./logs:/app/logs
-    depends_on:
-      postgres:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
-    networks:
-      - ai4thai-network
-    restart: unless-stopped
-
-  # Frontend (Yew WebAssembly PWA)
-  frontend:
-    build:
-      context: ./frontend
-      dockerfile: Dockerfile
-    container_name: ai4thai-frontend
+  # Redis for chat storage
+  redis:
+    image: redis:7-alpine
+    container_name: ai4thai-redis
+    command: redis-server --appendonly yes --maxmemory 1gb --maxmemory-policy allkeys-lru
     ports:
-      - "${FRONTEND_PORT:-8080}:8080"
-    environment:
-      - API_URL=${API_URL:-http://localhost:3000}
-      - WS_URL=${WS_URL:-ws://localhost:3000/ws}
-      - APP_ENV=${APP_ENV:-demo}
-    networks:
-      - ai4thai-network
-    depends_on:
-      - api-gateway
-    restart: unless-stopped
-
-  # Optional: MinIO for local file storage (S3-compatible)
-  minio:
-    image: minio/minio:latest
-    container_name: ai4thai-minio
-    ports:
-      - "${MINIO_PORT:-9000}:9000"
-      - "${MINIO_CONSOLE_PORT:-9001}:9001"
-    environment:
-      - MINIO_ROOT_USER=${MINIO_ROOT_USER:-minioadmin}
-      - MINIO_ROOT_PASSWORD=${MINIO_ROOT_PASSWORD:-minioadmin123}
-    command: server /data --console-address ":9001"
+      - "${REDIS_PORT:-6379}:6379"
     volumes:
-      - minio_data:/data
+      - redis_data:/data
     networks:
-      - ai4thai-network
-    profiles:
-      - storage
-    restart: unless-stopped
-
-  # Optional: Monitoring with Prometheus
-  prometheus:
-    image: prom/prometheus:latest
-    container_name: ai4thai-prometheus
-    ports:
-      - "${PROMETHEUS_PORT:-9090}:9090"
-    volumes:
-      - ./tools/monitoring/prometheus.yml:/etc/prometheus/prometheus.yml
-      - prometheus_data:/prometheus
-    command:
-      - '--config.file=/etc/prometheus/prometheus.yml'
-      - '--storage.tsdb.path=/prometheus'
-      - '--web.enable-lifecycle'
-    networks:
-      - ai4thai-network
-    profiles:
-      - monitoring
-    restart: unless-stopped
-
-  # Optional: Grafana for monitoring dashboards
-  grafana:
-    image: grafana/grafana:latest
-    container_name: ai4thai-grafana
-    ports:
-      - "${GRAFANA_PORT:-3001}:3000"
-    environment:
-      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_PASSWORD:-admin}
-    volumes:
-      - grafana_data:/var/lib/grafana
-      - ./tools/monitoring/grafana:/etc/grafana/provisioning
-    networks:
-      - ai4thai-network
-    depends_on:
-      - prometheus
-    profiles:
-      - monitoring
+      - app-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
     restart: unless-stopped
 
 networks:
-  ai4thai-network:
+  app-network:
     driver: bridge
 
 volumes:
-  postgres_data:
-    driver: local
   redis_data:
-    driver: local
-  minio_data:
-    driver: local
-  prometheus_data:
-    driver: local
-  grafana_data:
     driver: local

@@ -3,28 +3,8 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Rust](https://img.shields.io/badge/rust-%23000000.svg?style=for-the-badge&logo=rust&logoColor=white)](https://www.rust-lang.org/)
 [![Python](https://img.shields.io/badge/python-3670A0?style=for-the-badge&logo=python&logoColor=ffdd54)](https://www.python.org/)
-[![Docker](https://img.shields.io/badge/docker-%230db7ed.svg?style=for-the-badge&logo=docker&logoColor=white)](https://www.docker.com/)
 
 > AI-powered crop disease detection and advisory system for Thai farmers
-
-## Challenge
-
-Thai farmers are facing unprecedented challenges due to climate change, economic pressure, and widespread crop diseases. Key issues include:
-
--   **Climate Impact**: Unpredictable weather patterns leading to droughts and floods.
--   **Economic Pressure**: Rising cultivation costs and volatile crop prices.
--   **Disease Outbreaks**: Significant yield losses (e.g., over 50% in Durian crops due to fungal diseases).
--   **Knowledge Gap**: Limited access to timely and accurate agricultural expertise.
-
-## 🎯 Our Objective
-
-Our objective is to empower Thai farmers by democratizing access to advanced AI-powered agricultural technology. We aim to:
-
--   **Provide Accurate Early Detection**: Deliver a highly accurate (>98%) and rapid crop disease diagnosis tool.
--   **Bridge the Language Barrier**: Offer a solution fully localized in the Thai language, accessible via text and voice.
--   **Deliver Actionable Advice**: Provide farmers with clear, step-by-step treatment plans and cost-effective solutions.
--   **Ensure Accessibility**: Build an offline-first Progressive Web App (PWA) that works reliably even with limited internet connectivity.
--   **Improve Livelihoods**: Ultimately, help farmers increase their crop yields, reduce costs, and improve their economic stability.
 
 ## 🎯 Overview
 
@@ -46,228 +26,139 @@ AI4Thai Crop Guardian democratizes AI-powered agricultural expertise for Thai fa
 - 🥭 Mango (มะม่วง) - Anthracnose, Powdery mildew
 - 🌳 Rubber (ยางพารา) - Leaf blight, Tapping panel dryness
 
-### 📑 API Specification
-
-#### **POST `/v1/chat`**
-
-This unified endpoint processes image-based crop analysis using AI models based on user intent. It can detect insects, diagnose diseases, or check general crop health.
-
----
-
-#### 📥 Request Parameters
-
-**Content-Type:** `multipart/form-data`
-
-| Field        | Type     | Required | Description                                       |
-|--------------|----------|----------|---------------------------------------------------|
-| `image`      | File     | ✅       | Image of the crop or leaf                         |
-| `crop_type`  | String   | ✅       | Type of crop, e.g., `rice`, `cassava`, `mango`    |
-| `query`      | String   | ✅       | What the user wants to know (e.g. `"Is it sick?"`) |
-
----
-
-#### 💬 Example Queries
-
-| User Query                      | Response    |
-|----------------------------------|----------------------|
-| `"Check for insects"`            | The way to deal with grasshopper    |
-| `"What disease is this?"`        | leave disease diagnosis result   |
-
----
-
-#### 📤 Response Format
-
-{
-    "answer": "Your rice leave have sign of ..."
-}
-
----
-
 ## 🏗️ Architecture
 
-```mermaid
-graph TB
-    A[Frontend PWA<br/>Yew WebAssembly] --> B[API Gateway<br/>Rust/Axum]
-    B --> C[Vision Service<br/>Python/FastAPI]
-    B --> D[LLM Service<br/>Python/FastAPI]
-    B --> E[External APIs<br/>TTS/ASR/Weather]
-    B --> F[(PostgreSQL)]
-    B --> G[(Redis)]
-    
-    style A fill:#e1f5fe
-    style B fill:#f3e5f5
-    style C fill:#e8f5e8
-    style D fill:#e8f5e8
-    style E fill:#fff3e0
-    style F fill:#fce4ec
-    style G fill:#fce4ec
+The system supports **two deployment modes**:
+
+### 1. Standalone AI Services (Self-hosted)
+```
+Frontend PWA         API Gateway         AI Services Cluster
+(Yew WebAssembly) → (Rust/Axum)    → [Vision + Queue Worker]
+                         ↓                    ↓
+                 PostgreSQL          Redis + Celery
+```
+
+### 2. External AI Services (Demo/Production)
+```
+Frontend PWA         API Gateway         External APIs
+(Yew WebAssembly) → (Rust/Axum)    → (AI4Thai Services)
+                         ↓
+                 PostgreSQL + Redis
 ```
 
 ## 🚀 Quick Start
 
-### 🤖 Separate AI Services Deployment (Recommended)
-
-Deploy AI services separately using HuggingFace models for better performance and scalability:
-
+### Option 1: Demo with External AI Services (Recommended)
 ```bash
-# 1. Deploy AI services (Vision & LLM) separately
-./scripts/deploy-ai-services.sh basic
-
-# 2. Configure main application
-cp .env.example .env
-# Edit .env: Set VISION_SERVICE_URL=http://localhost:8001
-#           Set LLM_SERVICE_URL=http://localhost:8002
-
-# 3. Start main application services
-docker-compose up -d
-```
-
-**Access the application:**
-- 📱 Frontend: http://localhost:8080
-- 🔌 API Gateway: http://localhost:3000
-- 👁️ Vision Service: http://localhost:8001
-- 🧠 LLM Service: http://localhost:8002
-
-> **Note**: AI services use HuggingFace models and require GPU for optimal performance. See [Separate AI Services Guide](docs/deployment/separate-ai-services.md) for details.
-
-### 🎮 Demo Deployment (External AI Services)
-
-For quick demonstrations using external AI4Thai services:
-
-```bash
-# Clone and setup
-git clone https://github.com/your-org/ai4thai-crop-guardian.git
+git clone <repository-url>
 cd ai4thai-crop-guardian
 
-# Configure for external AI services
+# Configure environment
 cp .env.example .env
-# Edit .env: AI4THAI_API_KEY=your_api_key_here
+# Edit .env: Set AI4THAI_API_KEY=your_api_key
 
-# Start demo
+# Start demo (main application only)
 ./scripts/demo-start.sh
 ```
+**Access**: Frontend at http://localhost:8080, API at http://localhost:3000
 
-### 💻 Full Development Setup
-
-For complete local development with all services:
-
-**Prerequisites:**
-- [Rust](https://rustup.rs/) (1.70+)
-- [Python](https://www.python.org/) (3.9+)
-- [Docker](https://www.docker.com/) & Docker Compose
-- [Node.js](https://nodejs.org/) (for frontend tooling)
-- NVIDIA GPU (recommended for AI services)
-
+### Option 2: Full Self-hosted AI Services
 ```bash
-# Full development setup
-./scripts/setup-dev.sh
+# Deploy standalone AI services first
+cd ai-services/deployment
+docker-compose up -d
 
-# Start all services locally
+# Then start main application
+cd ../../
+./scripts/setup-dev.sh
 ./scripts/dev-start.sh
+```
+**Access**: AI Services at http://localhost:8001-8003, Main app at http://localhost:8080
+
+## 🛠️ Development
+
+### Build Commands
+```bash
+# Main application (API Gateway + Frontend)
+cargo build --workspace
+cd frontend && trunk build
+
+# AI Services (if self-hosting)
+cd ai-services/deployment && docker-compose build
+```
+
+### Testing
+```bash
+./scripts/test-all.sh            # All tests
+cd api-gateway && cargo test     # Backend tests
+cd frontend && wasm-pack test --headless --firefox  # Frontend tests
 ```
 
 ## 📁 Project Structure
 
 ```
 ai4thai-crop-guardian/
-├── 📋 docs/                    # Documentation
-│   ├── api/                    # API documentation
-│   ├── architecture/           # System design docs
-│   ├── deployment/             # Deployment guides
-│   └── user-guides/           # User documentation
-├── 🔧 scripts/                # Development & deployment scripts
-├── 🌐 api-gateway/            # Rust API Gateway (Axum)
-├── 🤖 ai-services/            # Python AI Services
-│   ├── vision-service/        # Computer vision service
-│   └── llm-service/          # LLM advisory service
-├── 📱 frontend/               # Yew WebAssembly PWA
-├── 🔗 shared/                 # Shared Rust types
-├── 🏗️ infrastructure/         # Infrastructure as code
-├── 🧪 tests/                  # Integration tests
-└── 🛠️ tools/                  # Development tools
+├── api-gateway/          # Rust API Gateway (main application)
+├── frontend/             # Yew WebAssembly PWA (main application)  
+├── shared/               # Common Rust types (main application)
+├── ai-services/          # Standalone AI Services Deployment
+│   ├── vision-service/   # Computer vision service
+│   ├── queue-worker/     # Background job processing
+│   └── deployment/       # Docker compose for AI services
+└── scripts/              # Development scripts
 ```
 
-## 🛠️ Development
+**Deployment Modes**:
+- **External AI**: Deploy only `api-gateway` + `frontend` (connects to AI4Thai APIs)
+- **Self-hosted AI**: Deploy `ai-services/` cluster + `api-gateway` + `frontend`
 
-### Backend Development
+## 🔧 Configuration
 
+### Required Environment Variables
 ```bash
-# API Gateway
-cd api-gateway
-cargo run
+# For demo deployment (external AI services)
+AI4THAI_API_KEY=your_api_key_here
 
-# Vision Service
-cd ai-services/vision-service
-python -m uvicorn app:app --reload --port 8001
+# For self-hosted deployment
+VISION_SERVICE_URL=http://localhost:8001
+QUEUE_WORKER_URL=http://localhost:8003
 
-# LLM Service
-cd ai-services/llm-service
-python -m uvicorn app:app --reload --port 8002
+# Chat storage (both modes)
+REDIS_URL=redis://localhost:6379
 ```
 
-### Frontend Development
+### Service Ports
+**Main Application:**
+- Frontend: 8080
+- API Gateway: 3000
 
-```bash
-cd frontend
-trunk serve --port 8080
-```
+**AI Services (when self-hosted):**
+- Vision Service: 8001
+- Queue Worker: 8003
 
-### Testing
+## 📊 API Reference
 
-```bash
-# Run all tests
-./scripts/test-all.sh
+### POST `/v1/chat`
+Unified endpoint for crop analysis and advisory.
 
-# Backend tests
-cd api-gateway && cargo test
-cd ai-services/vision-service && pytest
-cd ai-services/llm-service && pytest
+**Request**: `multipart/form-data`
+- `image`: Image file
+- `crop_type`: Crop type (e.g., "rice", "cassava")
+- `query`: User query (e.g., "Check for diseases")
 
-# Frontend tests
-cd frontend && wasm-pack test --headless --firefox
-```
-
-## 📊 Performance Benchmarks
-
-| Metric | Target | Current |
-|--------|--------|---------|
-| Disease Detection Accuracy | >95% | 98.2% |
-| API Response Time | <3s | 1.8s |
-| Frontend Load Time | <2s | 1.2s |
-| PWA Lighthouse Score | >90 | 94 |
+**Response**: `{"answer": "Analysis result..."}`
 
 ## 🤝 Contributing
 
-We welcome contributions! Please see our [Contributing Guide](docs/CONTRIBUTING.md) for details.
-
-### Development Workflow
-
 1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
-
-## 📖 Documentation
-
-- [API Documentation](docs/api/README.md)
-- [Architecture Overview](docs/architecture/README.md)
-- [Deployment Guide](docs/deployment/README.md)
-- [User Guide](docs/user-guides/README.md)
-
-## 🔒 Security
-
-For security concerns, please email security@ai4thai.com instead of using the issue tracker.
+2. Create feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit changes (`git commit -m 'Add amazing feature'`)
+4. Push to branch (`git push origin feature/amazing-feature`)
+5. Open Pull Request
 
 ## 📄 License
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
-## 🙏 Acknowledgments
-
-- Thai farmers who provided invaluable feedback
-- AI4Thai community for language processing support
-- Open source contributors and maintainers
+MIT License - see [LICENSE](LICENSE) file for details.
 
 ## 📞 Support
 

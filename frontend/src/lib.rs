@@ -6,6 +6,7 @@ pub mod services;
 pub mod utils;
 pub mod i18n;
 pub mod styles;
+pub mod types;
 
 pub use app::App;
 

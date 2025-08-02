@@ -1,301 +1,262 @@
-// Chat Window Component - 2025 Design System
-// Modern chat interface with AI personality and multimodal input
+//! Chat Window Component
+//! 
+//! This module provides the main chat interface for the AI4Thai Crop Guardian
+//! application, supporting multimodal conversations with AI agricultural advisors.
 
 use yew::prelude::*;
 use web_sys::HtmlInputElement;
-use crate::components::layout::{BentoGrid, BentoCard};
-use crate::components::ui::{GradientButton, ButtonVariant, ButtonSize};
-use crate::styles::{use_theme, Typography, TypographyVariant, TypographyColor};
+use crate::types::{ChatMessage, ChatRole, Language};
+use crate::i18n::I18nContext;
+use crate::components::ui::{GradientButton, StatusCard};
+use crate::services::api::ApiService;
+use uuid::Uuid;
+use chrono::Utc;
 
-#[derive(Debug, Clone, PartialEq)]
-pub struct ChatMessage {
-    pub id: String,
-    pub sender: MessageSender,
-    pub content: String,
-    pub message_type: MessageType,
-    pub timestamp: String,
-    pub confidence: Option<f32>,
-    pub sources: Option<Vec<String>>,
-    pub attachments: Option<Vec<MessageAttachment>>,
-}
-
-#[derive(Debug, Clone, PartialEq)]
-pub enum MessageSender {
-    User,
-    AI,
-}
-
-#[derive(Debug, Clone, PartialEq)]
-pub enum MessageType {
-    Text,
-    Image,
-    Voice,
-    System,
-}
-
-#[derive(Debug, Clone, PartialEq)]
-pub struct MessageAttachment {
-    pub attachment_type: String,
-    pub url: String,
-    pub filename: Option<String>,
-}
-
+/// Properties for the chat window component
 #[derive(Properties, PartialEq)]
 pub struct ChatWindowProps {
-    pub messages: Vec<ChatMessage>,
-    pub on_send_message: Callback<String>,
-    pub on_send_image: Option<Callback<String>>,
-    pub on_send_voice: Option<Callback<Vec<u8>>>,
-    pub typing: Option<bool>,
-    pub class: Option<String>,
+    /// Current conversation ID
+    pub conversation_id: Uuid,
+    
+    /// Language for the chat interface
+    #[prop_or(Language::Thai)]
+    pub language: Language,
+    
+    /// Whether the chat is in loading state
+    #[prop_or(false)]
+    pub loading: bool,
+    
+    /// Callback when a new message is sent
+    #[prop_or_default]
+    pub on_message_sent: Callback<ChatMessage>,
 }
 
+/// Main chat window component
 #[function_component(ChatWindow)]
 pub fn chat_window(props: &ChatWindowProps) -> Html {
-    let theme = use_theme();
-    let colors = &theme.colors;
+    let i18n = use_context::<I18nContext>().expect("I18nContext not found");
     
+    // State management
+    let messages = use_state(Vec::<ChatMessage>::new);
+    let input_value = use_state(String::new);
+    let is_sending = use_state(|| false);
     let input_ref = use_node_ref();
-    let message_input = use_state(String::new);
-    let is_recording = use_state(|| false);
-    let show_quick_actions = use_state(|| true);
-    let typing = props.typing.unwrap_or(false);
     
-    // Send text message
-    let send_message = {
-        let message_input = message_input.clone();
-        let on_send_message = props.on_send_message.clone();
-        let input_ref = input_ref.clone();
+    // Send message handler
+    let on_send_message = {
+        let messages = messages.clone();
+        let input_value = input_value.clone();
+        let is_sending = is_sending.clone();
+        let conversation_id = props.conversation_id;
+        let language = props.language.clone();
+        let on_message_sent = props.on_message_sent.clone();
         
         Callback::from(move |_| {
-            let message = (*message_input).clone();
-            if !message.trim().is_empty() {
-                on_send_message.emit(message);
-                message_input.set(String::new());
-                
-                // Clear input field
-                if let Some(input) = input_ref.cast::<HtmlInputElement>() {
-                    input.set_value("");
-                }
+            let message_content = (*input_value).clone();
+            if message_content.trim().is_empty() || *is_sending {
+                return;
             }
+            
+            is_sending.set(true);
+            input_value.set(String::new());
+            
+            // Create user message
+            let user_message = ChatMessage {
+                role: ChatRole::User,
+                content: message_content.clone(),
+                timestamp: Utc::now(),
+            };
+            
+            // Add user message to chat
+            let mut current_messages = (*messages).clone();
+            current_messages.push(user_message.clone());
+            messages.set(current_messages);
+            
+            // Emit message sent event
+            on_message_sent.emit(user_message);
+            
+            // Send to API
+            let messages_clone = messages.clone();
+            let is_sending_clone = is_sending.clone();
+            let language_clone = language.clone();
+            
+            wasm_bindgen_futures::spawn_local(async move {
+                match ApiService::send_chat_message(
+                    message_content,
+                    conversation_id,
+                    language_clone,
+                ).await {
+                    Ok(response) => {
+                        let ai_message = ChatMessage {
+                            role: ChatRole::Assistant,
+                            content: response,
+                            timestamp: Utc::now(),
+                        };
+                        
+                        let mut current_messages = (*messages_clone).clone();
+                        current_messages.push(ai_message);
+                        messages_clone.set(current_messages);
+                    }
+                    Err(e) => {
+                        log::error!("Failed to send message: {:?}", e);
+                        let error_message = ChatMessage {
+                            role: ChatRole::Assistant,
+                            content: i18n.t("error.network"),
+                            timestamp: Utc::now(),
+                        };
+                        
+                        let mut current_messages = (*messages_clone).clone();
+                        current_messages.push(error_message);
+                        messages_clone.set(current_messages);
+                    }
+                }
+                
+                is_sending_clone.set(false);
+            });
         })
     };
     
-    // Handle input change
+    // Input change handler
     let on_input_change = {
-        let message_input = message_input.clone();
+        let input_value = input_value.clone();
         Callback::from(move |e: InputEvent| {
             let input: HtmlInputElement = e.target_unchecked_into();
-            message_input.set(input.value());
+            input_value.set(input.value());
         })
     };
     
-    // Handle enter key
+    // Key press handler for Enter key
     let on_key_press = {
-        let send_message = send_message.clone();
+        let on_send_message = on_send_message.clone();
         Callback::from(move |e: KeyboardEvent| {
             if e.key() == "Enter" && !e.shift_key() {
                 e.prevent_default();
-                send_message.emit(());
+                on_send_message.emit(());
             }
         })
     };
     
-    // Quick action callbacks
-    let take_photo = Callback::from(|_| {
-        web_sys::console::log_1(&"Take photo".into());
-    });
-    
-    let record_voice = {
-        let is_recording = is_recording.clone();
-        Callback::from(move |_| {
-            is_recording.set(!*is_recording);
-            web_sys::console::log_1(&"Toggle voice recording".into());
-        })
-    };
-    
-    let share_location = Callback::from(|_| {
-        web_sys::console::log_1(&"Share location".into());
-    });
-    
-    let toggle_quick_actions = {
-        let show_quick_actions = show_quick_actions.clone();
-        Callback::from(move |_| {
-            show_quick_actions.set(!*show_quick_actions);
-        })
-    };
-
     html! {
-        <div class={classes!("chat-window", props.class.clone())}>
-            // Chat Header with AI Avatar
+        <div class="chat-window">
             <div class="chat-header">
-                <div class="ai-avatar">
-                    <div class="avatar-image">{"🤖"}</div>
-                    <div class="avatar-status online"></div>
-                </div>
-                <div class="chat-title-group">
-                    <Typography variant={TypographyVariant::H4} class="chat-title">
-                        {"ผู้ช่วย AI เกษตรกร"}
-                    </Typography>
-                    <div class="chat-status">
-                        if typing {
-                            <div class="typing-indicator">
-                                <span class="typing-dot"></span>
-                                <span class="typing-dot"></span>
-                                <span class="typing-dot"></span>
-                                <Typography variant={TypographyVariant::Caption} color={TypographyColor::Secondary} class="thai-text">
-                                    {"กำลังพิมพ์..."}
-                                </Typography>
-                            </div>
-                        } else {
-                            <Typography variant={TypographyVariant::Caption} color={TypographyColor::Success}>
-                                {"🟢 พร้อมให้บริการ"}
-                            </Typography>
-                        }
-                    </div>
-                </div>
-                <button class="chat-menu-btn" onclick={toggle_quick_actions}>
-                    {"⋯"}
-                </button>
-            </div>
-
-            // Messages Container
-            <div class="messages-container">
-                <div class="messages-list">
-                    { for props.messages.iter().map(|message| {
-                        html! {
-                            <MessageBubble message={message.clone()} />
-                        }
-                    })}
-                    
-                    // Typing indicator message
-                    if typing {
-                        <div class="message ai-message typing-message">
-                            <div class="message-avatar">{"🤖"}</div>
-                            <div class="message-bubble ai-bubble">
-                                <div class="typing-animation">
-                                    <div class="typing-dot"></div>
-                                    <div class="typing-dot"></div>
-                                    <div class="typing-dot"></div>
-                                </div>
-                            </div>
-                        </div>
+                <h2 class="chat-title">
+                    { i18n.t("app.title") }
+                </h2>
+                <div class="chat-status">
+                    if *is_sending {
+                        <span class="status-indicator sending">
+                            { i18n.t("status.connecting") }
+                        </span>
+                    } else {
+                        <span class="status-indicator connected">
+                            { i18n.t("status.connected") }
+                        </span>
                     }
                 </div>
             </div>
-
-            // Input Container
-            <div class="chat-input-container">
-                // Quick Actions (collapsible)
-                if *show_quick_actions {
-                    <div class="quick-actions">
-                        <BentoGrid columns={3} gap="0.5rem">
-                            <BentoCard 
-                                color={colors.accent_lime_green} 
-                                hover_effect={true}
-                                clickable={true}
-                                onclick={take_photo}
-                            >
-                                <div class="quick-action">
-                                    <div class="quick-action-icon">{"📷"}</div>
-                                    <Typography variant={TypographyVariant::Caption} color={TypographyColor::Inverse} class="thai-text">
-                                        {"ถ่ายรูป"}
-                                    </Typography>
-                                </div>
-                            </BentoCard>
-                            
-                            <BentoCard 
-                                color={if *is_recording { colors.error } else { colors.accent_purple }}
-                                hover_effect={true}
-                                clickable={true}
-                                onclick={record_voice}
-                            >
-                                <div class="quick-action">
-                                    <div class="quick-action-icon">
-                                        {if *is_recording { "⏹️" } else { "🎤" }}
-                                    </div>
-                                    <Typography variant={TypographyVariant::Caption} color={TypographyColor::Inverse} class="thai-text">
-                                        {if *is_recording { "หยุด" } else { "บันทึกเสียง" }}
-                                    </Typography>
-                                </div>
-                            </BentoCard>
-                            
-                            <BentoCard 
-                                color={colors.accent_yellow} 
-                                hover_effect={true}
-                                clickable={true}
-                                onclick={share_location}
-                            >
-                                <div class="quick-action">
-                                    <div class="quick-action-icon">{"📍"}</div>
-                                    <Typography variant={TypographyVariant::Caption} color={TypographyColor::Primary} class="thai-text">
-                                        {"ตำแหน่ง"}
-                                    </Typography>
-                                </div>
-                            </BentoCard>
-                        </BentoGrid>
+            
+            <div class="chat-messages">
+                if messages.is_empty() {
+                    <div class="welcome-message">
+                        <div class="welcome-content">
+                            <h3>{ i18n.t("welcome.title") }</h3>
+                            <p>{ i18n.t("welcome.subtitle") }</p>
+                            <div class="welcome-steps">
+                                <p>{ i18n.t("welcome.how_to_use") }</p>
+                                <ul>
+                                    <li>{ i18n.t("welcome.step1") }</li>
+                                    <li>{ i18n.t("welcome.step2") }</li>
+                                    <li>{ i18n.t("welcome.step3") }</li>
+                                    <li>{ i18n.t("welcome.step4") }</li>
+                                </ul>
+                            </div>
+                        </div>
                     </div>
+                } else {
+                    { for messages.iter().enumerate().map(|(index, message)| {
+                        html! {
+                            <MessageBubble
+                                key={index}
+                                message={message.clone()}
+                                language={props.language.clone()}
+                            />
+                        }
+                    })}
                 }
                 
-                // Main Input Area
-                <div class="input-area">
-                    <BentoGrid columns={5} gap="0.5rem">
-                        <BentoCard span_cols={4} class="input-card">
-                            <div class="input-wrapper">
-                                <input
-                                    ref={input_ref}
-                                    type="text"
-                                    placeholder="พิมพ์คำถามของคุณ..."
-                                    class="chat-input thai-text"
-                                    value={(*message_input).clone()}
-                                    oninput={on_input_change}
-                                    onkeypress={on_key_press}
-                                />
-                                <button 
-                                    class="input-action-btn"
-                                    onclick={toggle_quick_actions}
-                                    title="เพิ่มเติม"
-                                >
-                                    {"+""}
-                                </button>
-                            </div>
-                        </BentoCard>
-                        
-                        <BentoCard gradient={colors.get_primary_gradient()} hover_effect={true}>
-                            <GradientButton
-                                variant={ButtonVariant::Primary}
-                                size={ButtonSize::Medium}
-                                onclick={send_message}
-                                icon="📤"
-                                full_width={true}
-                                disabled={message_input.trim().is_empty()}
-                            >
-                                {""}
-                            </GradientButton>
-                        </BentoCard>
-                    </BentoGrid>
+                if *is_sending {
+                    <div class="typing-indicator">
+                        <div class="typing-dots">
+                            <span class="dot"></span>
+                            <span class="dot"></span>
+                            <span class="dot"></span>
+                        </div>
+                        <span class="typing-text">
+                            { i18n.t("chat.ai_typing") }
+                        </span>
+                    </div>
+                }
+            </div>
+            
+            <div class="chat-input">
+                <div class="input-container">
+                    <textarea
+                        ref={input_ref}
+                        class="message-input"
+                        placeholder={i18n.t("chat.placeholder")}
+                        value={(*input_value).clone()}
+                        oninput={on_input_change}
+                        onkeypress={on_key_press}
+                        disabled={*is_sending}
+                        rows="1"
+                    />
+                    <div class="input-actions">
+                        <GradientButton
+                            onclick={on_send_message}
+                            disabled={input_value.trim().is_empty() || *is_sending}
+                            loading={*is_sending}
+                            size={crate::components::ui::ButtonSize::Medium}
+                        >
+                            { i18n.t("chat.send") }
+                        </GradientButton>
+                    </div>
+                </div>
+                
+                <div class="input-tools">
+                    <button class="tool-button" title={i18n.t("chat.upload_image")}>
+                        <span class="icon">{"📷"}</span>
+                        <span class="label">{ i18n.t("chat.take_photo") }</span>
+                    </button>
+                    <button class="tool-button" title={i18n.t("chat.voice_input")}>
+                        <span class="icon">{"🎤"}</span>
+                        <span class="label">{ i18n.t("chat.voice_input") }</span>
+                    </button>
                 </div>
             </div>
         </div>
     }
 }
 
-// Message Bubble Component
+/// Properties for message bubble component
 #[derive(Properties, PartialEq)]
 pub struct MessageBubbleProps {
+    /// The chat message to display
     pub message: ChatMessage,
+    
+    /// Language for formatting
+    #[prop_or(Language::Thai)]
+    pub language: Language,
 }
 
+/// Individual message bubble component
 #[function_component(MessageBubble)]
 pub fn message_bubble(props: &MessageBubbleProps) -> Html {
-    let theme = use_theme();
-    let colors = &theme.colors;
     let message = &props.message;
+    let is_user = matches!(message.role, ChatRole::User);
     
-    let is_user = matches!(message.sender, MessageSender::User);
     let bubble_class = if is_user { "user-bubble" } else { "ai-bubble" };
     let message_class = if is_user { "user-message" } else { "ai-message" };
-
+    
     html! {
         <div class={classes!("message", message_class)}>
             if !is_user {
@@ -304,42 +265,15 @@ pub fn message_bubble(props: &MessageBubbleProps) -> Html {
             
             <div class="message-content">
                 <div class={classes!("message-bubble", bubble_class)}>
-                    <Typography variant={TypographyVariant::Body1} class="message-text thai-text">
-                        {&message.content}
-                    </Typography>
-                    
-                    // Confidence indicator for AI messages
-                    if let Some(confidence) = message.confidence {
-                        <div class="message-confidence">
-                            <div class="confidence-bar">
-                                <div 
-                                    class="confidence-fill"
-                                    style={format!("width: {}%", confidence * 100.0)}
-                                ></div>
-                            </div>
-                            <Typography variant={TypographyVariant::Caption} color={TypographyColor::Secondary}>
-                                {format!("ความมั่นใจ {}%", (confidence * 100.0) as u8)}
-                            </Typography>
-                        </div>
-                    }
-                    
-                    // Sources for AI messages
-                    if let Some(sources) = &message.sources {
-                        if !sources.is_empty() {
-                            <div class="message-sources">
-                                <Typography variant={TypographyVariant::Caption} color={TypographyColor::Secondary}>
-                                    {"แหล่งข้อมูล: "}
-                                    {sources.join(", ")}
-                                </Typography>
-                            </div>
-                        }
-                    }
+                    <div class="message-text">
+                        { &message.content }
+                    </div>
                 </div>
                 
                 <div class="message-meta">
-                    <Typography variant={TypographyVariant::Caption} color={TypographyColor::Disabled}>
-                        {&message.timestamp}
-                    </Typography>
+                    <span class="message-time">
+                        { message.timestamp.format("%H:%M").to_string() }
+                    </span>
                 </div>
             </div>
             
@@ -350,453 +284,33 @@ pub fn message_bubble(props: &MessageBubbleProps) -> Html {
     }
 }
 
-// CSS for chat interface
-pub fn generate_chat_css() -> String {
-    r#"/* Chat Interface Styles - 2025 Design */
-
-.chat-window {
-  display: flex;
-  flex-direction: column;
-  height: 100vh;
-  background: var(--color-bg-light);
-}
-
-/* Chat Header */
-.chat-header {
-  display: flex;
-  align-items: center;
-  gap: var(--space-md);
-  padding: var(--space-lg);
-  background: var(--color-surface-light);
-  border-bottom: 1px solid var(--color-bg-light);
-  box-shadow: var(--shadow-sm);
-}
-
-.ai-avatar {
-  position: relative;
-  width: 48px;
-  height: 48px;
-  border-radius: var(--radius-full);
-  background: var(--gradient-primary);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 1.5rem;
-  flex-shrink: 0;
-}
-
-.avatar-status {
-  position: absolute;
-  bottom: 2px;
-  right: 2px;
-  width: 12px;
-  height: 12px;
-  border-radius: 50%;
-  border: 2px solid var(--color-surface-light);
-}
-
-.avatar-status.online {
-  background: var(--color-success);
-}
-
-.chat-title-group {
-  flex: 1;
-  min-width: 0;
-}
-
-.chat-title {
-  margin-bottom: var(--space-xs);
-}
-
-.chat-status {
-  display: flex;
-  align-items: center;
-  gap: var(--space-xs);
-}
-
-.chat-menu-btn {
-  background: none;
-  border: none;
-  font-size: 1.25rem;
-  color: var(--color-text-secondary);
-  cursor: pointer;
-  padding: var(--space-sm);
-  border-radius: var(--radius-md);
-  transition: background-color 0.2s ease;
-}
-
-.chat-menu-btn:hover {
-  background: var(--color-bg-light);
-}
-
-/* Typing Indicator */
-.typing-indicator {
-  display: flex;
-  align-items: center;
-  gap: var(--space-xs);
-}
-
-.typing-dot {
-  width: 4px;
-  height: 4px;
-  border-radius: 50%;
-  background: var(--color-primary-electric-blue);
-  animation: typing-bounce 1.4s ease-in-out infinite both;
-}
-
-.typing-dot:nth-child(1) { animation-delay: -0.32s; }
-.typing-dot:nth-child(2) { animation-delay: -0.16s; }
-.typing-dot:nth-child(3) { animation-delay: 0s; }
-
-@keyframes typing-bounce {
-  0%, 80%, 100% {
-    transform: scale(0);
-    opacity: 0.5;
-  }
-  40% {
-    transform: scale(1);
-    opacity: 1;
-  }
-}
-
-/* Messages Container */
-.messages-container {
-  flex: 1;
-  overflow-y: auto;
-  padding: var(--space-lg);
-  scroll-behavior: smooth;
-}
-
-.messages-list {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-lg);
-  max-width: 800px;
-  margin: 0 auto;
-}
-
-/* Message Styles */
-.message {
-  display: flex;
-  gap: var(--space-md);
-  align-items: flex-end;
-  animation: message-fade-in 0.3s ease-out;
-}
-
-.user-message {
-  flex-direction: row-reverse;
-}
-
-.message-avatar {
-  width: 32px;
-  height: 32px;
-  border-radius: var(--radius-full);
-  background: var(--gradient-primary);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 1rem;
-  flex-shrink: 0;
-}
-
-.user-avatar {
-  background: var(--color-text-secondary);
-}
-
-.message-content {
-  flex: 1;
-  max-width: 70%;
-  min-width: 0;
-}
-
-.message-bubble {
-  padding: var(--space-md) var(--space-lg);
-  border-radius: var(--radius-xl);
-  box-shadow: var(--shadow-sm);
-  position: relative;
-  word-wrap: break-word;
-  overflow-wrap: break-word;
-}
-
-.ai-bubble {
-  background: var(--color-surface-light);
-  color: var(--color-text-primary);
-  border-bottom-left-radius: var(--radius-md);
-}
-
-.user-bubble {
-  background: var(--gradient-primary);
-  color: var(--color-text-inverse);
-  border-bottom-right-radius: var(--radius-md);
-}
-
-.message-text {
-  margin: 0;
-  line-height: var(--leading-relaxed);
-}
-
-.message-confidence {
-  margin-top: var(--space-sm);
-  padding-top: var(--space-sm);
-  border-top: 1px solid rgba(0, 0, 0, 0.1);
-}
-
-.confidence-bar {
-  width: 100%;
-  height: 4px;
-  background: rgba(0, 0, 0, 0.1);
-  border-radius: var(--radius-full);
-  overflow: hidden;
-  margin-bottom: var(--space-xs);
-}
-
-.confidence-fill {
-  height: 100%;
-  background: var(--color-success);
-  border-radius: var(--radius-full);
-  transition: width 0.3s ease;
-}
-
-.message-sources {
-  margin-top: var(--space-sm);
-  padding-top: var(--space-sm);
-  border-top: 1px solid rgba(0, 0, 0, 0.1);
-}
-
-.message-meta {
-  margin-top: var(--space-xs);
-  text-align: right;
-}
-
-.user-message .message-meta {
-  text-align: left;
-}
-
-/* Typing Animation */
-.typing-message .message-bubble {
-  padding: var(--space-lg);
-}
-
-.typing-animation {
-  display: flex;
-  gap: var(--space-xs);
-  justify-content: center;
-}
-
-.typing-animation .typing-dot {
-  width: 8px;
-  height: 8px;
-  background: var(--color-text-secondary);
-}
-
-/* Input Container */
-.chat-input-container {
-  padding: var(--space-lg);
-  background: var(--color-surface-light);
-  border-top: 1px solid var(--color-bg-light);
-  box-shadow: var(--shadow-sm);
-}
-
-.quick-actions {
-  margin-bottom: var(--space-md);
-}
-
-.quick-action {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: var(--space-xs);
-  padding: var(--space-sm);
-  text-align: center;
-}
-
-.quick-action-icon {
-  font-size: 1.25rem;
-}
-
-.input-area {
-  max-width: 800px;
-  margin: 0 auto;
-}
-
-.input-card {
-  background: var(--color-bg-light);
-  border: 2px solid transparent;
-  transition: border-color 0.2s ease;
-}
-
-.input-card:focus-within {
-  border-color: var(--color-primary-electric-blue);
-}
-
-.input-wrapper {
-  display: flex;
-  align-items: center;
-  gap: var(--space-sm);
-  width: 100%;
-}
-
-.chat-input {
-  flex: 1;
-  border: none;
-  background: transparent;
-  font-family: var(--font-body);
-  font-size: var(--text-base);
-  color: var(--color-text-primary);
-  padding: var(--space-md);
-  outline: none;
-  resize: none;
-  min-height: 44px;
-}
-
-.chat-input::placeholder {
-  color: var(--color-text-disabled);
-}
-
-.input-action-btn {
-  background: var(--color-primary-electric-blue);
-  color: var(--color-text-inverse);
-  border: none;
-  width: 32px;
-  height: 32px;
-  border-radius: var(--radius-full);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  font-size: 1.25rem;
-  transition: all 0.2s ease;
-  flex-shrink: 0;
-}
-
-.input-action-btn:hover {
-  background: var(--color-primary-energetic-pink);
-  transform: scale(1.05);
-}
-
-/* Animations */
-@keyframes message-fade-in {
-  from {
-    opacity: 0;
-    transform: translateY(10px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-/* Responsive Design */
-@media (max-width: 768px) {
-  .chat-header {
-    padding: var(--space-md);
-  }
-  
-  .messages-container {
-    padding: var(--space-md);
-  }
-  
-  .chat-input-container {
-    padding: var(--space-md);
-  }
-  
-  .message-content {
-    max-width: 85%;
-  }
-  
-  .quick-actions {
-    margin-bottom: var(--space-sm);
-  }
-  
-  .quick-action {
-    padding: var(--space-xs);
-  }
-  
-  .quick-action-icon {
-    font-size: 1rem;
-  }
-}
-
-@media (max-width: 480px) {
-  .ai-avatar {
-    width: 40px;
-    height: 40px;
-    font-size: 1.25rem;
-  }
-  
-  .message-avatar {
-    width: 28px;
-    height: 28px;
-    font-size: 0.875rem;
-  }
-  
-  .message-bubble {
-    padding: var(--space-sm) var(--space-md);
-  }
-  
-  .chat-input {
-    padding: var(--space-sm);
-  }
-}
-
-/* Accessibility */
-@media (prefers-reduced-motion: reduce) {
-  .typing-dot {
-    animation: none;
-  }
-  
-  .message {
-    animation: none;
-  }
-  
-  .input-action-btn:hover {
-    transform: none;
-  }
-}
-
-/* Scrollbar styling */
-.messages-container::-webkit-scrollbar {
-  width: 6px;
-}
-
-.messages-container::-webkit-scrollbar-track {
-  background: var(--color-bg-light);
-}
-
-.messages-container::-webkit-scrollbar-thumb {
-  background: var(--color-text-disabled);
-  border-radius: var(--radius-full);
-}
-
-.messages-container::-webkit-scrollbar-thumb:hover {
-  background: var(--color-text-secondary);
-}
-"#.to_string()
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
 
     #[test]
-    fn test_message_sender() {
-        let user = MessageSender::User;
-        let ai = MessageSender::AI;
-        assert_ne!(user, ai);
+    fn test_message_bubble_user() {
+        let message = ChatMessage {
+            role: ChatRole::User,
+            content: "Test message".to_string(),
+            timestamp: Utc::now(),
+        };
+        
+        // Test that user messages are properly identified
+        assert_eq!(message.role, ChatRole::User);
+        assert_eq!(message.content, "Test message");
     }
 
     #[test]
-    fn test_message_type() {
-        let text = MessageType::Text;
-        let image = MessageType::Image;
-        assert_ne!(text, image);
-    }
-
-    #[test]
-    fn test_css_generation() {
-        let css = generate_chat_css();
-        assert!(css.contains("chat-window"));
-        assert!(css.contains("message-bubble"));
-        assert!(css.contains("@keyframes"));
+    fn test_message_bubble_assistant() {
+        let message = ChatMessage {
+            role: ChatRole::Assistant,
+            content: "AI response".to_string(),
+            timestamp: Utc::now(),
+        };
+        
+        // Test that assistant messages are properly identified
+        assert_eq!(message.role, ChatRole::Assistant);
+        assert_eq!(message.content, "AI response");
     }
 }

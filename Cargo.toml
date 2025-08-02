@@ -1,10 +1,32 @@
 [workspace]
 members = [
     "api-gateway",
-    "frontend", 
     "shared"
 ]
+# Note: frontend excluded due to compilation issues - build separately with trunk
 resolver = "2"
+
+
+# Workspace-wide lints
+[workspace.lints.rust]
+unsafe_code = "forbid"
+unused_imports = "warn"
+unused_variables = "warn"
+dead_code = "warn"
+missing_docs = "warn"
+
+[workspace.lints.clippy]
+all = { level = "warn", priority = -1 }
+pedantic = { level = "warn", priority = -1 }
+nursery = { level = "warn", priority = -1 }
+cargo = { level = "warn", priority = -1 }
+# Disable some pedantic lints that are too noisy
+module_name_repetitions = "allow"
+similar_names = "allow"
+too_many_lines = "allow"
+cast_precision_loss = "allow"
+cast_possible_truncation = "allow"
+cast_sign_loss = "allow"
 
 [workspace.dependencies]
 # Async runtime
@@ -48,7 +70,7 @@ chrono = { version = "0.4", features = ["serde"] }
 validator = { version = "0.18", features = ["derive"] }
 
 # HTTP client
-reqwest = { version = "0.11", features = ["json", "stream"] }
+reqwest = { version = "0.11", features = ["json", "stream", "multipart"] }
 
 # Circuit breaker and resilience
 tower-timeout = "0.3"

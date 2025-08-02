@@ -204,11 +204,86 @@ services:
       start_period: 120s
     restart: unless-stopped
 
-  # Redis for caching and session management
+  # Queue Worker Service
+  queue-worker:
+    build:
+      context: ../queue-worker
+      dockerfile: Dockerfile
+      target: ${BUILD_TARGET:-production}
+    container_name: ai4thai-queue-worker
+    ports:
+      - "${QUEUE_WORKER_PORT:-8003}:8003"
+    environment:
+      - REDIS_URL=redis://redis:6379/0
+      - VISION_SERVICE_URL=http://vision-service:8001
+      - LLM_SERVICE_URL=http://llm-service:8002
+      - LOG_LEVEL=${LOG_LEVEL:-INFO}
+      - PYTHONUNBUFFERED=1
+    depends_on:
+      - redis
+      - vision-service
+      - llm-service
+    networks:
+      - ai-services-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8003/health"]
+      interval: 30s
+      timeout: 15s
+      retries: 3
+      start_period: 30s
+    restart: unless-stopped
+
+  # Celery Worker
+  celery-worker:
+    build:
+      context: ../queue-worker
+      dockerfile: Dockerfile
+      target: ${BUILD_TARGET:-production}
+    container_name: ai4thai-celery-worker
+    command: celery -A tasks worker --loglevel=info --concurrency=4
+    environment:
+      - REDIS_URL=redis://redis:6379/0
+      - VISION_SERVICE_URL=http://vision-service:8001
+      - LLM_SERVICE_URL=http://llm-service:8002
+      - LOG_LEVEL=${LOG_LEVEL:-INFO}
+      - PYTHONUNBUFFERED=1
+    depends_on:
+      - redis
+      - vision-service
+      - llm-service
+    networks:
+      - ai-services-network
+    deploy:
+      resources:
+        limits:
+          memory: 2G
+        reservations:
+          memory: 1G
+    restart: unless-stopped
+
+  # Celery Beat (Scheduler)
+  celery-beat:
+    build:
+      context: ../queue-worker
+      dockerfile: Dockerfile
+      target: ${BUILD_TARGET:-production}
+    container_name: ai4thai-celery-beat
+    command: celery -A tasks beat --loglevel=info
+    environment:
+      - REDIS_URL=redis://redis:6379/0
+      - LOG_LEVEL=${LOG_LEVEL:-INFO}
+      - PYTHONUNBUFFERED=1
+    depends_on:
+      - redis
+    networks:
+      - ai-services-network
+    restart: unless-stopped
+
+  # Redis for caching, session management, and job queue
   redis:
     image: redis:7-alpine
     container_name: ai4thai-ai-redis
-    command: redis-server --appendonly yes --maxmemory 2gb --maxmemory-policy allkeys-lru
+    command: redis-server --appendonly yes --maxmemory 4gb --maxmemory-policy allkeys-lru
     ports:
       - "${REDIS_PORT:-6379}:6379"
     volumes:
