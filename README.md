@@ -46,6 +46,43 @@ AI4Thai Crop Guardian democratizes AI-powered agricultural expertise for Thai fa
 - 🥭 Mango (มะม่วง) - Anthracnose, Powdery mildew
 - 🌳 Rubber (ยางพารา) - Leaf blight, Tapping panel dryness
 
+### 📑 API Specification
+
+#### **POST `/v1/chat`**
+
+This unified endpoint processes image-based crop analysis using AI models based on user intent. It can detect insects, diagnose diseases, or check general crop health.
+
+---
+
+#### 📥 Request Parameters
+
+**Content-Type:** `multipart/form-data`
+
+| Field        | Type     | Required | Description                                       |
+|--------------|----------|----------|---------------------------------------------------|
+| `image`      | File     | ✅       | Image of the crop or leaf                         |
+| `crop_type`  | String   | ✅       | Type of crop, e.g., `rice`, `cassava`, `mango`    |
+| `query`      | String   | ✅       | What the user wants to know (e.g. `"Is it sick?"`) |
+
+---
+
+#### 💬 Example Queries
+
+| User Query                      | Response    |
+|----------------------------------|----------------------|
+| `"Check for insects"`            | The way to deal with grasshopper    |
+| `"What disease is this?"`        | leave disease diagnosis result   |
+
+---
+
+#### 📤 Response Format
+
+{
+    "answer": "Your rice leave have sign of ..."
+}
+
+---
+
 ## 🏗️ Architecture
 
 ```mermaid
