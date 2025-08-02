@@ -10,7 +10,7 @@ use yew::prelude::*;
 use crate::styles::{colors::*, spacing::*, typography::*};
 
 /// Trend direction for status indicators
-#[derive(Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum TrendDirection {
     /// Upward trend (positive)
     Up,

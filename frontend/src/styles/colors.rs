@@ -159,6 +159,85 @@ impl ColorPalette {
             _ => SemanticColors::INFO,
         }
     }
+    
+    /// Generate CSS custom properties for the color system
+    pub fn css_variables() -> String {
+        format!(
+            r#"
+:root {{
+  /* Primary Colors */
+  --color-primary-electric-blue: {};
+  --color-primary-vibrant-orange: {};
+  --color-primary-energetic-pink: {};
+  
+  /* Accent Colors */
+  --color-accent-lime-green: {};
+  --color-accent-purple: {};
+  --color-accent-yellow: {};
+  --color-accent-cyan: {};
+  --color-accent-coral: {};
+  
+  /* Surface Colors */
+  --bg-light: {};
+  --bg-dark: {};
+  --surface-light: {};
+  --surface-dark: {};
+  --border-light: {};
+  --border-dark: {};
+  
+  /* Text Colors */
+  --text-primary-light: {};
+  --text-primary-dark: {};
+  --text-secondary-light: {};
+  --text-secondary-dark: {};
+  --text-tertiary-light: {};
+  --text-tertiary-dark: {};
+  
+  /* Semantic Colors */
+  --color-success: {};
+  --color-warning: {};
+  --color-error: {};
+  --color-info: {};
+  
+  /* Agricultural Colors */
+  --color-crop-healthy: {};
+  --color-crop-diseased: {};
+  --color-soil: {};
+  --color-water: {};
+  --color-sun: {};
+}}
+"#,
+            PrimaryColors::ELECTRIC_BLUE,
+            PrimaryColors::VIBRANT_ORANGE,
+            PrimaryColors::ENERGETIC_PINK,
+            AccentColors::LIME_GREEN,
+            AccentColors::PURPLE,
+            AccentColors::YELLOW,
+            AccentColors::CYAN,
+            AccentColors::CORAL,
+            SurfaceColors::BG_LIGHT,
+            SurfaceColors::BG_DARK,
+            SurfaceColors::SURFACE_LIGHT,
+            SurfaceColors::SURFACE_DARK,
+            SurfaceColors::BORDER_LIGHT,
+            SurfaceColors::BORDER_DARK,
+            TextColors::PRIMARY_LIGHT,
+            TextColors::PRIMARY_DARK,
+            TextColors::SECONDARY_LIGHT,
+            TextColors::SECONDARY_DARK,
+            TextColors::TERTIARY_LIGHT,
+            TextColors::TERTIARY_DARK,
+            SemanticColors::SUCCESS,
+            SemanticColors::WARNING,
+            SemanticColors::ERROR,
+            SemanticColors::INFO,
+            AgricultureColors::CROP_HEALTHY,
+            AgricultureColors::CROP_DISEASED,
+            AgricultureColors::SOIL,
+            AgricultureColors::WATER,
+            AgricultureColors::SUN,
+        )
+    }
 }
 
 #[cfg(test)]

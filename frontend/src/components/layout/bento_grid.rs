@@ -335,21 +335,21 @@ pub struct BentoVariants;
 impl BentoVariants {
     /// Create a status card with dopamine colors
     pub fn status_card(
-        title: &str,
-        value: &str,
-        trend: Option<&str>,
-        color: &str,
+        title: String,
+        value: String,
+        trend: Option<String>,
+        color: String,
         onclick: Callback<MouseEvent>,
     ) -> Html {
         html! {
             <BentoCard 
                 size={BentoSize::Small}
                 background={color}
-                color={SurfaceColors::SURFACE_LIGHT}
+                color={SurfaceColors::SURFACE_LIGHT.to_string()}
                 interactive={true}
                 onclick={onclick}
             >
-                <BentoCardHeader title={title.to_string()} />
+                <BentoCardHeader title={title} />
                 <BentoCardContent>
                     <div style="text-align: center;">
                         <div style={format!("font-size: {}; font-weight: {}; margin-bottom: 0.5rem;", 
@@ -370,8 +370,8 @@ impl BentoVariants {
     
     /// Create a feature card with icon and description
     pub fn feature_card(
-        title: &str,
-        description: &str,
+        title: String,
+        description: String,
         icon: Html,
         onclick: Callback<MouseEvent>,
     ) -> Html {
@@ -382,7 +382,7 @@ impl BentoVariants {
                 onclick={onclick}
             >
                 <BentoCardHeader 
-                    title={title.to_string()} 
+                    title={title} 
                     icon={Some(icon)}
                 />
                 <BentoCardContent>
@@ -396,16 +396,16 @@ impl BentoVariants {
     
     /// Create a hero card for main actions
     pub fn hero_card(
-        title: &str,
-        subtitle: &str,
-        background_gradient: &str,
+        title: String,
+        subtitle: String,
+        background_gradient: String,
         onclick: Callback<MouseEvent>,
     ) -> Html {
         html! {
             <BentoCard 
                 size={BentoSize::Hero}
                 background={background_gradient}
-                color={SurfaceColors::SURFACE_LIGHT}
+                color={SurfaceColors::SURFACE_LIGHT.to_string()}
                 interactive={true}
                 onclick={onclick}
             >

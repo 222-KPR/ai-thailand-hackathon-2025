@@ -10,7 +10,7 @@ use yew::prelude::*;
 use crate::styles::{colors::*, spacing::*, typography::*};
 
 /// Loading animation variants
-#[derive(Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum LoadingVariant {
     /// Spinning circle loader
     Spinner,
@@ -340,7 +340,7 @@ pub fn skeleton_group(props: &SkeletonGroupProps) -> Html {
     html! {
         <div class={classes!("skeleton-group", props.class.clone())} style={container_style}>
             { for (0..props.lines).map(|i| {
-                let width = match i {
+                let _width = match i {
                     0 => "100%",
                     n if n == props.lines - 1 => "60%",
                     _ => "80%",
