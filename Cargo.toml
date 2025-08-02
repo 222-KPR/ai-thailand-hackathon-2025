@@ -1,9 +1,8 @@
 [workspace]
 members = [
-    "backend",
+    "api-gateway",
     "frontend", 
-    "shared",
-    "queue-worker"
+    "shared"
 ]
 resolver = "2"
 
@@ -47,6 +46,13 @@ chrono = { version = "0.4", features = ["serde"] }
 
 # HTTP client
 reqwest = { version = "0.11", features = ["json", "stream"] }
+
+# Circuit breaker and resilience
+hystrix = "0.1"
+tower-timeout = "0.1"
+
+# Service discovery
+consul = "0.4"
 
 # Testing
 mockall = "0.12"

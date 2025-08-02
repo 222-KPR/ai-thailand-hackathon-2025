@@ -1,5 +1,5 @@
 [package]
-name = "ai-vision-backend"
+name = "api-gateway"
 version = "0.1.0"
 edition = "2021"
 
@@ -23,11 +23,16 @@ uuid = { workspace = true }
 chrono = { workspace = true }
 reqwest = { workspace = true }
 
-# Backend specific
+# API Gateway specific
 jsonwebtoken = "9.0"
 bcrypt = "0.15"
 validator = { version = "0.18", features = ["derive"] }
 multipart = "0.18"
+tower-timeout = { workspace = true }
+hystrix = { workspace = true }
+
+# Service clients
+consul = { workspace = true }
 
 # Local dependencies
 shared = { path = "../shared" }

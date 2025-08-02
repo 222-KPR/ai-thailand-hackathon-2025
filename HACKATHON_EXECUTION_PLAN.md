@@ -14,70 +14,73 @@
 5. **Testing**: Automated test generation
 6. **Documentation**: Real-time documentation
 
-### Maintaining Original Spec
-- ✅ **Rust Backend**: Full Axum with PostgreSQL
+### Maintaining Original Spec - Microservices Architecture
+- ✅ **Rust API Gateway**: Axum with PostgreSQL + Redis
+- ✅ **Python AI Services**: Vision + LLM microservices
 - ✅ **Rust Frontend**: Yew WebAssembly PWA
-- ✅ **Computer Vision**: Real model integration
-- ✅ **Queue System**: Redis-based job processing
+- ✅ **External APIs**: TTS/ASR via third-party services
 - ✅ **Multimodal Chat**: Voice + image + text
 - ✅ **Thai Language**: Full bilingual support
 
-## 🏗️ Backend Development (24 hours with AI)
+## 🏗️ API Gateway Development (24 hours with AI)
 
-### Hour Allocation with AI Assistance
+### Hour Allocation with AI Assistance - Microservices
 
-#### Hours 1-6: Foundation & Architecture
+#### Hours 1-6: Foundation & Service Discovery
 **AI Tasks:**
-- Generate complete Cargo workspace setup
+- Generate complete Cargo workspace for API Gateway
 - Create database migrations and models
-- Generate Axum server boilerplate with middleware
+- Generate Axum server with middleware stack
 - Set up authentication and JWT handling
+- Generate service discovery and health checks
 
 **Manual Tasks:**
-- Architecture decisions and configuration
-- Database schema design review
+- Microservices architecture decisions
+- Service registry configuration
 - Security middleware configuration
 
-#### Hours 7-14: Core API Development
+#### Hours 7-14: API Gateway Core
 **AI Tasks:**
-- Generate CRUD operations for all models
-- Create image upload handling with validation
-- Generate OpenAPI documentation
-- Create error handling and response types
+- Generate API routing and request transformation
+- Create service proxy and load balancing
+- Generate rate limiting and circuit breaker
+- Create WebSocket chat management
+- Generate file upload/download handling
 
 **Manual Tasks:**
-- Business logic implementation
-- API endpoint testing and validation
+- Service integration testing
+- API endpoint validation
 - Performance optimization
 
-#### Hours 15-20: Computer Vision Integration
+#### Hours 15-20: Service Integration
 **AI Tasks:**
-- Generate HTTP client for vision API
-- Create image preprocessing pipelines
-- Generate response mapping and validation
-- Create batch processing logic
+- Generate Vision Service HTTP client
+- Generate LLM Service HTTP client
+- Create external API clients (TTS/ASR/Weather)
+- Generate request/response transformation
+- Create error handling and fallback logic
 
 **Manual Tasks:**
-- Model selection and configuration
-- Accuracy validation and tuning
-- Error handling for model failures
+- Service contract validation
+- Integration testing
+- Error handling optimization
 
-#### Hours 21-24: Queue System & External APIs
+#### Hours 21-24: Queue System & Monitoring
 **AI Tasks:**
 - Generate Redis job queue implementation
-- Create LLM API integration clients
-- Generate ASR/TTS service wrappers
-- Create background worker processes
+- Create background task processing
+- Generate metrics and logging
+- Create health check endpoints
 
 **Manual Tasks:**
-- Queue optimization and monitoring
-- API rate limiting and retry logic
-- Performance testing under load
+- Performance monitoring setup
+- Load testing and optimization
+- Security validation
 
-### Enhanced Backend Architecture
+### Enhanced API Gateway Architecture
 ```rust
-// AI-generated project structure
-backend/
+// AI-generated microservices project structure
+api-gateway/
 ├── src/
 │   ├── main.rs                 # Server entry point
 │   ├── lib.rs                  # Library exports
@@ -85,35 +88,42 @@ backend/
 │   │   ├── mod.rs
 │   │   ├── database.rs         # DB connection pool
 │   │   ├── redis.rs            # Redis connection
-│   │   └── external_apis.rs    # API configurations
+│   │   ├── services.rs         # Service discovery config
+│   │   └── external_apis.rs    # External API configurations
 │   ├── models/
 │   │   ├── mod.rs
 │   │   ├── user.rs             # User model with sqlx
-│   │   ├── job.rs              # Job queue model
-│   │   ├── diagnosis.rs        # Disease diagnosis
-│   │   └── conversation.rs     # Chat conversations
+│   │   ├── chat.rs             # Chat conversations
+│   │   ├── diagnosis.rs        # Disease diagnosis records
+│   │   └── api_contracts.rs    # Service API contracts
 │   ├── handlers/
 │   │   ├── mod.rs
 │   │   ├── auth.rs             # Authentication endpoints
-│   │   ├── chat.rs             # Chat API handlers
-│   │   ├── vision.rs           # Image processing
-│   │   └── diagnostics.rs      # Disease diagnosis
+│   │   ├── chat.rs             # WebSocket chat management
+│   │   ├── diagnosis.rs        # Disease diagnosis orchestration
+│   │   ├── files.rs            # File upload/download
+│   │   └── health.rs           # Health check endpoints
 │   ├── services/
 │   │   ├── mod.rs
-│   │   ├── vision_service.rs   # Computer vision integration
-│   │   ├── llm_service.rs      # LLM API client
-│   │   ├── speech_service.rs   # ASR/TTS integration
+│   │   ├── vision_client.rs    # Vision service HTTP client
+│   │   ├── llm_client.rs       # LLM service HTTP client
+│   │   ├── tts_client.rs       # External TTS API client
+│   │   ├── asr_client.rs       # External ASR API client
+│   │   ├── weather_client.rs   # Weather API client
 │   │   └── queue_service.rs    # Redis job processing
 │   ├── middleware/
 │   │   ├── mod.rs
 │   │   ├── auth.rs             # JWT validation
+│   │   ├── rate_limit.rs       # Rate limiting per service
+│   │   ├── circuit_breaker.rs  # Circuit breaker pattern
 │   │   ├── cors.rs             # CORS configuration
-│   │   └── logging.rs          # Request logging
+│   │   └── logging.rs          # Request logging & tracing
 │   └── utils/
 │       ├── mod.rs
-│       ├── image.rs            # Image processing utilities
-│       ├── crypto.rs           # Encryption utilities
-│       └── validation.rs       # Input validation
+│       ├── service_discovery.rs # Service registry
+│       ├── load_balancer.rs    # Load balancing logic
+│       ├── validation.rs       # Input validation
+│       └── errors.rs           # Error handling
 └── migrations/                 # SQLx migrations
 ```
 
@@ -575,8 +585,8 @@ volumes:
 
 ### Day 2 (20 hours)
 #### Integration & Advanced Features (12 hours) - WASM Integration
-- **Hours 21-24**: AI integrates computer vision API with WASM fetch
-- **Hours 25-28**: AI implements queue system and workers
+- **Hours 21-24**: AI integrates Vision/LLM services with WASM fetch
+- **Hours 25-28**: AI implements external API integration (TTS/ASR)
 - **Hours 29-32**: AI creates camera/voice integration in WASM
 
 #### Polish & Deployment (8 hours) - WASM PWA
