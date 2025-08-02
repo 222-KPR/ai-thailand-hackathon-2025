@@ -120,8 +120,8 @@ ai4thai-crop-guardian/
 AI4THAI_API_KEY=your_api_key_here
 
 # For self-hosted deployment
-VISION_SERVICE_URL=http://localhost:8001
-QUEUE_WORKER_URL=http://localhost:8003
+VISION_SERVICE_URL=http://localhost:2001
+QUEUE_WORKER_URL=http://localhost:2003
 
 # Chat storage (both modes)
 REDIS_URL=redis://localhost:6379
@@ -133,8 +133,8 @@ REDIS_URL=redis://localhost:6379
 - API Gateway: 3000
 
 **AI Services (when self-hosted):**
-- Vision Service: 8001
-- Queue Worker: 8003
+- Vision Service: 2001
+- Queue Worker: 2003
 
 ## 📊 API Reference
 

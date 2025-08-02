@@ -1,67 +1,42 @@
 """
 AI4Thai Crop Guardian - Vision Service
-FastAPI application for crop disease detection using HuggingFace models
+FastAPI application for agricultural pest detection and disease identification
 """
 
 import asyncio
 import logging
 import time
 from contextlib import asynccontextmanager
-from typing import Dict, List, Optional
+from typing import Optional
 
-import torch
 import uvicorn
-from fastapi import FastAPI, File, Form, HTTPException, UploadFile, Depends
+from fastapi import FastAPI, File, Form, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
-from PIL import Image
-import io
 
-from models.model_registry import ModelRegistry
-from services.image_processor import ImageProcessor
-from services.inference_engine import InferenceEngine
-from services.result_formatter import ResultFormatter
-from utils.validation import validate_image, validate_crop_type
-from config.settings import get_settings
-from shared.monitoring.health_check import HealthChecker
-from shared.monitoring.metrics import MetricsCollector
+from services.pest_detection import get_pest_detection_service
+from services.disease_detection import get_disease_detection_service
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-# Global variables for models and services
-model_registry: Optional[ModelRegistry] = None
-image_processor: Optional[ImageProcessor] = None
-inference_engine: Optional[InferenceEngine] = None
-result_formatter: Optional[ResultFormatter] = None
-health_checker: Optional[HealthChecker] = None
-metrics_collector: Optional[MetricsCollector] = None
-
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Application lifespan manager for startup and shutdown events."""
-    global model_registry, image_processor, inference_engine, result_formatter
-    global health_checker, metrics_collector
-    
-    settings = get_settings()
-    
     try:
         # Initialize services
-        logger.info("Initializing Vision Service...")
+        logger.info("Initializing AI4Thai Vision Service...")
         
-        # Initialize model registry and load models
-        model_registry = ModelRegistry(settings.model_config)
-        await model_registry.load_models()
+        # Initialize pest detection service
+        logger.info("Loading pest detection model...")
+        pest_service = await get_pest_detection_service()
+        await pest_service.initialize_model()
         
-        # Initialize processors
-        image_processor = ImageProcessor(settings.image_config)
-        inference_engine = InferenceEngine(model_registry, settings.inference_config)
-        result_formatter = ResultFormatter(settings.output_config)
-        
-        # Initialize monitoring
-        health_checker = HealthChecker()
-        metrics_collector = MetricsCollector("vision_service")
+        # Initialize disease detection service
+        logger.info("Loading disease detection model...")
+        disease_service = await get_disease_detection_service()
+        await disease_service.initialize_model()
         
         logger.info("Vision Service initialized successfully")
         
@@ -71,15 +46,12 @@ async def lifespan(app: FastAPI):
         logger.error(f"Failed to initialize Vision Service: {e}")
         raise
     finally:
-        # Cleanup
         logger.info("Shutting down Vision Service...")
-        if model_registry:
-            await model_registry.cleanup()
 
 # Create FastAPI app
 app = FastAPI(
     title="AI4Thai Vision Service",
-    description="Crop disease detection and plant classification service using HuggingFace models",
+    description="Agricultural pest detection and disease identification service",
     version="1.0.0",
     lifespan=lifespan
 )
@@ -93,98 +65,150 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Dependency to get services
-def get_services():
-    """Dependency to get initialized services."""
-    if not all([model_registry, image_processor, inference_engine, result_formatter]):
-        raise HTTPException(status_code=503, detail="Service not ready")
-    return {
-        "model_registry": model_registry,
-        "image_processor": image_processor,
-        "inference_engine": inference_engine,
-        "result_formatter": result_formatter,
-        "metrics_collector": metrics_collector
-    }
-
 @app.get("/health")
 async def health_check():
     """Basic health check endpoint."""
-    return {"status": "healthy", "timestamp": time.time()}
+    return {
+        "status": "healthy", 
+        "service": "AI4Thai Vision Service - Pest Detection",
+        "timestamp": time.time()
+    }
 
 @app.get("/health/detailed")
 async def detailed_health_check():
-    """Detailed health check with service status."""
-    if not health_checker:
-        raise HTTPException(status_code=503, detail="Health checker not initialized")
-    
-    health_status = await health_checker.check_all()
-    return health_status
+    """Detailed health check with pest detection service status."""
+    try:
+        pest_service = await get_pest_detection_service()
+        health_status = await pest_service.health_check()
+        
+        return {
+            "status": "healthy",
+            "service": "AI4Thai Vision Service - Pest Detection",
+            "pest_detection": health_status,
+            "timestamp": time.time()
+        }
+    except Exception as e:
+        logger.error(f"Health check failed: {e}")
+        raise HTTPException(status_code=503, detail=f"Service unavailable: {str(e)}")
 
-@app.get("/health/models")
-async def models_health_check():
-    """Check model loading status."""
-    if not model_registry:
-        raise HTTPException(status_code=503, detail="Model registry not initialized")
+@app.post("/detect/pests")
+async def detect_pests(
+    image: UploadFile = File(...),
+    confidence_threshold: Optional[float] = Form(0.01),
+    return_details: Optional[bool] = Form(False)
+):
+    """
+    Detect pests in agricultural images using YOLO11s model.
     
-    model_status = await model_registry.get_model_status()
-    return {"models": model_status}
+    Args:
+        image: Uploaded image file
+        confidence_threshold: Minimum confidence threshold for pest detection (default: 0.01)
+        return_details: Whether to return detailed detection information including bounding boxes
+        
+    Returns:
+        Pest detection results with identified pests and optional bounding boxes
+    """
+    start_time = time.time()
+    
+    try:
+        # Validate image
+        if not image.content_type or not image.content_type.startswith('image/'):
+            raise HTTPException(status_code=400, detail="Invalid image file type")
+        
+        # Read image bytes
+        image_bytes = await image.read()
+        if len(image_bytes) == 0:
+            raise HTTPException(status_code=400, detail="Empty image file")
+        
+        # Get pest detection service
+        pest_service = await get_pest_detection_service()
+        
+        # Run pest detection
+        results = await pest_service.detect_pests_from_bytes(
+            image_bytes=image_bytes,
+            conf_threshold=confidence_threshold,
+            return_details=return_details
+        )
+        
+        processing_time = time.time() - start_time
+        
+        logger.info(f"Pest detection completed in {processing_time:.2f}s - Found {results['pest_count']} pests")
+        
+        return JSONResponse(
+            status_code=200,
+            content={
+                "success": True,
+                "data": results,
+                "processing_time_ms": round(processing_time * 1000, 2),
+                "timestamp": time.time()
+            }
+        )
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        processing_time = time.time() - start_time
+        logger.error(f"Pest detection failed: {e}")
+        raise HTTPException(status_code=500, detail=f"Pest detection failed: {str(e)}")
 
-@app.get("/models")
-async def list_models():
-    """List available models and their configurations."""
-    if not model_registry:
-        raise HTTPException(status_code=503, detail="Model registry not initialized")
+@app.post("/analyze")
+async def analyze_image(
+    image: UploadFile = File(...),
+    confidence_threshold: Optional[float] = Form(0.01),
+    include_details: Optional[bool] = Form(True)
+):
+    """
+    Analyze agricultural image for pests (alias for /detect/pests).
     
-    models = await model_registry.list_models()
-    return {"models": models}
+    Args:
+        image: Uploaded image file
+        confidence_threshold: Minimum confidence threshold for pest detection
+        include_details: Whether to include detailed detection information
+        
+    Returns:
+        Pest analysis results
+    """
+    return await detect_pests(image, confidence_threshold, include_details)
 
 @app.post("/detect/disease")
 async def detect_disease(
     image: UploadFile = File(...),
-    crop_type: str = Form(...),
-    confidence_threshold: Optional[float] = Form(0.7),
-    services: Dict = Depends(get_services)
+    custom_prompt: Optional[str] = Form(None)
 ):
     """
-    Detect diseases in crop images.
+    Detect diseases in plant leaf images using LLaVA model.
     
     Args:
-        image: Uploaded image file
-        crop_type: Type of crop (rice, cassava, durian, mango, rubber)
-        confidence_threshold: Minimum confidence threshold for predictions
+        image: Uploaded image file (preferably leaf images)
+        custom_prompt: Custom prompt for analysis (optional)
         
     Returns:
-        Disease detection results with confidence scores and treatment recommendations
+        Disease detection results with analysis and recommendations
     """
     start_time = time.time()
     
     try:
-        # Validate inputs
-        validate_crop_type(crop_type)
-        image_data = await validate_image(image)
+        # Validate image
+        if not image.content_type or not image.content_type.startswith('image/'):
+            raise HTTPException(status_code=400, detail="Invalid image file type")
         
-        # Process image
-        processed_image = await services["image_processor"].process_image(
-            image_data, crop_type
+        # Read image bytes
+        image_bytes = await image.read()
+        if len(image_bytes) == 0:
+            raise HTTPException(status_code=400, detail="Empty image file")
+        
+        # Get disease detection service
+        disease_service = await get_disease_detection_service()
+        
+        # Run disease detection
+        results = await disease_service.detect_disease(
+            image_bytes=image_bytes,
+            custom_prompt=custom_prompt
         )
         
-        # Run inference
-        predictions = await services["inference_engine"].predict_disease(
-            processed_image, crop_type, confidence_threshold
-        )
-        
-        # Format results
-        results = await services["result_formatter"].format_disease_results(
-            predictions, crop_type, confidence_threshold
-        )
-        
-        # Record metrics
         processing_time = time.time() - start_time
-        await services["metrics_collector"].record_request(
-            endpoint="detect_disease",
-            processing_time=processing_time,
-            success=True
-        )
+        
+        logger.info(f"Disease detection completed in {processing_time:.2f}s - Disease: {results['disease_analysis']['disease_name']}")
         
         return JSONResponse(
             status_code=200,
@@ -196,221 +220,276 @@ async def detect_disease(
             }
         )
         
+    except HTTPException:
+        raise
     except Exception as e:
         processing_time = time.time() - start_time
-        await services["metrics_collector"].record_request(
-            endpoint="detect_disease",
-            processing_time=processing_time,
-            success=False,
-            error=str(e)
-        )
-        
         logger.error(f"Disease detection failed: {e}")
         raise HTTPException(status_code=500, detail=f"Disease detection failed: {str(e)}")
 
-@app.post("/classify/crop")
-async def classify_crop(
+@app.post("/analyze/comprehensive")
+async def comprehensive_analysis(
     image: UploadFile = File(...),
-    confidence_threshold: Optional[float] = Form(0.8),
-    services: Dict = Depends(get_services)
+    pest_confidence: Optional[float] = Form(0.01),
+    pest_details: Optional[bool] = Form(False),
+    disease_prompt: Optional[str] = Form(None)
 ):
     """
-    Classify crop type from images.
+    Comprehensive analysis including both pest and disease detection.
     
     Args:
         image: Uploaded image file
-        confidence_threshold: Minimum confidence threshold for predictions
+        pest_confidence: Confidence threshold for pest detection
+        pest_details: Include pest detection details
+        disease_prompt: Custom prompt for disease analysis
         
     Returns:
-        Crop classification results with confidence scores
+        Combined results from pest and disease detection
     """
     start_time = time.time()
     
     try:
-        # Validate inputs
-        image_data = await validate_image(image)
+        # Validate image
+        if not image.content_type or not image.content_type.startswith('image/'):
+            raise HTTPException(status_code=400, detail="Invalid image file type")
         
-        # Process image
-        processed_image = await services["image_processor"].process_image(
-            image_data, "unknown"
+        # Read image bytes once
+        image_bytes = await image.read()
+        if len(image_bytes) == 0:
+            raise HTTPException(status_code=400, detail="Empty image file")
+        
+        # Get services
+        pest_service = await get_pest_detection_service()
+        disease_service = await get_disease_detection_service()
+        
+        # Run both analyses in parallel
+        pest_task = asyncio.create_task(
+            pest_service.detect_pests_from_bytes(
+                image_bytes=image_bytes,
+                conf_threshold=pest_confidence,
+                return_details=pest_details
+            )
         )
         
-        # Run inference
-        predictions = await services["inference_engine"].predict_crop(
-            processed_image, confidence_threshold
+        disease_task = asyncio.create_task(
+            disease_service.detect_disease(
+                image_bytes=image_bytes,
+                custom_prompt=disease_prompt
+            )
         )
         
-        # Format results
-        results = await services["result_formatter"].format_crop_results(
-            predictions, confidence_threshold
+        # Wait for both analyses
+        pest_results, disease_results = await asyncio.gather(
+            pest_task, disease_task, return_exceptions=True
         )
         
-        # Record metrics
+        # Process results
+        response_data = {
+            "pest_analysis": {},
+            "disease_analysis": {},
+            "summary": {}
+        }
+        
+        # Handle pest results
+        if isinstance(pest_results, Exception):
+            response_data["pest_analysis"] = {
+                "success": False,
+                "error": str(pest_results)
+            }
+        else:
+            response_data["pest_analysis"] = {
+                "success": True,
+                "results": pest_results
+            }
+        
+        # Handle disease results
+        if isinstance(disease_results, Exception):
+            response_data["disease_analysis"] = {
+                "success": False,
+                "error": str(disease_results)
+            }
+        else:
+            response_data["disease_analysis"] = {
+                "success": True,
+                "results": disease_results
+            }
+        
+        # Create comprehensive summary
+        issues = []
+        thai_summaries = []
+        recommendations = []
+        
+        # Check pest results
+        if (response_data["pest_analysis"].get("success") and 
+            response_data["pest_analysis"]["results"].get("has_pests")):
+            issues.append("pests")
+            thai_summaries.append(response_data["pest_analysis"]["results"]["thai_summary"])
+        
+        # Check disease results
+        if (response_data["disease_analysis"].get("success") and 
+            not response_data["disease_analysis"]["results"]["disease_analysis"].get("is_healthy", True)):
+            issues.append("disease")
+            thai_summaries.append(response_data["disease_analysis"]["results"]["disease_analysis"]["thai_summary"])
+            recommendations.extend(response_data["disease_analysis"]["results"]["disease_analysis"]["recommendations"])
+        
+        # Generate summary
+        if not issues:
+            response_data["summary"] = {
+                "status": "healthy",
+                "issues": [],
+                "thai_summary": "พืชมีสุขภาพดี ไม่พบศัตรูพืชหรือโรคพืช",
+                "recommendations": ["ดูแลรักษาตามปกติ", "ตรวจสอบเป็นประจำ"]
+            }
+        else:
+            response_data["summary"] = {
+                "status": "issues_detected",
+                "issues": issues,
+                "thai_summary": " และ ".join(thai_summaries),
+                "recommendations": recommendations if recommendations else ["ปรึกษาผู้เชี่ยวชาญการเกษตร"]
+            }
+        
         processing_time = time.time() - start_time
-        await services["metrics_collector"].record_request(
-            endpoint="classify_crop",
-            processing_time=processing_time,
-            success=True
-        )
         
         return JSONResponse(
             status_code=200,
             content={
                 "success": True,
-                "data": results,
+                "data": response_data,
                 "processing_time_ms": round(processing_time * 1000, 2),
                 "timestamp": time.time()
             }
         )
         
+    except HTTPException:
+        raise
     except Exception as e:
         processing_time = time.time() - start_time
-        await services["metrics_collector"].record_request(
-            endpoint="classify_crop",
-            processing_time=processing_time,
-            success=False,
-            error=str(e)
-        )
-        
-        logger.error(f"Crop classification failed: {e}")
-        raise HTTPException(status_code=500, detail=f"Crop classification failed: {str(e)}")
+        logger.error(f"Comprehensive analysis failed: {e}")
+        raise HTTPException(status_code=500, detail=f"Analysis failed: {str(e)}")
 
-@app.post("/analyze/batch")
-async def analyze_batch(
-    images: List[UploadFile] = File(...),
-    crop_types: List[str] = Form(...),
-    confidence_threshold: Optional[float] = Form(0.7),
-    services: Dict = Depends(get_services)
-):
-    """
-    Batch analysis of multiple images.
-    
-    Args:
-        images: List of uploaded image files
-        crop_types: List of crop types corresponding to images
-        confidence_threshold: Minimum confidence threshold for predictions
-        
-    Returns:
-        Batch analysis results
-    """
-    start_time = time.time()
-    
+@app.get("/health/disease")
+async def disease_detection_health():
+    """Health check for disease detection service."""
     try:
-        if len(images) != len(crop_types):
-            raise HTTPException(
-                status_code=400, 
-                detail="Number of images must match number of crop types"
-            )
-        
-        if len(images) > 10:  # Limit batch size
-            raise HTTPException(
-                status_code=400,
-                detail="Batch size limited to 10 images"
-            )
-        
-        results = []
-        
-        for i, (image, crop_type) in enumerate(zip(images, crop_types)):
-            try:
-                # Validate inputs
-                validate_crop_type(crop_type)
-                image_data = await validate_image(image)
-                
-                # Process image
-                processed_image = await services["image_processor"].process_image(
-                    image_data, crop_type
-                )
-                
-                # Run inference
-                predictions = await services["inference_engine"].predict_disease(
-                    processed_image, crop_type, confidence_threshold
-                )
-                
-                # Format results
-                result = await services["result_formatter"].format_disease_results(
-                    predictions, crop_type, confidence_threshold
-                )
-                
-                results.append({
-                    "image_index": i,
-                    "filename": image.filename,
-                    "crop_type": crop_type,
-                    "result": result
-                })
-                
-            except Exception as e:
-                results.append({
-                    "image_index": i,
-                    "filename": image.filename,
-                    "crop_type": crop_type,
-                    "error": str(e)
-                })
-        
-        # Record metrics
-        processing_time = time.time() - start_time
-        await services["metrics_collector"].record_request(
-            endpoint="analyze_batch",
-            processing_time=processing_time,
-            success=True,
-            batch_size=len(images)
-        )
-        
-        return JSONResponse(
-            status_code=200,
-            content={
-                "success": True,
-                "data": {
-                    "batch_size": len(images),
-                    "results": results
-                },
-                "processing_time_ms": round(processing_time * 1000, 2),
-                "timestamp": time.time()
-            }
-        )
-        
+        disease_service = await get_disease_detection_service()
+        health_status = await disease_service.health_check()
+        return health_status
     except Exception as e:
-        processing_time = time.time() - start_time
-        await services["metrics_collector"].record_request(
-            endpoint="analyze_batch",
-            processing_time=processing_time,
-            success=False,
-            error=str(e)
-        )
-        
-        logger.error(f"Batch analysis failed: {e}")
-        raise HTTPException(status_code=500, detail=f"Batch analysis failed: {str(e)}")
-
-@app.get("/metrics")
-async def get_metrics():
-    """Get service metrics."""
-    if not metrics_collector:
-        raise HTTPException(status_code=503, detail="Metrics collector not initialized")
-    
-    metrics = await metrics_collector.get_metrics()
-    return {"metrics": metrics}
+        logger.error(f"Disease detection health check failed: {e}")
+        raise HTTPException(status_code=503, detail=f"Disease detection service unavailable: {str(e)}")
 
 @app.get("/info")
 async def get_service_info():
-    """Get service information."""
-    settings = get_settings()
-    
+    """Get service information and capabilities."""
+    try:
+        # Get services info
+        pest_service = await get_pest_detection_service()
+        disease_service = await get_disease_detection_service()
+        
+        pest_health = await pest_service.health_check()
+        disease_health = await disease_service.health_check()
+        
+        return {
+            "service": "AI4Thai Vision Service",
+            "version": "1.0.0",
+            "description": "Agricultural pest detection and disease identification service",
+            "models": [
+                {
+                    "name": "YOLO11s",
+                    "source": "underdogquality/yolo11s-pest-detection",
+                    "type": "Object Detection",
+                    "framework": "Ultralytics",
+                    "purpose": "Pest Detection"
+                },
+                {
+                    "name": "LLaVA-v1.5-7B",
+                    "source": "YuchengShi/LLaVA-v1.5-7B-Plant-Leaf-Diseases-Detection",
+                    "type": "Vision-Language Model",
+                    "framework": "Transformers",
+                    "purpose": "Disease Detection"
+                }
+            ],
+            "capabilities": [
+                "Agricultural pest detection",
+                "Plant disease identification",
+                "Multi-pest identification", 
+                "Disease severity assessment",
+                "Confidence scoring",
+                "Bounding box detection",
+                "Thai language summaries",
+                "Treatment recommendations",
+                "Comprehensive plant health analysis"
+            ],
+            "endpoints": {
+                "pest_detection": "/detect/pests",
+                "disease_detection": "/detect/disease",
+                "comprehensive": "/analyze/comprehensive",
+                "analyze_alias": "/analyze", 
+                "health": "/health",
+                "detailed_health": "/health/detailed",
+                "pest_health": "/health/pests",
+                "disease_health": "/health/disease",
+                "info": "/info"
+            },
+            "pest_detection": {
+                "status": pest_health.get("status", "unknown"),
+                "model_loaded": pest_health.get("model_loaded", False),
+                "available_classes": pest_health.get("available_classes", 0)
+            },
+            "disease_detection": {
+                "status": disease_health.get("status", "unknown"),
+                "model_loaded": disease_health.get("model_loaded", False),
+                "device": disease_health.get("device", "unknown")
+            },
+            "supported_formats": ["image/jpeg", "image/png", "image/webp", "image/bmp"],
+            "default_pest_confidence": 0.01,
+            "max_file_size": "10MB"
+        }
+    except Exception as e:
+        logger.error(f"Failed to get service info: {e}")
+        return {
+            "service": "AI4Thai Vision Service - Pest Detection", 
+            "version": "1.0.0",
+            "status": "error",
+            "error": str(e)
+        }
+
+@app.get("/")
+async def root():
+    """Root endpoint with service overview."""
     return {
-        "service": "AI4Thai Vision Service",
-        "version": "1.0.0",
-        "models": await model_registry.list_models() if model_registry else [],
-        "supported_crops": settings.supported_crops,
-        "supported_formats": settings.supported_image_formats,
-        "max_image_size": settings.max_image_size,
-        "gpu_available": torch.cuda.is_available(),
-        "gpu_count": torch.cuda.device_count() if torch.cuda.is_available() else 0
+        "message": "AI4Thai Vision Service",
+        "description": "Comprehensive agricultural pest detection and disease identification service",
+        "models": {
+            "pest_detection": "YOLO11s from underdogquality/yolo11s-pest-detection",
+            "disease_detection": "LLaVA-v1.5-7B from YuchengShi/LLaVA-v1.5-7B-Plant-Leaf-Diseases-Detection"
+        },
+        "endpoints": {
+            "pest_detection": "/detect/pests",
+            "disease_detection": "/detect/disease",
+            "comprehensive_analysis": "/analyze/comprehensive",
+            "analyze_alias": "/analyze",
+            "health": "/health", 
+            "info": "/info"
+        },
+        "usage": {
+            "pest_detection": "Upload an image to /detect/pests to identify agricultural pests",
+            "disease_detection": "Upload a leaf image to /detect/disease to identify plant diseases",
+            "comprehensive": "Upload an image to /analyze/comprehensive for both pest and disease analysis"
+        },
+        "features": [
+            "Agricultural pest detection",
+            "Plant disease identification", 
+            "Thai language summaries",
+            "Treatment recommendations",
+            "Parallel processing for comprehensive analysis"
+        ]
     }
 
 if __name__ == "__main__":
-    settings = get_settings()
     uvicorn.run(
         "app:app",
-        host=settings.host,
-        port=settings.port,
-        reload=settings.debug,
-        workers=1  # Use 1 worker for GPU models
+        host="0.0.0.0",
+        port=2001,
+        reload=True
     )

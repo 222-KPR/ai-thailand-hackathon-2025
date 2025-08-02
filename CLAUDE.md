@@ -71,10 +71,10 @@ cd ai-services
 source venv/bin/activate
 
 # Vision service
-cd vision-service && python -m uvicorn app:app --reload --port 8001
+cd vision-service && python -m uvicorn app:app --reload --port 2001
 
 # Queue worker service  
-cd queue-worker && python -m uvicorn app:app --reload --port 8003
+cd queue-worker && python -m uvicorn app:app --reload --port 2003
 
 # Queue worker background tasks
 cd queue-worker && celery -A tasks worker --loglevel=info
@@ -90,8 +90,8 @@ cd queue-worker && celery -A tasks worker --loglevel=info
 ### Service Ports
 - Frontend: 8080
 - API Gateway: 3000
-- Vision Service: 8001
-- Queue Worker: 8003
+- Vision Service: 2001
+- Queue Worker: 2003
 - Redis: 6379
 
 ### Docker Services

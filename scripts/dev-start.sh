@@ -226,7 +226,7 @@ check_ai_services() {
     elif [[ -n "${VISION_SERVICE_URL:-}" ]]; then
         success "Using self-hosted AI services"
         log "Vision Service: $VISION_SERVICE_URL"
-        log "Queue Worker: ${QUEUE_WORKER_URL:-http://localhost:8003}"
+        log "Queue Worker: ${QUEUE_WORKER_URL:-http://localhost:2003}"
         warn "Make sure AI services are running separately!"
         warn "Start them with: cd ai-services/deployment && docker-compose up -d"
     else
