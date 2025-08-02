@@ -1,13 +1,12 @@
-// Components module for AI4Thai Crop Guardian - 2025 Design System
-// Exports all component modules
+// Copyright (c) 2025 AI4Thai Crop Guardian
+// Licensed under the MIT License
+
+//! Components Module
+//! 
+//! This module contains all UI components organized by category.
 
 pub mod layout;
 pub mod ui;
-pub mod camera;
-pub mod chat;
 
-// Re-export commonly used components
-pub use layout::{BentoGrid, BentoCard, BentoSection};
-pub use ui::{GradientButton, StatusCard, QuickAction, ButtonVariant, ButtonSize};
-pub use camera::camera_capture::{CameraCapture, CameraState, CameraFacing};
-pub use chat::chat_window::{ChatWindow, MessageBubble, ChatMessage, MessageSender};
+pub use layout::*;
+pub use ui::*;
