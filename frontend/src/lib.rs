@@ -4,7 +4,6 @@ mod app;
 mod components;
 mod services;
 mod utils;
-mod store;
 mod i18n;
 
 pub use app::App;

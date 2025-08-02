@@ -10,13 +10,12 @@ crate-type = ["cdylib"]
 # Workspace dependencies
 serde = { workspace = true }
 serde_json = { workspace = true }
-uuid = { workspace = true }
+uuid = { workspace = true, features = ["v4", "js"] }
 chrono = { workspace = true }
 
 # Yew framework
 yew = { version = "0.21", features = ["csr"] }
 yew-router = "0.18"
-yewdux = "0.10"
 
 # WASM bindings
 wasm-bindgen = "0.2"
@@ -24,40 +23,30 @@ wasm-bindgen-futures = "0.4"
 js-sys = "0.3"
 web-sys = { version = "0.3", features = [
     "console",
-    "MediaDevices",
-    "MediaStream",
-    "MediaStreamConstraints",
-    "MediaRecorder",
     "Navigator",
     "Window",
     "Document",
     "Element",
-    "HtmlVideoElement",
-    "HtmlCanvasElement",
-    "CanvasRenderingContext2d",
-    "ImageData",
+    "HtmlInputElement",
+    "HtmlTextAreaElement",
+    "HtmlSelectElement",
     "Blob",
+    "File",
+    "FileList",
     "FileReader",
-    "WebSocket",
-    "MessageEvent",
+    "Event",
+    "MouseEvent",
+    "KeyboardEvent",
+    "InputEvent",
+    "SubmitEvent",
     "Storage",
     "Location",
-    "ServiceWorkerRegistration",
-    "NotificationPermission",
-    "Notification",
-    "GeolocationPosition",
 ] }
 
 # Network and utilities
-gloo = { version = "0.11", features = ["net", "storage", "timers", "events"] }
-gloo-net = { version = "0.6", features = ["websocket"] }
+gloo = { version = "0.10", features = ["net", "storage", "timers", "events"] }
+gloo-net = { version = "0.5", features = ["websocket"] }
 reqwest = { version = "0.11", features = ["json"] }
-
-# UI and styling
-stylist = { version = "0.13", features = ["yew"] }
-
-# Internationalization
-yew-i18n = "0.7"
 
 # Error handling
 anyhow = { workspace = true }
@@ -67,9 +56,6 @@ thiserror = { workspace = true }
 log = "0.4"
 wasm-logger = "0.2"
 console_error_panic_hook = "0.1"
-
-# Additional utilities
-regex = "1.0"
 
 # Local dependencies
 shared = { path = "../shared" }
