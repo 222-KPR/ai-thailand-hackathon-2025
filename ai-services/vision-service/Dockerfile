@@ -2,7 +2,7 @@
 # Multi-stage build optimized for H100 16GB VRAM
 
 # Minimal base image
-FROM python:3.9-slim-bullseye as base
+FROM python:3.9-slim-bullseye AS base
 
 # Set environment variables for optimization
 ENV PYTHONUNBUFFERED=1
@@ -35,7 +35,7 @@ RUN pip install --no-cache-dir --upgrade pip setuptools wheel && \
     pip cache purge
 
 # Development stage (minimal)
-FROM base as development
+FROM base AS development
 
 # Copy only necessary source code
 COPY app.py .
@@ -54,7 +54,7 @@ EXPOSE 8001
 CMD ["uvicorn", "app:app", "--host", "0.0.0.0", "--port", "8001", "--reload"]
 
 # Production stage (minimal)
-FROM base as production
+FROM base AS production
 
 # Copy only essential files
 COPY app.py .
@@ -78,7 +78,7 @@ HEALTHCHECK --interval=30s --timeout=15s --start-period=30s --retries=2 \
 CMD ["gunicorn", "app:app", "-w", "1", "-k", "uvicorn.workers.UvicornWorker", "--bind", "0.0.0.0:2001", "--timeout", "300", "--max-requests", "100", "--preload"]
 
 # H100-optimized stage for 16GB VRAM
-FROM production as h100-optimized
+FROM production AS h100-optimized
 
 USER root
 
