@@ -1,0 +1,165 @@
+# GitLab CI/CD Pipeline for AI4Thai Crop Guardian - AI Services Only
+# Deploys AI services when tagged with 'hackathon-siamai2'
+
+stages:
+  - build
+  - deploy
+
+variables:
+  DOCKER_DRIVER: overlay2
+  DOCKER_TLS_CERTDIR: "/certs"
+  # AI Services Configuration
+  VISION_SERVICE_PORT: "2001"
+  QUEUE_WORKER_PORT: "2003"
+  VISION_LB_PORT: "2011"
+  REDIS_PORT: "6379"
+  PROMETHEUS_PORT: "9090"
+  GRAFANA_PORT: "3001"
+
+# Build AI Services Images
+build-ai-services:
+  stage: build
+  image: docker:24.0.5
+  services:
+    - docker:24.0.5-dind
+  before_script:
+    - docker info
+    - cd ai-services/deployment
+  script:
+    # Build Vision Service
+    - echo "Building Vision Service..."
+    - docker build -t team10-vision-service:$CI_COMMIT_SHA ../vision-service/
+    - docker tag team10-vision-service:$CI_COMMIT_SHA team10-vision-service:latest
+    
+    # Build Queue Worker
+    - echo "Building Queue Worker..."
+    - docker build -t team10-queue-worker:$CI_COMMIT_SHA ../queue-worker/
+    - docker tag team10-queue-worker:$CI_COMMIT_SHA team10-queue-worker:latest
+    
+    # Save images for deployment stage
+    - docker save team10-vision-service:latest | gzip > vision-service.tar.gz
+    - docker save team10-queue-worker:latest | gzip > queue-worker.tar.gz
+  artifacts:
+    paths:
+      - ai-services/deployment/vision-service.tar.gz
+      - ai-services/deployment/queue-worker.tar.gz
+    expire_in: 1 hour
+  only:
+    - tags
+  except:
+    - branches
+  tags:
+    - hackathon-siamai2
+
+# Deploy AI Services
+deploy-ai-services:
+  stage: deploy
+  image: docker:24.0.5
+  services:
+    - docker:24.0.5-dind
+  before_script:
+    - apk add --no-cache docker-compose curl
+    - docker info
+    - cd ai-services/deployment
+  script:
+    # Load built images
+    - echo "Loading Docker images..."
+    - docker load < vision-service.tar.gz
+    - docker load < queue-worker.tar.gz
+    
+    # Verify images loaded
+    - docker images | grep team10
+    
+    # Stop existing services if running
+    - echo "Stopping existing AI services..."
+    - docker-compose down --remove-orphans || true
+    
+    # Clean up old containers and volumes (optional)
+    - docker container prune -f || true
+    
+    # Set environment variables for deployment
+    - export VISION_SERVICE_PORT=$VISION_SERVICE_PORT
+    - export QUEUE_WORKER_PORT=$QUEUE_WORKER_PORT
+    - export VISION_LB_PORT=$VISION_LB_PORT
+    - export REDIS_PORT=$REDIS_PORT
+    - export PROMETHEUS_PORT=$PROMETHEUS_PORT
+    - export GRAFANA_PORT=$GRAFANA_PORT
+    - export BUILD_TARGET=production
+    
+    # Deploy AI services
+    - echo "Deploying AI services..."
+    - docker-compose up -d
+    
+    # Wait for services to be healthy
+    - echo "Waiting for services to be ready..."
+    - sleep 30
+    
+    # Health checks
+    - echo "Performing health checks..."
+    - curl -f http://localhost:$VISION_SERVICE_PORT/health || exit 1
+    - curl -f http://localhost:$QUEUE_WORKER_PORT/health || exit 1
+    
+    # Display running containers
+    - echo "AI Services deployment completed successfully!"
+    - docker ps --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}"
+    
+    # Display volume usage
+    - echo "Team10 volumes:"
+    - docker volume ls | grep team10 || echo "No team10 volumes found"
+  environment:
+    name: production
+    url: http://localhost:$VISION_SERVICE_PORT
+  only:
+    - tags
+  except:
+    - branches
+  tags:
+    - hackathon-siamai2
+  when: manual
+  dependencies:
+    - build-ai-services
+
+# Cleanup job (optional - runs on schedule or manual trigger)
+cleanup-ai-services:
+  stage: deploy
+  image: docker:24.0.5
+  services:
+    - docker:24.0.5-dind
+  before_script:
+    - apk add --no-cache docker-compose
+    - cd ai-services/deployment
+  script:
+    - echo "Cleaning up AI services..."
+    - docker-compose down --volumes --remove-orphans
+    - docker system prune -f
+    - docker volume prune -f
+    - echo "Cleanup completed"
+  only:
+    - tags
+  except:
+    - branches
+  tags:
+    - hackathon-siamai2
+  when: manual
+  allow_failure: true
+
+# Health check job (can be run independently)
+health-check:
+  stage: deploy
+  image: alpine:latest
+  before_script:
+    - apk add --no-cache curl
+  script:
+    - echo "Checking AI services health..."
+    - curl -f http://localhost:$VISION_SERVICE_PORT/health
+    - curl -f http://localhost:$QUEUE_WORKER_PORT/health
+    - curl -f http://localhost:$VISION_LB_PORT/health || echo "Load balancer health check failed (may be expected)"
+    - echo "All critical services are healthy!"
+  only:
+    - tags
+  except:
+    - branches
+  tags:
+    - hackathon-siamai2
+  when: manual
+  allow_failure: true
