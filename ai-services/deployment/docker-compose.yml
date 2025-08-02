@@ -54,9 +54,8 @@ services:
       - ENABLE_METRICS=true
       - METRICS_PORT=9001
     volumes:
-      - vision_models:/app/models
-      - vision_logs:/app/logs
-      - vision_temp:/app/temp
+      - team10-root:/root
+      - team10-data:/app/models
     networks:
       - ai-services-network
     deploy:
@@ -92,6 +91,9 @@ services:
     depends_on:
       - redis
       - vision-service
+    volumes:
+      - team10-root:/root
+      - team10-data:/app/data
     networks:
       - ai-services-network
     healthcheck:
@@ -119,6 +121,9 @@ services:
     depends_on:
       - redis
       - vision-service
+    volumes:
+      - team10-root:/root
+      - team10-data:/app/data
     networks:
       - ai-services-network
     deploy:
@@ -143,6 +148,9 @@ services:
       - PYTHONUNBUFFERED=1
     depends_on:
       - redis
+    volumes:
+      - team10-root:/root
+      - team10-data:/app/data
     networks:
       - ai-services-network
     restart: unless-stopped
@@ -155,7 +163,8 @@ services:
     ports:
       - "${REDIS_PORT:-6379}:6379"
     volumes:
-      - redis_data:/data
+      - team10-root:/root
+      - team10-data:/data
     networks:
       - ai-services-network
     healthcheck:
@@ -172,7 +181,8 @@ services:
     ports:
       - "${VISION_LB_PORT:-2011}:80"
     volumes:
-      - ./nginx/vision-nginx.conf:/etc/nginx/nginx.conf:ro
+      - team10-root:/root
+      - team10-data:/etc/nginx
     depends_on:
       - vision-service
     networks:
@@ -188,8 +198,8 @@ services:
     ports:
       - "${PROMETHEUS_PORT:-9090}:9090"
     volumes:
-      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml:ro
-      - prometheus_data:/prometheus
+      - team10-root:/root
+      - team10-data:/prometheus
     command:
       - '--config.file=/etc/prometheus/prometheus.yml'
       - '--storage.tsdb.path=/prometheus'
@@ -212,8 +222,8 @@ services:
       - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_PASSWORD:-admin}
       - GF_USERS_ALLOW_SIGN_UP=false
     volumes:
-      - grafana_data:/var/lib/grafana
-      - ./monitoring/grafana:/etc/grafana/provisioning:ro
+      - team10-root:/root
+      - team10-data:/var/lib/grafana
     depends_on:
       - prometheus
     networks:
@@ -230,15 +240,7 @@ networks:
         - subnet: 172.20.0.0/16
 
 volumes:
-  vision_models:
+  team10-root:
     driver: local
-  vision_logs:
-    driver: local
-  vision_temp:
-    driver: local
-  redis_data:
-    driver: local
-  prometheus_data:
-    driver: local
-  grafana_data:
+  team10-data:
     driver: local
