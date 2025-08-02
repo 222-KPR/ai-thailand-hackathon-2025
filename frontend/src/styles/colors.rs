@@ -1,213 +1,164 @@
-// Color system for AI4Thai Crop Guardian - 2025 Design
-// Implements dopamine color palette for positive user experience
+// Copyright (c) 2025 AI4Thai Crop Guardian
+// Licensed under the MIT License
 
-use yew::prelude::*;
+//! Dopamine Color Palette System
+//! 
+//! This module defines the vibrant, energetic color palette designed to evoke
+//! positive emotions and create an engaging user experience for Thai farmers.
 
-#[derive(Debug, Clone, PartialEq)]
-pub struct ColorPalette {
-    // Primary dopamine colors - vibrant and energetic
-    pub primary_electric_blue: &'static str,
-    pub primary_vibrant_orange: &'static str,
-    pub primary_energetic_pink: &'static str,
+/// Primary dopamine colors for main UI elements
+pub struct PrimaryColors;
+
+impl PrimaryColors {
+    /// Electric blue - Primary action color
+    pub const ELECTRIC_BLUE: &'static str = "#0066FF";
     
-    // Accent colors for variety and visual interest
-    pub accent_lime_green: &'static str,
-    pub accent_purple: &'static str,
-    pub accent_yellow: &'static str,
+    /// Vibrant orange - Secondary action color
+    pub const VIBRANT_ORANGE: &'static str = "#FF6B35";
     
-    // Balanced backgrounds for readability
-    pub bg_light: &'static str,
-    pub bg_dark: &'static str,
-    pub surface_light: &'static str,
-    pub surface_dark: &'static str,
-    
-    // Semantic colors
-    pub success: &'static str,
-    pub warning: &'static str,
-    pub error: &'static str,
-    pub info: &'static str,
-    
-    // Text colors
-    pub text_primary: &'static str,
-    pub text_secondary: &'static str,
-    pub text_disabled: &'static str,
-    pub text_inverse: &'static str,
+    /// Energetic pink - Accent color for highlights
+    pub const ENERGETIC_PINK: &'static str = "#FF1B8D";
 }
 
-impl Default for ColorPalette {
-    fn default() -> Self {
-        Self {
-            // Primary dopamine colors
-            primary_electric_blue: "#0066FF",
-            primary_vibrant_orange: "#FF6B35",
-            primary_energetic_pink: "#FF1B8D",
-            
-            // Accent colors
-            accent_lime_green: "#32D74B",
-            accent_purple: "#AF52DE",
-            accent_yellow: "#FFD60A",
-            
-            // Backgrounds
-            bg_light: "#FAFAFA",
-            bg_dark: "#1C1C1E",
-            surface_light: "#FFFFFF",
-            surface_dark: "#2C2C2E",
-            
-            // Semantic colors
-            success: "#32D74B",
-            warning: "#FFD60A",
-            error: "#FF453A",
-            info: "#0066FF",
-            
-            // Text colors
-            text_primary: "#1C1C1E",
-            text_secondary: "#6B7280",
-            text_disabled: "#9CA3AF",
-            text_inverse: "#FFFFFF",
-        }
-    }
+/// Accent colors for variety and visual interest
+pub struct AccentColors;
+
+impl AccentColors {
+    /// Lime green - Success states and positive feedback
+    pub const LIME_GREEN: &'static str = "#32D74B";
+    
+    /// Purple - Premium features and special content
+    pub const PURPLE: &'static str = "#AF52DE";
+    
+    /// Yellow - Warnings and attention-grabbing elements
+    pub const YELLOW: &'static str = "#FFD60A";
+    
+    /// Cyan - Information and neutral actions
+    pub const CYAN: &'static str = "#5AC8FA";
+    
+    /// Coral - Warm accent for agricultural themes
+    pub const CORAL: &'static str = "#FF9F0A";
 }
 
-// Color utility functions
+/// Background and surface colors for balance
+pub struct SurfaceColors;
+
+impl SurfaceColors {
+    /// Light background - Primary light theme background
+    pub const BG_LIGHT: &'static str = "#FAFAFA";
+    
+    /// Dark background - Primary dark theme background
+    pub const BG_DARK: &'static str = "#1C1C1E";
+    
+    /// Light surface - Cards and elevated elements in light theme
+    pub const SURFACE_LIGHT: &'static str = "#FFFFFF";
+    
+    /// Dark surface - Cards and elevated elements in dark theme
+    pub const SURFACE_DARK: &'static str = "#2C2C2E";
+    
+    /// Light border - Subtle borders in light theme
+    pub const BORDER_LIGHT: &'static str = "#E5E5E7";
+    
+    /// Dark border - Subtle borders in dark theme
+    pub const BORDER_DARK: &'static str = "#38383A";
+}
+
+/// Text colors for optimal readability
+pub struct TextColors;
+
+impl TextColors {
+    /// Primary text on light backgrounds
+    pub const PRIMARY_LIGHT: &'static str = "#1D1D1F";
+    
+    /// Primary text on dark backgrounds
+    pub const PRIMARY_DARK: &'static str = "#F2F2F7";
+    
+    /// Secondary text on light backgrounds
+    pub const SECONDARY_LIGHT: &'static str = "#6D6D80";
+    
+    /// Secondary text on dark backgrounds
+    pub const SECONDARY_DARK: &'static str = "#8E8E93";
+    
+    /// Tertiary text on light backgrounds
+    pub const TERTIARY_LIGHT: &'static str = "#C7C7CC";
+    
+    /// Tertiary text on dark backgrounds
+    pub const TERTIARY_DARK: &'static str = "#48484A";
+}
+
+/// Semantic colors for status and feedback
+pub struct SemanticColors;
+
+impl SemanticColors {
+    /// Success color - Green for positive outcomes
+    pub const SUCCESS: &'static str = "#34C759";
+    
+    /// Warning color - Orange for caution
+    pub const WARNING: &'static str = "#FF9500";
+    
+    /// Error color - Red for errors and destructive actions
+    pub const ERROR: &'static str = "#FF3B30";
+    
+    /// Info color - Blue for informational content
+    pub const INFO: &'static str = "#007AFF";
+}
+
+/// Agricultural theme colors specific to farming context
+pub struct AgricultureColors;
+
+impl AgricultureColors {
+    /// Healthy crop green
+    pub const CROP_HEALTHY: &'static str = "#4CAF50";
+    
+    /// Diseased crop yellow/brown
+    pub const CROP_DISEASED: &'static str = "#FF8F00";
+    
+    /// Soil brown
+    pub const SOIL: &'static str = "#8D6E63";
+    
+    /// Water blue
+    pub const WATER: &'static str = "#2196F3";
+    
+    /// Sun yellow
+    pub const SUN: &'static str = "#FFC107";
+}
+
+/// Color palette utility functions
+pub struct ColorPalette;
+
 impl ColorPalette {
-    pub fn get_gradient(&self, color1: &str, color2: &str, direction: u16) -> String {
-        format!("linear-gradient({}deg, {}, {})", direction, color1, color2)
-    }
-    
-    pub fn get_primary_gradient(&self) -> String {
-        self.get_gradient(self.primary_electric_blue, self.primary_energetic_pink, 135)
-    }
-    
-    pub fn get_success_gradient(&self) -> String {
-        self.get_gradient(self.accent_lime_green, self.primary_electric_blue, 135)
-    }
-    
-    pub fn get_warning_gradient(&self) -> String {
-        self.get_gradient(self.accent_yellow, self.primary_vibrant_orange, 135)
-    }
-    
-    pub fn with_opacity(&self, color: &str, opacity: f32) -> String {
-        // Convert hex to rgba with opacity
-        if let Ok(hex) = u32::from_str_radix(&color[1..], 16) {
-            let r = (hex >> 16) & 0xFF;
-            let g = (hex >> 8) & 0xFF;
-            let b = hex & 0xFF;
-            format!("rgba({}, {}, {}, {})", r, g, b, opacity)
-        } else {
-            color.to_string()
+    /// Get primary color by index (0-2)
+    pub fn primary(index: usize) -> &'static str {
+        match index {
+            0 => PrimaryColors::ELECTRIC_BLUE,
+            1 => PrimaryColors::VIBRANT_ORANGE,
+            2 => PrimaryColors::ENERGETIC_PINK,
+            _ => PrimaryColors::ELECTRIC_BLUE,
         }
     }
-}
-
-// CSS custom properties generator
-pub fn generate_css_variables(palette: &ColorPalette) -> String {
-    format!(
-        r#":root {{
-  /* Primary dopamine colors */
-  --color-primary-electric-blue: {};
-  --color-primary-vibrant-orange: {};
-  --color-primary-energetic-pink: {};
-  
-  /* Accent colors */
-  --color-accent-lime-green: {};
-  --color-accent-purple: {};
-  --color-accent-yellow: {};
-  
-  /* Backgrounds */
-  --color-bg-light: {};
-  --color-bg-dark: {};
-  --color-surface-light: {};
-  --color-surface-dark: {};
-  
-  /* Semantic colors */
-  --color-success: {};
-  --color-warning: {};
-  --color-error: {};
-  --color-info: {};
-  
-  /* Text colors */
-  --color-text-primary: {};
-  --color-text-secondary: {};
-  --color-text-disabled: {};
-  --color-text-inverse: {};
-  
-  /* Gradients */
-  --gradient-primary: {};
-  --gradient-success: {};
-  --gradient-warning: {};
-  
-  /* Shadows with dopamine colors */
-  --shadow-primary: 0 4px 20px {};
-  --shadow-success: 0 4px 20px {};
-  --shadow-warning: 0 4px 20px {};
-  --shadow-hover: 0 8px 30px rgba(0, 0, 0, 0.12);
-}}"#,
-        palette.primary_electric_blue,
-        palette.primary_vibrant_orange,
-        palette.primary_energetic_pink,
-        palette.accent_lime_green,
-        palette.accent_purple,
-        palette.accent_yellow,
-        palette.bg_light,
-        palette.bg_dark,
-        palette.surface_light,
-        palette.surface_dark,
-        palette.success,
-        palette.warning,
-        palette.error,
-        palette.info,
-        palette.text_primary,
-        palette.text_secondary,
-        palette.text_disabled,
-        palette.text_inverse,
-        palette.get_primary_gradient(),
-        palette.get_success_gradient(),
-        palette.get_warning_gradient(),
-        palette.with_opacity(palette.primary_electric_blue, 0.2),
-        palette.with_opacity(palette.accent_lime_green, 0.2),
-        palette.with_opacity(palette.accent_yellow, 0.2),
-    )
-}
-
-// Theme context for components
-#[derive(Debug, Clone, PartialEq)]
-pub struct Theme {
-    pub colors: ColorPalette,
-    pub is_dark_mode: bool,
-}
-
-impl Default for Theme {
-    fn default() -> Self {
-        Self {
-            colors: ColorPalette::default(),
-            is_dark_mode: false,
+    
+    /// Get accent color by index (0-4)
+    pub fn accent(index: usize) -> &'static str {
+        match index {
+            0 => AccentColors::LIME_GREEN,
+            1 => AccentColors::PURPLE,
+            2 => AccentColors::YELLOW,
+            3 => AccentColors::CYAN,
+            4 => AccentColors::CORAL,
+            _ => AccentColors::LIME_GREEN,
         }
     }
-}
-
-// Theme context provider
-pub type ThemeContext = UseStateHandle<Theme>;
-
-#[derive(Properties, PartialEq)]
-pub struct ThemeProviderProps {
-    pub children: Children,
-    pub theme: Option<Theme>,
-}
-
-#[function_component(ThemeProvider)]
-pub fn theme_provider(props: &ThemeProviderProps) -> Html {
-    let theme = use_state(|| props.theme.clone().unwrap_or_default());
     
-    html! {
-        <ContextProvider<ThemeContext> context={theme}>
-            { for props.children.iter() }
-        </ContextProvider<ThemeContext>>
+    /// Get semantic color by type
+    pub fn semantic(color_type: &str) -> &'static str {
+        match color_type {
+            "success" => SemanticColors::SUCCESS,
+            "warning" => SemanticColors::WARNING,
+            "error" => SemanticColors::ERROR,
+            "info" => SemanticColors::INFO,
+            _ => SemanticColors::INFO,
+        }
     }
-}
-
-// Hook to use theme in components
-pub fn use_theme() -> ThemeContext {
-    use_context::<ThemeContext>().expect("Theme context not found")
 }
 
 #[cfg(test)]
@@ -215,27 +166,16 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_color_palette_default() {
-        let palette = ColorPalette::default();
-        assert_eq!(palette.primary_electric_blue, "#0066FF");
-        assert_eq!(palette.primary_vibrant_orange, "#FF6B35");
-        assert_eq!(palette.primary_energetic_pink, "#FF1B8D");
+    fn test_primary_colors() {
+        assert_eq!(PrimaryColors::ELECTRIC_BLUE, "#0066FF");
+        assert_eq!(PrimaryColors::VIBRANT_ORANGE, "#FF6B35");
+        assert_eq!(PrimaryColors::ENERGETIC_PINK, "#FF1B8D");
     }
 
     #[test]
-    fn test_gradient_generation() {
-        let palette = ColorPalette::default();
-        let gradient = palette.get_primary_gradient();
-        assert!(gradient.contains("linear-gradient"));
-        assert!(gradient.contains("#0066FF"));
-        assert!(gradient.contains("#FF1B8D"));
-    }
-
-    #[test]
-    fn test_opacity_conversion() {
-        let palette = ColorPalette::default();
-        let rgba = palette.with_opacity("#0066FF", 0.5);
-        assert!(rgba.contains("rgba"));
-        assert!(rgba.contains("0.5"));
+    fn test_color_palette_utility() {
+        assert_eq!(ColorPalette::primary(0), "#0066FF");
+        assert_eq!(ColorPalette::accent(0), "#32D74B");
+        assert_eq!(ColorPalette::semantic("success"), "#34C759");
     }
 }
