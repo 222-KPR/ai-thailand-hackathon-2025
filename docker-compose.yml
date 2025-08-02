@@ -1,6 +1,5 @@
-# AI4Thai Crop Guardian - Simplified Docker Compose for Demonstration
-# AI services run on external AI4Thai infrastructure
-# Local services: API Gateway, Frontend, Database, Queue Worker
+# AI4Thai Crop Guardian - Main Application Services
+# AI services deployed separately using ./scripts/deploy-ai-services.sh
 
 version: '3.8'
 
@@ -56,10 +55,9 @@ services:
       - DATABASE_URL=postgresql://postgres:${POSTGRES_PASSWORD:-password}@postgres:5432/ai4thai
       - REDIS_URL=redis://redis:6379
       
-      # External AI4Thai Services (provided by AI4Thai infrastructure)
-      - VISION_SERVICE_URL=${VISION_SERVICE_URL:-https://vision-api.ai4thai.com}
-      - LLM_SERVICE_URL=${LLM_SERVICE_URL:-https://llm-api.ai4thai.com}
-      - AI4THAI_API_KEY=${AI4THAI_API_KEY}
+      # AI Services (deployed separately)
+      - VISION_SERVICE_URL=${VISION_SERVICE_URL:-http://localhost:8001}
+      - LLM_SERVICE_URL=${LLM_SERVICE_URL:-http://localhost:8002}
       
       # External APIs
       - WEATHER_API_KEY=${WEATHER_API_KEY}
@@ -101,10 +99,9 @@ services:
       - DATABASE_URL=postgresql://postgres:${POSTGRES_PASSWORD:-password}@postgres:5432/ai4thai
       - REDIS_URL=redis://redis:6379
       
-      # External AI4Thai Services
-      - VISION_SERVICE_URL=${VISION_SERVICE_URL:-https://vision-api.ai4thai.com}
-      - LLM_SERVICE_URL=${LLM_SERVICE_URL:-https://llm-api.ai4thai.com}
-      - AI4THAI_API_KEY=${AI4THAI_API_KEY}
+      # AI Services (deployed separately)
+      - VISION_SERVICE_URL=${VISION_SERVICE_URL:-http://localhost:8001}
+      - LLM_SERVICE_URL=${LLM_SERVICE_URL:-http://localhost:8002}
       
       # Configuration
       - RUST_LOG=${RUST_LOG:-info}

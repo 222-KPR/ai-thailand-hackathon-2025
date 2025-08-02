@@ -1,0 +1,286 @@
+# AI4Thai Crop Guardian - AI Services Deployment
+# Separate deployment for Vision and LLM services using HuggingFace models
+
+version: '3.8'
+
+services:
+  # Vision Service
+  vision-service:
+    build:
+      context: ../vision-service
+      dockerfile: Dockerfile
+      target: ${BUILD_TARGET:-production}
+    container_name: ai4thai-vision-service
+    ports:
+      - "${VISION_SERVICE_PORT:-8001}:8001"
+    environment:
+      # Model Configuration
+      - MODEL_CACHE_DIR=/app/models
+      - HUGGINGFACE_HUB_CACHE=/app/models/hub
+      - TRANSFORMERS_CACHE=/app/models/transformers
+      
+      # HuggingFace Configuration
+      - HUGGINGFACE_HUB_TOKEN=${HUGGINGFACE_HUB_TOKEN}
+      - HF_HOME=/app/models
+      
+      # Service Configuration
+      - SERVICE_HOST=0.0.0.0
+      - SERVICE_PORT=8001
+      - MAX_WORKERS=1
+      - WORKER_TIMEOUT=120
+      
+      # Model Settings
+      - CROP_CLASSIFIER_MODEL=google/vit-base-patch16-224
+      - DISEASE_DETECTOR_MODEL=microsoft/resnet-50
+      - CONFIDENCE_THRESHOLD=0.7
+      - BATCH_SIZE=4
+      - MAX_IMAGE_SIZE=10485760  # 10MB
+      
+      # GPU Configuration
+      - CUDA_VISIBLE_DEVICES=${CUDA_VISIBLE_DEVICES:-0}
+      - TORCH_CUDA_ARCH_LIST="6.0;6.1;7.0;7.5;8.0;8.6"
+      
+      # Performance
+      - OMP_NUM_THREADS=4
+      - MKL_NUM_THREADS=4
+      
+      # Logging
+      - LOG_LEVEL=${LOG_LEVEL:-INFO}
+      - PYTHONUNBUFFERED=1
+      
+      # Redis for caching (optional)
+      - REDIS_URL=${REDIS_URL:-redis://redis:6379}
+      
+      # Monitoring
+      - ENABLE_METRICS=true
+      - METRICS_PORT=9001
+    volumes:
+      - vision_models:/app/models
+      - vision_logs:/app/logs
+      - vision_temp:/app/temp
+    networks:
+      - ai-services-network
+    deploy:
+      resources:
+        limits:
+          memory: ${VISION_MEMORY_LIMIT:-8G}
+        reservations:
+          memory: ${VISION_MEMORY_RESERVATION:-4G}
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8001/health"]
+      interval: 30s
+      timeout: 15s
+      retries: 3
+      start_period: 60s
+    restart: unless-stopped
+
+  # LLM Service
+  llm-service:
+    build:
+      context: ../llm-service
+      dockerfile: Dockerfile
+      target: ${BUILD_TARGET:-production}
+    container_name: ai4thai-llm-service
+    ports:
+      - "${LLM_SERVICE_PORT:-8002}:8002"
+    environment:
+      # Model Configuration
+      - MODEL_CACHE_DIR=/app/models
+      - HUGGINGFACE_HUB_CACHE=/app/models/hub
+      - TRANSFORMERS_CACHE=/app/models/transformers
+      
+      # HuggingFace Configuration
+      - HUGGINGFACE_HUB_TOKEN=${HUGGINGFACE_HUB_TOKEN}
+      - HF_HOME=/app/models
+      
+      # Service Configuration
+      - SERVICE_HOST=0.0.0.0
+      - SERVICE_PORT=8002
+      - MAX_WORKERS=1
+      - WORKER_TIMEOUT=180
+      
+      # Model Settings
+      - AGRICULTURAL_ADVISOR_MODEL=microsoft/DialoGPT-large
+      - THAI_LANGUAGE_MODEL=airesearch/wangchanberta-base-att-spm-uncased
+      - MAX_LENGTH=512
+      - TEMPERATURE=0.7
+      - TOP_P=0.9
+      - TOP_K=50
+      
+      # External API Keys (fallback)
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
+      
+      # GPU Configuration
+      - CUDA_VISIBLE_DEVICES=${CUDA_VISIBLE_DEVICES:-0}
+      - TORCH_CUDA_ARCH_LIST="6.0;6.1;7.0;7.5;8.0;8.6"
+      
+      # Performance
+      - OMP_NUM_THREADS=8
+      - MKL_NUM_THREADS=8
+      
+      # Logging
+      - LOG_LEVEL=${LOG_LEVEL:-INFO}
+      - PYTHONUNBUFFERED=1
+      
+      # Redis for caching and conversation history
+      - REDIS_URL=${REDIS_URL:-redis://redis:6379}
+      
+      # Monitoring
+      - ENABLE_METRICS=true
+      - METRICS_PORT=9002
+    volumes:
+      - llm_models:/app/models
+      - llm_logs:/app/logs
+      - llm_prompts:/app/prompts
+    networks:
+      - ai-services-network
+    deploy:
+      resources:
+        limits:
+          memory: ${LLM_MEMORY_LIMIT:-16G}
+        reservations:
+          memory: ${LLM_MEMORY_RESERVATION:-8G}
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8002/health"]
+      interval: 30s
+      timeout: 15s
+      retries: 3
+      start_period: 120s
+    restart: unless-stopped
+
+  # Redis for caching and session management
+  redis:
+    image: redis:7-alpine
+    container_name: ai4thai-ai-redis
+    command: redis-server --appendonly yes --maxmemory 2gb --maxmemory-policy allkeys-lru
+    ports:
+      - "${REDIS_PORT:-6379}:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - ai-services-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    restart: unless-stopped
+
+  # Load Balancer for Vision Service
+  vision-lb:
+    image: nginx:alpine
+    container_name: ai4thai-vision-lb
+    ports:
+      - "${VISION_LB_PORT:-8011}:80"
+    volumes:
+      - ./nginx/vision-nginx.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      - vision-service
+    networks:
+      - ai-services-network
+    profiles:
+      - load-balancer
+    restart: unless-stopped
+
+  # Load Balancer for LLM Service
+  llm-lb:
+    image: nginx:alpine
+    container_name: ai4thai-llm-lb
+    ports:
+      - "${LLM_LB_PORT:-8012}:80"
+    volumes:
+      - ./nginx/llm-nginx.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      - llm-service
+    networks:
+      - ai-services-network
+    profiles:
+      - load-balancer
+    restart: unless-stopped
+
+  # Monitoring - Prometheus
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: ai4thai-ai-prometheus
+    ports:
+      - "${PROMETHEUS_PORT:-9090}:9090"
+    volumes:
+      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus_data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/etc/prometheus/console_libraries'
+      - '--web.console.templates=/etc/prometheus/consoles'
+      - '--web.enable-lifecycle'
+    networks:
+      - ai-services-network
+    profiles:
+      - monitoring
+    restart: unless-stopped
+
+  # Monitoring - Grafana
+  grafana:
+    image: grafana/grafana:latest
+    container_name: ai4thai-ai-grafana
+    ports:
+      - "${GRAFANA_PORT:-3001}:3000"
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_PASSWORD:-admin}
+      - GF_USERS_ALLOW_SIGN_UP=false
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./monitoring/grafana:/etc/grafana/provisioning:ro
+    depends_on:
+      - prometheus
+    networks:
+      - ai-services-network
+    profiles:
+      - monitoring
+    restart: unless-stopped
+
+  # Model Downloader (Init Container)
+  model-downloader:
+    build:
+      context: ../shared
+      dockerfile: Dockerfile.model-downloader
+    container_name: ai4thai-model-downloader
+    environment:
+      - HUGGINGFACE_HUB_TOKEN=${HUGGINGFACE_HUB_TOKEN}
+      - MODELS_TO_DOWNLOAD=${MODELS_TO_DOWNLOAD:-google/vit-base-patch16-224,microsoft/resnet-50,microsoft/DialoGPT-large}
+    volumes:
+      - vision_models:/app/vision-models
+      - llm_models:/app/llm-models
+    networks:
+      - ai-services-network
+    profiles:
+      - init
+    restart: "no"
+
+networks:
+  ai-services-network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16
+
+volumes:
+  vision_models:
+    driver: local
+  llm_models:
+    driver: local
+  vision_logs:
+    driver: local
+  llm_logs:
+    driver: local
+  vision_temp:
+    driver: local
+  llm_prompts:
+    driver: local
+  redis_data:
+    driver: local
+  prometheus_data:
+    driver: local
+  grafana_data:
+    driver: local

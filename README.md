@@ -49,28 +49,47 @@ graph TB
 
 ## 🚀 Quick Start
 
-### 🎮 Demo Deployment (Recommended)
+### 🤖 Separate AI Services Deployment (Recommended)
 
-Perfect for demonstrations and testing with external AI services:
+Deploy AI services separately using HuggingFace models for better performance and scalability:
 
 ```bash
-# Clone the repository
+# 1. Deploy AI services (Vision & LLM) separately
+./scripts/deploy-ai-services.sh basic
+
+# 2. Configure main application
+cp .env.example .env
+# Edit .env: Set VISION_SERVICE_URL=http://localhost:8001
+#           Set LLM_SERVICE_URL=http://localhost:8002
+
+# 3. Start main application services
+docker-compose up -d
+```
+
+**Access the application:**
+- 📱 Frontend: http://localhost:8080
+- 🔌 API Gateway: http://localhost:3000
+- 👁️ Vision Service: http://localhost:8001
+- 🧠 LLM Service: http://localhost:8002
+
+> **Note**: AI services use HuggingFace models and require GPU for optimal performance. See [Separate AI Services Guide](docs/deployment/separate-ai-services.md) for details.
+
+### 🎮 Demo Deployment (External AI Services)
+
+For quick demonstrations using external AI4Thai services:
+
+```bash
+# Clone and setup
 git clone https://github.com/your-org/ai4thai-crop-guardian.git
 cd ai4thai-crop-guardian
 
-# Setup environment (add your AI4Thai API key)
+# Configure for external AI services
 cp .env.example .env
 # Edit .env: AI4THAI_API_KEY=your_api_key_here
 
-# Start demo (one command!)
+# Start demo
 ./scripts/demo-start.sh
 ```
-
-**Access the demo:**
-- 📱 Frontend: http://localhost:8080
-- 🔌 API: http://localhost:3000
-
-> **Note**: AI services (vision & LLM) run on AI4Thai infrastructure. You only need Docker and an API key!
 
 ### 💻 Full Development Setup
 
@@ -81,6 +100,7 @@ For complete local development with all services:
 - [Python](https://www.python.org/) (3.9+)
 - [Docker](https://www.docker.com/) & Docker Compose
 - [Node.js](https://nodejs.org/) (for frontend tooling)
+- NVIDIA GPU (recommended for AI services)
 
 ```bash
 # Full development setup
@@ -89,12 +109,6 @@ For complete local development with all services:
 # Start all services locally
 ./scripts/dev-start.sh
 ```
-
-**Access development environment:**
-- Frontend: http://localhost:8080
-- API Gateway: http://localhost:3000
-- Vision Service: http://localhost:8001 (local)
-- LLM Service: http://localhost:8002 (local)
 
 ## 📁 Project Structure
 
