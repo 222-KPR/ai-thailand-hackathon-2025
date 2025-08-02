@@ -56,7 +56,6 @@ pub struct ImageMetadata {
     pub width: u32,
     pub height: u32,
     pub format: String,         // "jpeg", "png", etc.
-    pub location: Option<GeoLocation>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -105,7 +104,7 @@ pub struct ChatContext {
     pub weather_context: Option<WeatherContext>,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub struct ChatMessage {
     pub role: String,           // "user", "assistant", "system"
     pub content: String,

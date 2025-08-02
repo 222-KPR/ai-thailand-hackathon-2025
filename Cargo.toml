@@ -44,14 +44,16 @@ uuid = { version = "1.0", features = ["v4", "serde"] }
 # Time handling
 chrono = { version = "0.4", features = ["serde"] }
 
+# Validation
+validator = { version = "0.18", features = ["derive"] }
+
 # HTTP client
 reqwest = { version = "0.11", features = ["json", "stream"] }
 
 # Circuit breaker and resilience
-hystrix = "0.1"
-tower-timeout = "0.1"
+tower-timeout = "0.3"
 
-# Service discovery
+# Service discovery and client
 consul = "0.4"
 
 # Testing
