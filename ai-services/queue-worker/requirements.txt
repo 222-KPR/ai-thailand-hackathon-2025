@@ -1,4 +1,4 @@
-# Queue Worker Dependencies for AI Services
+# Queue Worker Dependencies for Vision Service
 fastapi==0.104.1
 uvicorn[standard]==0.24.0
 redis==5.0.1
@@ -6,9 +6,13 @@ pydantic==2.5.0
 pydantic-settings==2.1.0
 celery==5.3.4
 kombu==5.3.4
-sqlalchemy==2.0.23
-psycopg2-binary==2.9.9
-alembic==1.13.1
+
+# Image processing
+Pillow==10.1.0
+httpx==0.25.2
+
+# File handling
+aiofiles==23.2.1
 
 # Logging and monitoring
 structlog==23.2.0

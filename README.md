@@ -1,14 +1,10 @@
 # AI4Thai Crop Guardian 🌾
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Rust](https://img.shields.io/badge/rust-%23000000.svg?style=for-the-badge&logo=rust&logoColor=white)](https://www.rust-lang.org/)
-[![Python](https://img.shields.io/badge/python-3670A0?style=for-the-badge&logo=python&logoColor=ffdd54)](https://www.python.org/)
-
 > AI-powered crop disease detection and advisory system for Thai farmers
 
 ## 🎯 Overview
 
-AI4Thai Crop Guardian democratizes AI-powered agricultural expertise for Thai farmers through intelligent crop disease detection, multimodal chat interface, and personalized treatment recommendations.
+AI4Thai Crop Guardian provides intelligent crop disease detection, multimodal chat interface, and personalized treatment recommendations for Thai farmers using computer vision and AI.
 
 ### Key Features
 
@@ -28,27 +24,25 @@ AI4Thai Crop Guardian democratizes AI-powered agricultural expertise for Thai fa
 
 ## 🏗️ Architecture
 
-The system supports **two deployment modes**:
+The system uses a microservices architecture with two deployment modes:
 
-### 1. Standalone AI Services (Self-hosted)
+### Main Application (Always Deployed)
 ```
-Frontend PWA         API Gateway         AI Services Cluster
-(Yew WebAssembly) → (Rust/Axum)    → [Vision + Queue Worker]
-                         ↓                    ↓
-                 PostgreSQL          Redis + Celery
+Frontend PWA         API Gateway         Chat Storage
+(Yew WebAssembly) → (Rust/Axum)    →   (Redis)
+     :8080              :3000            :6379
 ```
 
-### 2. External AI Services (Demo/Production)
+### AI Services (Deployed Separately)
 ```
-Frontend PWA         API Gateway         External APIs
-(Yew WebAssembly) → (Rust/Axum)    → (AI4Thai Services)
-                         ↓
-                 PostgreSQL + Redis
+Vision Service    Queue Worker     Background Tasks
+(Python/FastAPI) (Python/Celery) (Celery Worker/Beat)
+     :2001           :2003              + Redis
 ```
 
 ## 🚀 Quick Start
 
-### Option 1: Demo with External AI Services (Recommended)
+### Option 1: Demo with External AI Services
 ```bash
 git clone <repository-url>
 cd ai4thai-crop-guardian
@@ -62,79 +56,154 @@ cp .env.example .env
 ```
 **Access**: Frontend at http://localhost:8080, API at http://localhost:3000
 
-### Option 2: Full Self-hosted AI Services
+### Option 2: Full Self-hosted Deployment
 ```bash
-# Deploy standalone AI services first
+# Deploy AI services first
 cd ai-services/deployment
 docker-compose up -d
 
-# Then start main application
+# Start main application
 cd ../../
 ./scripts/setup-dev.sh
 ./scripts/dev-start.sh
 ```
-**Access**: AI Services at http://localhost:8001-8003, Main app at http://localhost:8080
 
 ## 🛠️ Development
 
+### Prerequisites
+- Rust 1.70+
+- Node.js 18+
+- Docker & Docker Compose
+- Python 3.9+ (for AI services)
+
+### Setup
+```bash
+# Install development tools
+./scripts/setup-dev.sh
+
+# Start all services
+./scripts/dev-start.sh
+
+# Stop services
+./scripts/dev-stop.sh
+```
+
 ### Build Commands
 ```bash
-# Main application (API Gateway + Frontend)
+# Main application
 cargo build --workspace
 cd frontend && trunk build
 
-# AI Services (if self-hosting)
+# AI services (if self-hosting)
 cd ai-services/deployment && docker-compose build
 ```
 
 ### Testing
 ```bash
-./scripts/test-all.sh            # All tests
-cd api-gateway && cargo test     # Backend tests
+./scripts/test-all.sh              # All tests
+cd api-gateway && cargo test       # Backend tests
 cd frontend && wasm-pack test --headless --firefox  # Frontend tests
+cd ai-services && source venv/bin/activate && pytest  # AI services tests
 ```
 
 ## 📁 Project Structure
 
 ```
 ai4thai-crop-guardian/
-├── api-gateway/          # Rust API Gateway (main application)
-├── frontend/             # Yew WebAssembly PWA (main application)  
-├── shared/               # Common Rust types (main application)
-├── ai-services/          # Standalone AI Services Deployment
+├── api-gateway/          # Rust API Gateway (main backend)
+├── frontend/             # Yew WebAssembly PWA
+├── shared/               # Common Rust types
+├── ai-services/          # AI Services (deployed separately)
 │   ├── vision-service/   # Computer vision service
 │   ├── queue-worker/     # Background job processing
 │   └── deployment/       # Docker compose for AI services
-└── scripts/              # Development scripts
+├── scripts/              # Development and deployment scripts
+└── .gitlab-ci.yml        # CI/CD pipeline
 ```
-
-**Deployment Modes**:
-- **External AI**: Deploy only `api-gateway` + `frontend` (connects to AI4Thai APIs)
-- **Self-hosted AI**: Deploy `ai-services/` cluster + `api-gateway` + `frontend`
 
 ## 🔧 Configuration
 
-### Required Environment Variables
+### Environment Variables
 ```bash
-# For demo deployment (external AI services)
+# Main Application
+REDIS_URL=redis://localhost:6379
+API_GATEWAY_PORT=3000
+FRONTEND_PORT=8080
+
+# AI Services (External Mode)
 AI4THAI_API_KEY=your_api_key_here
 
-# For self-hosted deployment
+# AI Services (Self-hosted Mode)
 VISION_SERVICE_URL=http://localhost:2001
 QUEUE_WORKER_URL=http://localhost:2003
-
-# Chat storage (both modes)
-REDIS_URL=redis://localhost:6379
 ```
 
 ### Service Ports
-**Main Application:**
-- Frontend: 8080
-- API Gateway: 3000
+- **Frontend**: 8080
+- **API Gateway**: 3000
+- **Vision Service**: 2001
+- **Queue Worker**: 2003
+- **Vision Load Balancer**: 2011
+- **Redis**: 6379
+- **Prometheus**: 9090
+- **Grafana**: 3001
 
-**AI Services (when self-hosted):**
-- Vision Service: 2001
-- Queue Worker: 2003
+## 🚀 Deployment
+
+### GitLab CI/CD Pipeline
+
+The repository includes a GitLab CI/CD pipeline for automated AI services deployment:
+
+```bash
+# Tag and deploy
+git tag v1.0.0
+git push origin v1.0.0
+```
+
+**Pipeline Requirements**:
+- GitLab runner with tag `hackathon-siamai2`
+- Docker and Docker Compose installed
+- 8GB+ RAM, 4+ CPU cores
+- Network access to ports 2001-2011, 6379, 9090, 3001
+
+**Pipeline Jobs**:
+- `build-ai-services`: Builds Docker images (automatic)
+- `deploy-ai-services`: Deploys services (manual)
+- `cleanup-ai-services`: Cleanup deployment (manual)
+- `health-check`: Service health verification (manual)
+
+### Manual Deployment
+
+```bash
+# AI services deployment
+./scripts/deploy-ai-services.sh deploy
+
+# Check deployment status
+./scripts/deploy-ai-services.sh status
+
+# Health checks
+./scripts/deploy-ai-services.sh health
+
+# Cleanup
+./scripts/deploy-ai-services.sh cleanup
+```
+
+### Deployed Services
+
+| Service | Container Name | Port | Purpose |
+|---------|----------------|------|---------|
+| Vision Service | `team10-vision-service` | 2001 | Computer vision API |
+| Queue Worker | `team10-queue-worker` | 2003 | Background job processing |
+| Celery Worker | `team10-celery-worker` | - | Task processor |
+| Celery Beat | `team10-celery-beat` | - | Task scheduler |
+| Redis | `team10-ai-redis` | 6379 | Cache and job queue |
+| Load Balancer | `team10-vision-lb` | 2011 | Vision service LB |
+| Prometheus | `team10-ai-prometheus` | 9090 | Metrics collection |
+| Grafana | `team10-ai-grafana` | 3001 | Monitoring dashboards |
+
+All services use standardized team10 volumes:
+- `team10-root`: Root access for all services
+- `team10-data`: Data storage (models, configs, databases)
 
 ## 📊 API Reference
 
@@ -148,6 +217,66 @@ Unified endpoint for crop analysis and advisory.
 
 **Response**: `{"answer": "Analysis result..."}`
 
+## 🔍 AI Services
+
+### Vision Service Features
+- **Pest Detection**: YOLO11s model (`underdogquality/yolo11s-pest-detection`)
+- **Disease Detection**: LLaVA model (`YuchengShi/LLaVA-v1.5-7B-Plant-Leaf-Diseases-Detection`)
+- **Thai Language Support**: Results and recommendations in Thai
+- **Real-time Analysis**: Fast async processing with dual model support
+
+### Queue Worker Features
+- **Background Processing**: Celery-based async job processing
+- **Image Management**: Validation, preprocessing, and temporary storage
+- **Job Tracking**: Full lifecycle management with status monitoring
+- **Error Handling**: Automatic retries and comprehensive error reporting
+
+## 🔍 Monitoring & Health Checks
+
+```bash
+# Check running containers
+docker ps --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}" | grep team10
+
+# View logs
+docker logs team10-vision-service
+docker logs team10-queue-worker
+
+# Health checks
+curl -f http://localhost:2001/health  # Vision Service
+curl -f http://localhost:2003/health  # Queue Worker
+
+# Monitor resources
+docker stats $(docker ps --format "{{.Names}}" | grep team10)
+
+# View volumes
+docker volume ls | grep team10
+```
+
+## 🚨 Troubleshooting
+
+### Common Issues
+
+**Build Failures**:
+```bash
+docker info                    # Check Docker daemon
+df -h                         # Check available space
+docker system prune -f        # Clean up Docker
+```
+
+**Deployment Failures**:
+```bash
+docker logs team10-vision-service
+docker logs team10-queue-worker
+netstat -tulpn | grep -E ':(2001|2003|2011|6379|9090|3001)'
+```
+
+**Health Check Failures**:
+```bash
+curl -v http://localhost:2001/health
+curl -v http://localhost:2003/health
+docker ps | grep team10
+```
+
 ## 🤝 Contributing
 
 1. Fork the repository
@@ -159,10 +288,6 @@ Unified endpoint for crop analysis and advisory.
 ## 📄 License
 
 MIT License - see [LICENSE](LICENSE) file for details.
-
-## 📞 Support
-
-- 📧 Email: rpithaksiripan@gmail.com
 
 ---
 
