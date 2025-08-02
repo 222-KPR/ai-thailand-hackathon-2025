@@ -1,0 +1,41 @@
+services:
+  frontend-dev:
+    build:
+      context: .
+      dockerfile: frontend/Dockerfile
+      target: development
+    container_name: ai4thai-frontend-dev
+    ports:
+      - "8080:8080"
+    volumes:
+      # Mount source code for hot reload
+      - ./frontend/src:/app/frontend/src:ro
+      - ./frontend/assets:/app/frontend/assets:ro
+      - ./frontend/index.html:/app/frontend/index.html:ro
+      - ./frontend/Trunk.toml:/app/frontend/Trunk.toml:ro
+      - ./shared:/app/shared:ro
+    environment:
+      - RUST_LOG=info
+      - TRUNK_SERVE_HOST=0.0.0.0
+      - TRUNK_SERVE_PORT=8080
+    networks:
+      - ai4thai-network
+    restart: unless-stopped
+
+  frontend-prod:
+    build:
+      context: .
+      dockerfile: frontend/Dockerfile
+      target: production
+    container_name: ai4thai-frontend-prod
+    ports:
+      - "8081:8080"
+    networks:
+      - ai4thai-network
+    restart: unless-stopped
+    profiles:
+      - production
+
+networks:
+  ai4thai-network:
+    external: true
