@@ -49,43 +49,52 @@ graph TB
 
 ## 🚀 Quick Start
 
-### Prerequisites
+### 🎮 Demo Deployment (Recommended)
 
+Perfect for demonstrations and testing with external AI services:
+
+```bash
+# Clone the repository
+git clone https://github.com/your-org/ai4thai-crop-guardian.git
+cd ai4thai-crop-guardian
+
+# Setup environment (add your AI4Thai API key)
+cp .env.example .env
+# Edit .env: AI4THAI_API_KEY=your_api_key_here
+
+# Start demo (one command!)
+./scripts/demo-start.sh
+```
+
+**Access the demo:**
+- 📱 Frontend: http://localhost:8080
+- 🔌 API: http://localhost:3000
+
+> **Note**: AI services (vision & LLM) run on AI4Thai infrastructure. You only need Docker and an API key!
+
+### 💻 Full Development Setup
+
+For complete local development with all services:
+
+**Prerequisites:**
 - [Rust](https://rustup.rs/) (1.70+)
 - [Python](https://www.python.org/) (3.9+)
 - [Docker](https://www.docker.com/) & Docker Compose
 - [Node.js](https://nodejs.org/) (for frontend tooling)
 
-### Development Setup
-
-1. **Clone the repository**
-   ```bash
-   git clone https://github.com/your-org/ai4thai-crop-guardian.git
-   cd ai4thai-crop-guardian
-   ```
-
-2. **Environment setup**
-   ```bash
-   cp .env.example .env
-   # Edit .env with your configuration
-   ```
-
-3. **Start development environment**
-   ```bash
-   ./scripts/dev-start.sh
-   ```
-
-4. **Access the application**
-   - Frontend: http://localhost:8080
-   - API Gateway: http://localhost:3000
-   - Vision Service: http://localhost:8001
-   - LLM Service: http://localhost:8002
-
-### Production Deployment
-
 ```bash
-docker-compose -f docker-compose.prod.yml up -d
+# Full development setup
+./scripts/setup-dev.sh
+
+# Start all services locally
+./scripts/dev-start.sh
 ```
+
+**Access development environment:**
+- Frontend: http://localhost:8080
+- API Gateway: http://localhost:3000
+- Vision Service: http://localhost:8001 (local)
+- LLM Service: http://localhost:8002 (local)
 
 ## 📁 Project Structure
 
