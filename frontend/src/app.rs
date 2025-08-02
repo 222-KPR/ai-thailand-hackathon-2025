@@ -3,11 +3,9 @@ use yew_router::prelude::*;
 use shared::{ChatMessage, Language};
 use uuid::Uuid;
 
-use crate::components::{
-    chat::ChatInterface,
-    header::Header,
-};
 use crate::i18n::I18nContext;
+use crate::styles::colors::*;
+use crate::components::ui::*;
 
 /// Main application routes
 #[derive(Clone, Routable, PartialEq)]
