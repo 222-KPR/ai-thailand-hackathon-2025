@@ -1,0 +1,30 @@
+[build]
+target = "index.html"
+dist = "dist"
+
+[watch]
+watch = ["src", "static"]
+ignore = ["dist"]
+
+[serve]
+address = "127.0.0.1"
+port = 8080
+open = false
+
+[clean]
+dist = "dist"
+
+[[hooks]]
+stage = "pre_build"
+command = "wasm-pack"
+command_arguments = ["--version"]
+
+[[hooks]]
+stage = "build"
+command = "wasm-opt"
+command_arguments = ["-Oz", "--output", "{file}", "{file}"]
+
+[tools]
+sass = "2.0.0"
+wasm-bindgen = "0.2.93"
+wasm-opt = "0.116.0"
