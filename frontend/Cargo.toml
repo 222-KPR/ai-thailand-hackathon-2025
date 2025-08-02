@@ -13,14 +13,59 @@ serde_json = { workspace = true }
 uuid = { workspace = true }
 chrono = { workspace = true }
 
-# Frontend specific
+# Yew framework
 yew = { version = "0.21", features = ["csr"] }
-web-sys = "0.3"
+yew-router = "0.18"
+yewdux = "0.10"
+
+# WASM bindings
 wasm-bindgen = "0.2"
 wasm-bindgen-futures = "0.4"
 js-sys = "0.3"
-gloo = { version = "0.11", features = ["net", "storage"] }
-yew-router = "0.18"
+web-sys = { version = "0.3", features = [
+    "console",
+    "MediaDevices",
+    "MediaStream",
+    "MediaStreamConstraints",
+    "MediaRecorder",
+    "Navigator",
+    "Window",
+    "Document",
+    "Element",
+    "HtmlVideoElement",
+    "HtmlCanvasElement",
+    "CanvasRenderingContext2d",
+    "ImageData",
+    "Blob",
+    "FileReader",
+    "WebSocket",
+    "MessageEvent",
+    "Storage",
+    "Location",
+    "ServiceWorkerRegistration",
+    "NotificationPermission",
+    "Notification",
+    "GeolocationPosition",
+] }
+
+# Network and utilities
+gloo = { version = "0.11", features = ["net", "storage", "timers", "events"] }
+gloo-net = { version = "0.6", features = ["websocket"] }
+reqwest = { version = "0.11", features = ["json"] }
+
+# UI and styling
+stylist = { version = "0.13", features = ["yew"] }
+
+# Internationalization
+yew-i18n = "0.7"
+
+# Error handling
+anyhow = { workspace = true }
+thiserror = { workspace = true }
+
+# Logging
+log = "0.4"
+wasm-logger = "0.2"
 
 # Local dependencies
 shared = { path = "../shared" }
