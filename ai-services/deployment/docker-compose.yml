@@ -10,7 +10,7 @@ services:
       context: ../vision-service
       dockerfile: Dockerfile
       target: ${BUILD_TARGET:-production}
-    container_name: ai4thai-vision-service
+    container_name: team10-vision-service
     ports:
       - "${VISION_SERVICE_PORT:-2001}:2001"
     environment:
@@ -79,7 +79,7 @@ services:
       context: ../queue-worker
       dockerfile: Dockerfile
       target: ${BUILD_TARGET:-production}
-    container_name: ai4thai-queue-worker
+    container_name: team10-queue-worker
     ports:
       - "${QUEUE_WORKER_PORT:-2003}:2003"
     environment:
@@ -108,7 +108,7 @@ services:
       context: ../queue-worker
       dockerfile: Dockerfile
       target: ${BUILD_TARGET:-production}
-    container_name: ai4thai-celery-worker
+    container_name: team10-celery-worker
     command: celery -A tasks worker --loglevel=info --concurrency=2
     environment:
       - REDIS_URL=redis://redis:6379/0
@@ -135,7 +135,7 @@ services:
       context: ../queue-worker
       dockerfile: Dockerfile
       target: ${BUILD_TARGET:-production}
-    container_name: ai4thai-celery-beat
+    container_name: team10-celery-beat
     command: celery -A tasks beat --loglevel=info
     environment:
       - REDIS_URL=redis://redis:6379/0
@@ -150,7 +150,7 @@ services:
   # Redis - Cache, Session Management, and Job Queue
   redis:
     image: redis:7-alpine
-    container_name: ai4thai-ai-redis
+    container_name: team10-ai-redis
     command: redis-server --appendonly yes --maxmemory 4gb --maxmemory-policy allkeys-lru
     ports:
       - "${REDIS_PORT:-6379}:6379"
@@ -168,7 +168,7 @@ services:
   # Load Balancer for Vision Service
   vision-lb:
     image: nginx:alpine
-    container_name: ai4thai-vision-lb
+    container_name: team10-vision-lb
     ports:
       - "${VISION_LB_PORT:-2011}:80"
     volumes:
@@ -184,7 +184,7 @@ services:
   # Monitoring - Prometheus
   prometheus:
     image: prom/prometheus:latest
-    container_name: ai4thai-ai-prometheus
+    container_name: team10-ai-prometheus
     ports:
       - "${PROMETHEUS_PORT:-9090}:9090"
     volumes:
@@ -205,7 +205,7 @@ services:
   # Monitoring - Grafana
   grafana:
     image: grafana/grafana:latest
-    container_name: ai4thai-ai-grafana
+    container_name: team10-ai-grafana
     ports:
       - "${GRAFANA_PORT:-3001}:3000"
     environment:

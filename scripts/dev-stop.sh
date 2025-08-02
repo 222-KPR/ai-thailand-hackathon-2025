@@ -85,7 +85,7 @@ stop_redis() {
     
     cd "$PROJECT_ROOT"
     
-    if docker ps --format "table {{.Names}}" | grep -q "ai4thai-redis"; then
+    if docker ps --format "table {{.Names}}" | grep -q "team10-redis"; then
         docker-compose stop redis
         success "Redis container stopped"
     else

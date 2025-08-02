@@ -78,7 +78,7 @@ check_dependencies() {
 start_redis() {
     log "Starting Redis for chat storage..."
     
-    if docker ps --format "table {{.Names}}" | grep -q "ai4thai-redis"; then
+    if docker ps --format "table {{.Names}}" | grep -q "team10-redis"; then
         warn "Redis container already running"
         return 0
     fi
@@ -92,7 +92,7 @@ start_redis() {
     local attempt=1
     
     while [[ $attempt -le $max_attempts ]]; do
-        if docker exec ai4thai-redis redis-cli ping &> /dev/null; then
+        if docker exec team10-redis redis-cli ping &> /dev/null; then
             success "Redis is ready"
             return 0
         fi

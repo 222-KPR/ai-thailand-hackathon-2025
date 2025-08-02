@@ -11,7 +11,7 @@ services:
       context: ./frontend
       dockerfile: Dockerfile
       target: production
-    container_name: ai4thai-frontend
+    container_name: team10-frontend
     ports:
       - "${FRONTEND_PORT:-8080}:80"
     environment:
@@ -28,7 +28,7 @@ services:
       context: ./api-gateway
       dockerfile: Dockerfile
       target: production
-    container_name: ai4thai-api-gateway
+    container_name: team10-api-gateway
     ports:
       - "${API_GATEWAY_PORT:-3000}:3000"
     environment:
@@ -61,7 +61,7 @@ services:
   # Redis for chat storage
   redis:
     image: redis:7-alpine
-    container_name: ai4thai-redis
+    container_name: team10-redis
     command: redis-server --appendonly yes --maxmemory 1gb --maxmemory-policy allkeys-lru
     ports:
       - "${REDIS_PORT:-6379}:6379"
