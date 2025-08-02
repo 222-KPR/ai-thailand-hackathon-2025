@@ -1,460 +1,431 @@
-// Status Card Component - 2025 Design System
-// Information display card with dopamine colors and animations
+// Copyright (c) 2025 AI4Thai Crop Guardian
+// Licensed under the MIT License
+
+//! Status Card Component
+//! 
+//! This module implements status cards for displaying metrics, statistics,
+//! and key information with trend indicators and dopamine colors.
 
 use yew::prelude::*;
-use crate::styles::{use_theme, ColorPalette};
+use crate::styles::{colors::*, spacing::*, typography::*};
 
-#[derive(Debug, Clone, PartialEq)]
-pub enum StatusCardVariant {
-    Default,
-    Success,
-    Warning,
-    Error,
-    Info,
-    Custom(String),
-}
-
-#[derive(Debug, Clone, PartialEq)]
+/// Trend direction for status indicators
+#[derive(Clone, PartialEq)]
 pub enum TrendDirection {
+    /// Upward trend (positive)
     Up,
+    /// Downward trend (negative)
     Down,
+    /// Neutral/stable trend
     Neutral,
 }
 
-#[derive(Properties, PartialEq)]
-pub struct StatusCardProps {
-    pub title: String,
-    pub value: String,
-    pub trend: Option<String>,
-    pub trend_direction: Option<TrendDirection>,
-    pub variant: Option<StatusCardVariant>,
-    pub icon: Option<String>,
-    pub subtitle: Option<String>,
-    pub onclick: Option<Callback<MouseEvent>>,
-    pub class: Option<String>,
-    pub style: Option<String>,
-    pub animated: Option<bool>,
-    pub loading: Option<bool>,
+impl TrendDirection {
+    /// Get the color for the trend direction
+    pub fn color(&self) -> &'static str {
+        match self {
+            TrendDirection::Up => SemanticColors::SUCCESS,
+            TrendDirection::Down => SemanticColors::ERROR,
+            TrendDirection::Neutral => TextColors::SECONDARY_LIGHT,
+        }
+    }
+    
+    /// Get the icon for the trend direction
+    pub fn icon(&self) -> &'static str {
+        match self {
+            TrendDirection::Up => "↗",
+            TrendDirection::Down => "↘",
+            TrendDirection::Neutral => "→",
+        }
+    }
 }
 
+/// Status card size variants
+#[derive(Clone, PartialEq)]
+pub enum StatusCardSize {
+    /// Compact card for dense layouts
+    Compact,
+    /// Standard card size
+    Standard,
+    /// Large card for prominent metrics
+    Large,
+}
+
+impl StatusCardSize {
+    /// Get the padding for the card size
+    pub fn padding(&self) -> &'static str {
+        match self {
+            StatusCardSize::Compact => Spacing::MD,
+            StatusCardSize::Standard => Spacing::XL,
+            StatusCardSize::Large => Spacing::XXL,
+        }
+    }
+    
+    /// Get the value font size for the card size
+    pub fn value_font_size(&self) -> &'static str {
+        match self {
+            StatusCardSize::Compact => TypographyScale::H4_SIZE,
+            StatusCardSize::Standard => TypographyScale::H2_SIZE,
+            StatusCardSize::Large => TypographyScale::H1_SIZE,
+        }
+    }
+    
+    /// Get the label font size for the card size
+    pub fn label_font_size(&self) -> &'static str {
+        match self {
+            StatusCardSize::Compact => TypographyScale::CAPTION_SIZE,
+            StatusCardSize::Standard => TypographyScale::BODY_SMALL_SIZE,
+            StatusCardSize::Large => TypographyScale::BODY_SIZE,
+        }
+    }
+}
+
+/// Properties for the status card component
+#[derive(Properties, PartialEq)]
+pub struct StatusCardProps {
+    /// Card title/label
+    pub label: String,
+    
+    /// Main value to display
+    pub value: String,
+    
+    /// Optional unit for the value (e.g., "%", "kg", "฿")
+    #[prop_or_default]
+    pub unit: Option<String>,
+    
+    /// Optional trend information
+    #[prop_or_default]
+    pub trend: Option<TrendInfo>,
+    
+    /// Card size variant
+    #[prop_or(StatusCardSize::Standard)]
+    pub size: StatusCardSize,
+    
+    /// Background color (uses dopamine palette)
+    #[prop_or_else(|| SurfaceColors::SURFACE_LIGHT.to_string())]
+    pub background: String,
+    
+    /// Accent color for highlights
+    #[prop_or_else(|| PrimaryColors::ELECTRIC_BLUE.to_string())]
+    pub accent_color: String,
+    
+    /// Whether the card is interactive
+    #[prop_or(false)]
+    pub interactive: bool,
+    
+    /// Click handler for interactive cards
+    #[prop_or_default]
+    pub onclick: Callback<MouseEvent>,
+    
+    /// Optional icon to display
+    #[prop_or_default]
+    pub icon: Option<Html>,
+    
+    /// Additional description text
+    #[prop_or_default]
+    pub description: Option<String>,
+    
+    /// Whether to show animated background
+    #[prop_or(false)]
+    pub animated_background: bool,
+    
+    /// Additional CSS classes
+    #[prop_or_default]
+    pub class: Classes,
+}
+
+/// Trend information for status cards
+#[derive(Clone, PartialEq)]
+pub struct TrendInfo {
+    /// Trend direction
+    pub direction: TrendDirection,
+    /// Trend value (e.g., "12%", "+5")
+    pub value: String,
+    /// Trend description (e.g., "vs last month")
+    pub description: String,
+}
+
+/// Status card component for displaying metrics and statistics
 #[function_component(StatusCard)]
 pub fn status_card(props: &StatusCardProps) -> Html {
-    let theme = use_theme();
-    let colors = &theme.colors;
-    
-    let variant = props.variant.as_ref().unwrap_or(&StatusCardVariant::Default);
-    let trend_direction = props.trend_direction.as_ref().unwrap_or(&TrendDirection::Neutral);
-    let animated = props.animated.unwrap_or(true);
-    let loading = props.loading.unwrap_or(false);
-    let clickable = props.onclick.is_some();
-    
-    // Determine colors based on variant
-    let (background_color, accent_color, text_color) = match variant {
-        StatusCardVariant::Default => (
-            colors.surface_light,
-            colors.primary_electric_blue,
-            colors.text_primary
-        ),
-        StatusCardVariant::Success => (
-            colors.with_opacity(colors.accent_lime_green, 0.1),
-            colors.accent_lime_green,
-            colors.text_primary
-        ),
-        StatusCardVariant::Warning => (
-            colors.with_opacity(colors.accent_yellow, 0.1),
-            colors.accent_yellow,
-            colors.text_primary
-        ),
-        StatusCardVariant::Error => (
-            colors.with_opacity(colors.error, 0.1),
-            colors.error,
-            colors.text_primary
-        ),
-        StatusCardVariant::Info => (
-            colors.with_opacity(colors.primary_electric_blue, 0.1),
-            colors.primary_electric_blue,
-            colors.text_primary
-        ),
-        StatusCardVariant::Custom(color) => (
-            colors.with_opacity(color, 0.1),
-            color.as_str(),
-            colors.text_primary
-        ),
+    let animated_bg = if props.animated_background {
+        format!(
+            "background: linear-gradient(-45deg, {}, {}, {}, {});
+             background-size: 400% 400%;
+             animation: gradient-shift 8s ease infinite;",
+            props.background,
+            format!("{}20", props.accent_color.trim_start_matches('#')),
+            props.background,
+            format!("{}10", props.accent_color.trim_start_matches('#'))
+        )
+    } else {
+        format!("background: {};", props.background)
     };
     
-    // Trend styling
-    let (trend_color, trend_icon) = match trend_direction {
-        TrendDirection::Up => (colors.accent_lime_green, "📈"),
-        TrendDirection::Down => (colors.error, "📉"),
-        TrendDirection::Neutral => (colors.text_secondary, "➡️"),
+    let interactive_styles = if props.interactive {
+        format!(
+            "cursor: pointer;
+             transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+             
+             &:hover {{
+               transform: translateY(-4px);
+               box-shadow: {};
+             }}
+             
+             &:active {{
+               transform: translateY(-2px);
+             }}",
+            Shadows::XL
+        )
+    } else {
+        "transition: box-shadow 0.3s ease;".to_string()
     };
     
-    let card_style = format!(
-        "background: {};
-         border-left: 4px solid {};
-         padding: var(--space-lg);
-         border-radius: var(--radius-xl);
-         box-shadow: var(--shadow-md);
-         transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-         cursor: {};
-         position: relative;
+    let card_styles = format!(
+        "position: relative;
+         padding: {};
+         border-radius: {};
+         box-shadow: {};
          overflow: hidden;
-         {}",
-        background_color,
-        accent_color,
-        if clickable { "pointer" } else { "default" },
-        props.style.as_deref().unwrap_or("")
+         {}
+         {}
+         
+         /* Gradient animation */
+         @keyframes gradient-shift {{
+           0% {{ background-position: 0% 50%; }}
+           50% {{ background-position: 100% 50%; }}
+           100% {{ background-position: 0% 50%; }}
+         }}",
+        props.size.padding(),
+        BorderRadius::LG,
+        Shadows::MD,
+        animated_bg,
+        interactive_styles
     );
     
-    let card_classes = classes!(
-        "status-card",
-        match variant {
-            StatusCardVariant::Default => "status-card-default",
-            StatusCardVariant::Success => "status-card-success",
-            StatusCardVariant::Warning => "status-card-warning",
-            StatusCardVariant::Error => "status-card-error",
-            StatusCardVariant::Info => "status-card-info",
-            StatusCardVariant::Custom(_) => "status-card-custom",
-        },
-        if clickable { "status-card-clickable" } else { "" },
-        if animated { "status-card-animated" } else { "" },
-        if loading { "status-card-loading" } else { "" },
-        props.class.clone()
-    );
-    
-    let onclick = {
-        let onclick = props.onclick.clone();
-        Callback::from(move |e: MouseEvent| {
-            if let Some(onclick) = &onclick {
-                onclick.emit(e);
-            }
-        })
+    let value_with_unit = if let Some(unit) = &props.unit {
+        format!("{}{}", props.value, unit)
+    } else {
+        props.value.clone()
     };
     
     html! {
         <div 
-            class={card_classes}
-            style={card_style}
-            onclick={onclick}
+            class={classes!("status-card", props.class.clone())}
+            style={card_styles}
+            onclick={props.onclick.clone()}
         >
-            // Loading overlay
-            if loading {
-                <div class="status-card-loading-overlay">
-                    <div class="status-card-loading-spinner"></div>
+            // Header with label and optional icon
+            <div class="status-card-header" 
+                 style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 1rem;">
+                
+                <div class="status-card-label-group" style="display: flex; align-items: center; gap: 0.5rem;">
+                    if let Some(icon) = &props.icon {
+                        <div class="status-card-icon" style={format!("color: {};", props.accent_color)}>
+                            { icon.clone() }
+                        </div>
+                    }
+                    <span class="status-card-label" 
+                          style={format!("font-size: {}; font-weight: {}; color: {}; opacity: 0.8;",
+                                        props.size.label_font_size(),
+                                        FontWeights::MEDIUM,
+                                        TextColors::SECONDARY_LIGHT)}>
+                        { &props.label }
+                    </span>
                 </div>
-            }
-            
-            // Card header with icon and title
-            <div class="status-card-header">
-                if let Some(icon) = &props.icon {
-                    <div class="status-card-icon" style={format!("color: {}", accent_color)}>
-                        {icon}
+                
+                if let Some(trend) = &props.trend {
+                    <div class="status-card-trend" 
+                         style={format!("display: flex; align-items: center; gap: 0.25rem; 
+                                        font-size: {}; color: {};",
+                                       TypographyScale::CAPTION_SIZE,
+                                       trend.direction.color())}>
+                        <span class="trend-icon">{ trend.direction.icon() }</span>
+                        <span class="trend-value">{ &trend.value }</span>
                     </div>
                 }
-                <div class="status-card-title-group">
-                    <h3 class="status-card-title">{&props.title}</h3>
-                    if let Some(subtitle) = &props.subtitle {
-                        <p class="status-card-subtitle">{subtitle}</p>
-                    }
-                </div>
             </div>
             
             // Main value display
-            <div class="status-card-value" style={format!("color: {}", accent_color)}>
-                {&props.value}
+            <div class="status-card-value" 
+                 style={format!("font-size: {}; font-weight: {}; color: {}; line-height: 1.2; margin-bottom: 0.5rem;",
+                               props.size.value_font_size(),
+                               FontWeights::BOLD,
+                               TextColors::PRIMARY_LIGHT)}>
+                { value_with_unit }
             </div>
             
-            // Trend information
-            if let Some(trend) = &props.trend {
-                <div class="status-card-trend">
-                    <span class="status-card-trend-icon">{trend_icon}</span>
-                    <span 
-                        class="status-card-trend-text"
-                        style={format!("color: {}", trend_color)}
-                    >
-                        {trend}
-                    </span>
+            // Optional description
+            if let Some(description) = &props.description {
+                <div class="status-card-description" 
+                     style={format!("font-size: {}; color: {}; opacity: 0.7; margin-bottom: 0.5rem;",
+                                   TypographyScale::CAPTION_SIZE,
+                                   TextColors::SECONDARY_LIGHT)}>
+                    { description }
                 </div>
             }
             
-            // Animated background effect
-            if animated && !loading {
-                <div 
-                    class="status-card-bg-effect"
-                    style={format!("background: linear-gradient(135deg, transparent, {})", 
-                        colors.with_opacity(accent_color, 0.05))}
-                ></div>
+            // Trend description
+            if let Some(trend) = &props.trend {
+                <div class="status-card-trend-description" 
+                     style={format!("font-size: {}; color: {}; opacity: 0.6;",
+                                   TypographyScale::CAPTION_SIZE,
+                                   TextColors::SECONDARY_LIGHT)}>
+                    { &trend.description }
+                </div>
             }
+            
+            // Accent border
+            <div class="status-card-accent" 
+                 style={format!("position: absolute; bottom: 0; left: 0; right: 0; height: 3px; 
+                                background: linear-gradient(90deg, {} 0%, {} 100%);",
+                               props.accent_color,
+                               format!("{}80", props.accent_color.trim_start_matches('#')))}>
+            </div>
         </div>
     }
 }
 
-// Quick Action Card - specialized status card for actions
+/// Properties for status card grid
 #[derive(Properties, PartialEq)]
-pub struct QuickActionProps {
-    pub icon: String,
-    pub title: String,
-    pub subtitle: Option<String>,
-    pub onclick: Callback<MouseEvent>,
-    pub variant: Option<StatusCardVariant>,
-    pub class: Option<String>,
-    pub disabled: Option<bool>,
+pub struct StatusCardGridProps {
+    /// Status cards to display
+    pub children: Children,
+    
+    /// Number of columns (responsive)
+    #[prop_or(3)]
+    pub columns: u8,
+    
+    /// Gap between cards
+    #[prop_or_else(|| Spacing::XL.to_string())]
+    pub gap: String,
+    
+    /// Additional CSS classes
+    #[prop_or_default]
+    pub class: Classes,
 }
 
-#[function_component(QuickAction)]
-pub fn quick_action(props: &QuickActionProps) -> Html {
-    let disabled = props.disabled.unwrap_or(false);
-    
-    let onclick = {
-        let onclick = props.onclick.clone();
-        let disabled = disabled;
-        Callback::from(move |e: MouseEvent| {
-            if !disabled {
-                onclick.emit(e);
-            }
-        })
-    };
+/// Grid container for organizing multiple status cards
+#[function_component(StatusCardGrid)]
+pub fn status_card_grid(props: &StatusCardGridProps) -> Html {
+    let grid_styles = format!(
+        "display: grid;
+         grid-template-columns: repeat({}, 1fr);
+         gap: {};
+         
+         /* Responsive adjustments */
+         @media (max-width: {}) {{
+           grid-template-columns: 1fr;
+         }}
+         
+         @media (min-width: {}) and (max-width: {}) {{
+           grid-template-columns: repeat(2, 1fr);
+         }}",
+        props.columns,
+        props.gap,
+        Breakpoints::MD,
+        Breakpoints::MD,
+        Breakpoints::LG
+    );
     
     html! {
-        <StatusCard
-            title={props.title.clone()}
-            value=""
-            icon={Some(props.icon.clone())}
-            subtitle={props.subtitle.clone()}
-            variant={props.variant.clone()}
-            onclick={Some(onclick)}
-            class={classes!("quick-action", if disabled { "quick-action-disabled" } else { "" }, props.class.clone())}
-            animated={Some(true)}
-        />
+        <div class={classes!("status-card-grid", props.class.clone())} style={grid_styles}>
+            { for props.children.iter() }
+        </div>
     }
 }
 
-// CSS for status cards
-pub fn generate_status_card_css() -> String {
-    r#"/* Status Card Styles */
-.status-card {
-  position: relative;
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-md);
-  min-height: 120px;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-}
+/// Predefined status card variants for common use cases
+pub struct StatusCardVariants;
 
-.status-card-clickable:hover {
-  transform: translateY(-2px);
-  box-shadow: var(--shadow-lg);
-}
-
-.status-card-clickable:active {
-  transform: translateY(0px);
-}
-
-.status-card-header {
-  display: flex;
-  align-items: flex-start;
-  gap: var(--space-md);
-}
-
-.status-card-icon {
-  font-size: 1.5rem;
-  line-height: 1;
-  flex-shrink: 0;
-}
-
-.status-card-title-group {
-  flex: 1;
-  min-width: 0;
-}
-
-.status-card-title {
-  font-family: var(--font-heading);
-  font-size: var(--text-sm);
-  font-weight: var(--weight-semibold);
-  color: var(--color-text-secondary);
-  margin: 0;
-  line-height: var(--leading-tight);
-}
-
-.status-card-subtitle {
-  font-size: var(--text-xs);
-  color: var(--color-text-disabled);
-  margin: var(--space-xs) 0 0 0;
-  line-height: var(--leading-normal);
-}
-
-.status-card-value {
-  font-family: var(--font-heading);
-  font-size: var(--text-3xl);
-  font-weight: var(--weight-extrabold);
-  line-height: var(--leading-tight);
-  margin: var(--space-sm) 0;
-}
-
-.status-card-trend {
-  display: flex;
-  align-items: center;
-  gap: var(--space-xs);
-  font-size: var(--text-sm);
-  font-weight: var(--weight-medium);
-}
-
-.status-card-trend-icon {
-  font-size: 1rem;
-}
-
-.status-card-trend-text {
-  line-height: var(--leading-normal);
-}
-
-/* Loading states */
-.status-card-loading {
-  position: relative;
-}
-
-.status-card-loading-overlay {
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(255, 255, 255, 0.8);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: inherit;
-  z-index: 1;
-}
-
-.status-card-loading-spinner {
-  width: 24px;
-  height: 24px;
-  border: 2px solid var(--color-text-disabled);
-  border-top: 2px solid var(--color-primary-electric-blue);
-  border-radius: 50%;
-  animation: status-card-spin 1s linear infinite;
-}
-
-@keyframes status-card-spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
-}
-
-/* Background effect */
-.status-card-bg-effect {
-  position: absolute;
-  top: 0;
-  right: 0;
-  width: 60%;
-  height: 100%;
-  border-radius: inherit;
-  opacity: 0;
-  transition: opacity 0.3s ease;
-  pointer-events: none;
-}
-
-.status-card-animated:hover .status-card-bg-effect {
-  opacity: 1;
-}
-
-/* Variant-specific styles */
-.status-card-success {
-  border-left-color: var(--color-success);
-}
-
-.status-card-warning {
-  border-left-color: var(--color-warning);
-}
-
-.status-card-error {
-  border-left-color: var(--color-error);
-}
-
-.status-card-info {
-  border-left-color: var(--color-info);
-}
-
-/* Quick Action specific styles */
-.quick-action {
-  cursor: pointer;
-  text-align: center;
-  justify-content: center;
-  align-items: center;
-  min-height: 100px;
-}
-
-.quick-action .status-card-header {
-  flex-direction: column;
-  align-items: center;
-  text-align: center;
-  gap: var(--space-sm);
-}
-
-.quick-action .status-card-icon {
-  font-size: 2rem;
-}
-
-.quick-action .status-card-title {
-  font-size: var(--text-base);
-  color: var(--color-text-primary);
-}
-
-.quick-action-disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
-.quick-action-disabled:hover {
-  transform: none;
-  box-shadow: inherit;
-}
-
-/* Responsive design */
-@media (max-width: 768px) {
-  .status-card {
-    min-height: 100px;
-    padding: var(--space-md);
-  }
-  
-  .status-card-value {
-    font-size: var(--text-2xl);
-  }
-  
-  .quick-action .status-card-icon {
-    font-size: 1.5rem;
-  }
-}
-
-/* Accessibility */
-.status-card-clickable:focus {
-  outline: 2px solid var(--color-primary-electric-blue);
-  outline-offset: 2px;
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .status-card {
-    transition: none;
-  }
-  
-  .status-card-clickable:hover {
-    transform: none;
-  }
-  
-  .status-card-bg-effect {
-    display: none;
-  }
-  
-  .status-card-loading-spinner {
-    animation: none;
-  }
-}
-
-/* High contrast mode */
-@media (prefers-contrast: high) {
-  .status-card {
-    border: 1px solid var(--color-text-secondary);
-  }
-}"#.to_string()
+impl StatusCardVariants {
+    /// Create a metric card with trend
+    pub fn metric_card(
+        label: &str,
+        value: &str,
+        unit: Option<&str>,
+        trend_direction: TrendDirection,
+        trend_value: &str,
+        trend_description: &str,
+        onclick: Callback<MouseEvent>,
+    ) -> Html {
+        let trend = TrendInfo {
+            direction: trend_direction,
+            value: trend_value.to_string(),
+            description: trend_description.to_string(),
+        };
+        
+        html! {
+            <StatusCard
+                label={label.to_string()}
+                value={value.to_string()}
+                unit={unit.map(|u| u.to_string())}
+                trend={Some(trend)}
+                interactive={true}
+                onclick={onclick}
+            />
+        }
+    }
+    
+    /// Create a colorful card with dopamine colors
+    pub fn colorful_card(
+        label: &str,
+        value: &str,
+        color: &str,
+        icon: Html,
+        onclick: Callback<MouseEvent>,
+    ) -> Html {
+        html! {
+            <StatusCard
+                label={label.to_string()}
+                value={value.to_string()}
+                accent_color={color.to_string()}
+                icon={Some(icon)}
+                animated_background={true}
+                interactive={true}
+                onclick={onclick}
+            />
+        }
+    }
+    
+    /// Create a compact card for dense layouts
+    pub fn compact_card(
+        label: &str,
+        value: &str,
+        onclick: Callback<MouseEvent>,
+    ) -> Html {
+        html! {
+            <StatusCard
+                label={label.to_string()}
+                value={value.to_string()}
+                size={StatusCardSize::Compact}
+                interactive={true}
+                onclick={onclick}
+            />
+        }
+    }
+    
+    /// Create a large featured card
+    pub fn featured_card(
+        label: &str,
+        value: &str,
+        description: &str,
+        color: &str,
+        onclick: Callback<MouseEvent>,
+    ) -> Html {
+        html! {
+            <StatusCard
+                label={label.to_string()}
+                value={value.to_string()}
+                description={Some(description.to_string())}
+                size={StatusCardSize::Large}
+                accent_color={color.to_string()}
+                animated_background={true}
+                interactive={true}
+                onclick={onclick}
+            />
+        }
+    }
 }
 
 #[cfg(test)]
@@ -462,24 +433,36 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_status_card_variants() {
-        let success = StatusCardVariant::Success;
-        let error = StatusCardVariant::Error;
-        assert_ne!(success, error);
+    fn test_trend_direction_colors() {
+        assert_eq!(TrendDirection::Up.color(), "#34C759");
+        assert_eq!(TrendDirection::Down.color(), "#FF3B30");
+        assert_eq!(TrendDirection::Neutral.color(), "#6D6D80");
     }
 
     #[test]
-    fn test_trend_directions() {
-        let up = TrendDirection::Up;
-        let down = TrendDirection::Down;
-        assert_ne!(up, down);
+    fn test_trend_direction_icons() {
+        assert_eq!(TrendDirection::Up.icon(), "↗");
+        assert_eq!(TrendDirection::Down.icon(), "↘");
+        assert_eq!(TrendDirection::Neutral.icon(), "→");
     }
 
     #[test]
-    fn test_css_generation() {
-        let css = generate_status_card_css();
-        assert!(css.contains("status-card"));
-        assert!(css.contains("quick-action"));
-        assert!(css.contains("@keyframes"));
+    fn test_status_card_size_properties() {
+        assert_eq!(StatusCardSize::Compact.padding(), "0.5rem");
+        assert_eq!(StatusCardSize::Standard.padding(), "1rem");
+        assert_eq!(StatusCardSize::Large.padding(), "1.25rem");
+    }
+
+    #[test]
+    fn test_trend_info_creation() {
+        let trend = TrendInfo {
+            direction: TrendDirection::Up,
+            value: "12%".to_string(),
+            description: "vs last month".to_string(),
+        };
+        
+        assert_eq!(trend.direction, TrendDirection::Up);
+        assert_eq!(trend.value, "12%");
+        assert_eq!(trend.description, "vs last month");
     }
 }
