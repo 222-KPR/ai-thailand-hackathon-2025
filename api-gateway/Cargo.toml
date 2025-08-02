@@ -29,7 +29,6 @@ bcrypt = "0.15"
 validator = { version = "0.18", features = ["derive"] }
 multipart = "0.18"
 tower-timeout = { workspace = true }
-hystrix = { workspace = true }
 
 # Service clients
 consul = { workspace = true }
