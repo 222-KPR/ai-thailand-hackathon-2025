@@ -71,9 +71,9 @@ services:
     deploy:
       resources:
         limits:
-          memory: ${VISION_MEMORY_LIMIT:-8G}  # Reduced for H100 16GB optimization
+          memory: ${VISION_MEMORY_LIMIT:-4G}  # Aggressive reduction for memory optimization
         reservations:
-          memory: ${VISION_MEMORY_RESERVATION:-4G}  # Reduced reservation
+          memory: ${VISION_MEMORY_RESERVATION:-2G}  # Minimal reservation
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:2001/health"]
       interval: 30s
@@ -139,9 +139,9 @@ services:
     deploy:
       resources:
         limits:
-          memory: 3G
+          memory: 2G  # Reduced for queue worker
         reservations:
-          memory: 1G
+          memory: 512M  # Minimal for queue processing
     restart: unless-stopped
 
   # Celery Beat - Scheduled Tasks

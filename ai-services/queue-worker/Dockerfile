@@ -1,5 +1,5 @@
 # Multi-stage build for queue worker - optimized
-FROM python:3.11-slim as base
+FROM python:3.11-slim AS base
 
 # Set environment variables for optimization
 ENV PYTHONDONTWRITEBYTECODE=1
@@ -7,6 +7,8 @@ ENV PYTHONUNBUFFERED=1
 ENV DEBIAN_FRONTEND=noninteractive
 ENV PIP_NO_CACHE_DIR=1
 ENV PIP_DISABLE_PIP_VERSION_CHECK=1
+ENV PYTHONFAULTHANDLER=1
+ENV PYTHONHASHSEED=random
 
 # Install minimal system dependencies
 RUN apt-get update && apt-get install -y --no-install-recommends \
@@ -20,18 +22,17 @@ WORKDIR /app
 # Copy requirements and install Python dependencies
 COPY requirements.txt .
 RUN pip install --no-cache-dir --upgrade pip setuptools wheel && \
-    pip install --no-cache-dir -r requirements.txt && \
-    pip cache purge
+    pip install --no-cache-dir -r requirements.txt
 
 # Copy only essential application files
 COPY app.py tasks.py ./
 
 # Development stage (minimal)
-FROM base as development
+FROM base AS development
 CMD ["uvicorn", "app:app", "--host", "0.0.0.0", "--port", "2003", "--reload"]
 
 # Production stage (minimal)
-FROM base as production
+FROM base AS production
 # Create non-root user
 RUN useradd --create-home --shell /bin/bash --uid 1000 worker && \
     chown -R worker:worker /app

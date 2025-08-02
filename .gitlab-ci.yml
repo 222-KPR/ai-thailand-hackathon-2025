@@ -16,7 +16,7 @@ variables:
   PROMETHEUS_PORT: "9090"
   GRAFANA_PORT: "3001"
 
-# Build AI Services Images - Optimized for H100 16GB VRAM
+# Build AI Services Images - Optimized for H100 16GB VRAM (No Artifacts)
 build-ai-services:
   stage: build
   image: docker:24.0.5
@@ -25,37 +25,34 @@ build-ai-services:
   before_script:
     - docker info
     - cd ai-services/deployment
-    # Enable Docker BuildKit for optimized builds
+    # Enable Docker BuildKit for optimized builds and size reduction
     - export DOCKER_BUILDKIT=1
     - export BUILDKIT_PROGRESS=plain
   script:
-    # Build Vision Service with H100 optimization
-    - echo "Building Vision Service for H100 16GB VRAM..."
-    - docker build --target h100-optimized --compress -t team10-vision-service:$CI_COMMIT_SHA ../vision-service/
+    # Build Vision Service with H100 optimization and size optimization
+    - echo "Building Vision Service for H100 16GB VRAM (optimized size)..."
+    - docker build --target h100-optimized --compress --squash -t team10-vision-service:$CI_COMMIT_SHA ../vision-service/
     - docker tag team10-vision-service:$CI_COMMIT_SHA team10-vision-service:latest
 
-    # Build Queue Worker (optimized)
-    - echo "Building Queue Worker..."
-    - docker build --target production --compress -t team10-queue-worker:$CI_COMMIT_SHA ../queue-worker/
+    # Build Queue Worker (optimized and minimal)
+    - echo "Building Queue Worker (minimal)..."
+    - docker build --target production --compress --squash -t team10-queue-worker:$CI_COMMIT_SHA ../queue-worker/
     - docker tag team10-queue-worker:$CI_COMMIT_SHA team10-queue-worker:latest
 
-    # Optimize images by removing intermediate layers
-    - docker image prune -f
+    # Optimize images by removing intermediate layers and unused data
+    - docker image prune -f --filter="dangling=true"
 
-    # Save compressed images with better compression
-    - echo "Creating optimized artifacts..."
-    - docker save team10-vision-service:latest | gzip -9 > vision-service.tar.gz
-    - docker save team10-queue-worker:latest | gzip -9 > queue-worker.tar.gz
+    # Display final image sizes (for monitoring)
+    - echo "Final Docker image sizes:"
+    - docker images | grep team10
 
-    # Display artifact sizes
-    - echo "Artifact sizes:"
-    - ls -lh *.tar.gz
-  artifacts:
-    paths:
-      - ai-services/deployment/vision-service.tar.gz
-      - ai-services/deployment/queue-worker.tar.gz
-    expire_in: 30m  # Reduced from 1 hour to minimize storage
-    when: on_success
+    # Verify images work
+    - echo "Testing image functionality..."
+    - docker run --rm team10-queue-worker:latest python -c "import fastapi; print('Queue Worker OK')"
+    - docker run --rm team10-vision-service:latest python -c "import torch; print('Vision Service OK')"
+
+    # No artifacts - images stay in local Docker daemon for deploy stage
+    - echo "Build completed successfully - images ready for deployment"
   only:
     - tags
   except:
@@ -74,12 +71,15 @@ deploy-ai-services:
     - docker info
     - cd ai-services/deployment
   script:
-    # Load built images
-    - echo "Loading Docker images..."
-    - docker load < vision-service.tar.gz
-    - docker load < queue-worker.tar.gz
+    # Rebuild images efficiently (fast due to layer caching)
+    - echo "Building Docker images for deployment..."
+    - export DOCKER_BUILDKIT=1
 
-    # Verify images loaded
+    # Build images with optimizations
+    - docker build --target h100-optimized --compress -t team10-vision-service:latest ../vision-service/
+    - docker build --target production --compress -t team10-queue-worker:latest ../queue-worker/
+
+    # Verify images are built
     - docker images | grep team10
 
     # Stop existing services if running
@@ -97,8 +97,8 @@ deploy-ai-services:
     - export PROMETHEUS_PORT=$PROMETHEUS_PORT
     - export GRAFANA_PORT=$GRAFANA_PORT
     - export BUILD_TARGET=h100-optimized
-    - export VISION_MEMORY_LIMIT=8G
-    - export VISION_MEMORY_RESERVATION=4G
+    - export VISION_MEMORY_LIMIT=4G
+    - export VISION_MEMORY_RESERVATION=2G
 
     # Deploy AI services
     - echo "Deploying AI services..."
@@ -130,8 +130,7 @@ deploy-ai-services:
   tags:
     - hackathon-siamai2
   when: manual
-  dependencies:
-    - build-ai-services
+  # No dependencies needed since images are in Docker daemon
 
 # Cleanup job (optional - runs on schedule or manual trigger)
 cleanup-ai-services:

@@ -45,21 +45,25 @@ class DiseaseDetectionService:
                 self.model_id
             )
 
-            # Configure quantization for efficiency
+            # Configure aggressive quantization for H100 16GB memory constraints
             quant_config = BitsAndBytesConfig(
                 load_in_4bit=True,
                 bnb_4bit_use_double_quant=True,
                 bnb_4bit_compute_dtype=torch.float16,
-                bnb_4bit_quant_type="nf4"
+                bnb_4bit_quant_type="nf4",
+                llm_int8_enable_fp32_cpu_offload=True  # Offload to CPU when needed
             )
 
-            # Load model with quantization
+            # Load model with aggressive memory optimization
             self.model = await loop.run_in_executor(
                 None,
                 lambda: LlavaForConditionalGeneration.from_pretrained(
                     self.model_id,
                     quantization_config=quant_config,
-                    device_map="auto"
+                    device_map="auto",
+                    torch_dtype=torch.float16,  # Use FP16 to reduce memory
+                    low_cpu_mem_usage=True,     # Reduce CPU memory during loading
+                    max_memory={0: "12GB", "cpu": "4GB"}  # Limit GPU/CPU memory usage
                 )
             )
 
@@ -139,34 +143,55 @@ class DiseaseDetectionService:
             raise RuntimeError(f"Disease detection failed: {e}")
 
     def _run_inference(self, image: Image.Image, prompt: str) -> str:
-        """Run LLaVA inference (blocking operation)"""
+        """Run LLaVA inference with aggressive memory optimization"""
         try:
-            # Prepare inputs
-            inputs = self.processor(
-                images=image,
-                text=prompt,
-                return_tensors="pt"
-            ).to(self.model.device, torch.float16)
+            # Clear GPU cache before inference
+            if torch.cuda.is_available():
+                torch.cuda.empty_cache()
 
-            # Generate response
-            output = self.model.generate(
-                **inputs,
-                max_new_tokens=200,
-                do_sample=False,
-                temperature=0.1
-            )
+            # Resize image to reduce memory usage (max 512x512)
+            max_size = 512
+            if max(image.size) > max_size:
+                ratio = max_size / max(image.size)
+                new_size = tuple(int(dim * ratio) for dim in image.size)
+                image = image.resize(new_size, Image.Resampling.LANCZOS)
 
-            # Decode response
-            response = self.processor.decode(output[0][2:], skip_special_tokens=True)
+            # Use context manager for memory cleanup
+            with torch.no_grad():  # Disable gradient computation
+                # Prepare inputs with memory optimization
+                inputs = self.processor(
+                    images=image,
+                    text=prompt,
+                    return_tensors="pt",
+                    max_length=512,  # Limit input length
+                    truncation=True
+                ).to(self.model.device, torch.float16)
 
-            # Extract only the generated part (remove the prompt)
-            if prompt in response:
-                response = response.split(prompt)[-1].strip()
+                # Generate response with memory constraints
+                output = self.model.generate(
+                    **inputs,
+                    max_new_tokens=150,  # Reduced from 200
+                    do_sample=False,
+                    temperature=0.1,
+                    use_cache=True,
+                    pad_token_id=self.processor.tokenizer.eos_token_id
+                )
 
-            return response
+                # Decode response
+                response = self.processor.decode(output[0][len(inputs['input_ids'][0]):], skip_special_tokens=True)
+
+                # Clean up tensors
+                del inputs, output
+                if torch.cuda.is_available():
+                    torch.cuda.empty_cache()
+
+            return response.strip()
 
         except Exception as e:
             logger.error(f"Inference failed: {e}")
+            # Ensure cleanup on error
+            if torch.cuda.is_available():
+                torch.cuda.empty_cache()
             raise
 
     def _parse_disease_response(self, response_text: str) -> Dict[str, Any]:

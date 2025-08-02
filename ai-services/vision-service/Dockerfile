@@ -1,8 +1,8 @@
 # AI4Thai Vision Service - Docker Configuration
 # Multi-stage build optimized for H100 16GB VRAM
 
-# Minimal base image
-FROM python:3.9-slim-bullseye AS base
+# Minimal base image with better optimization - Python 3.11 for compatibility
+FROM python:3.11-slim-bullseye AS base
 
 # Set environment variables for optimization
 ENV PYTHONUNBUFFERED=1
@@ -10,6 +10,8 @@ ENV PYTHONDONTWRITEBYTECODE=1
 ENV DEBIAN_FRONTEND=noninteractive
 ENV PIP_NO_CACHE_DIR=1
 ENV PIP_DISABLE_PIP_VERSION_CHECK=1
+ENV PYTHONFAULTHANDLER=1
+ENV PYTHONHASHSEED=random
 
 # Install minimal system dependencies
 RUN apt-get update && apt-get install -y --no-install-recommends \
@@ -29,9 +31,15 @@ WORKDIR /app
 # Copy requirements first for better caching
 COPY requirements.txt .
 
-# Install Python dependencies with optimizations
+# Install Python dependencies with optimizations and cleanup
 RUN pip install --no-cache-dir --upgrade pip setuptools wheel && \
-    pip install --no-cache-dir -r requirements.txt
+    pip install --no-cache-dir -r requirements.txt && \
+    python -c "import torch; print(f'PyTorch version: {torch.__version__}'); print(f'CUDA available: {torch.cuda.is_available()}')" && \
+    python -c "import transformers; print(f'Transformers version: {transformers.__version__}')" && \
+    python -c "import ultralytics; print(f'Ultralytics version: {ultralytics.__version__}')" && \
+    rm -rf /tmp/* /var/tmp/* /root/.cache/* && \
+    find /usr/local -name "*.pyc" -delete && \
+    find /usr/local -name "__pycache__" -type d -exec rm -rf {} + || true
 
 # Development stage (minimal)
 FROM base AS development
@@ -59,9 +67,18 @@ FROM base AS production
 COPY app.py .
 COPY services/ ./services/
 
-# Create minimal directories
+# Create minimal directories and cleanup
 RUN mkdir -p /app/models /app/logs && \
-    chown -R app:app /app
+    chown -R app:app /app && \
+    # Aggressive cleanup for smaller image
+    rm -rf /var/lib/apt/lists/* && \
+    rm -rf /tmp/* /var/tmp/* && \
+    rm -rf /root/.cache/* && \
+    find /usr/local -name "*.pyc" -delete && \
+    find /usr/local -name "__pycache__" -type d -exec rm -rf {} + || true && \
+    find /usr/local -name "*.pyo" -delete && \
+    find /usr/local -name "test" -type d -exec rm -rf {} + || true && \
+    find /usr/local -name "tests" -type d -exec rm -rf {} + || true
 
 # Switch to non-root user
 USER app
@@ -81,10 +98,9 @@ FROM production AS h100-optimized
 
 USER root
 
-# Install H100-specific optimizations
-RUN pip install --no-cache-dir \
-    nvidia-ml-py3==12.535.108 \
-    && pip cache purge
+# Verify NVIDIA ML installation (already in requirements)
+RUN python -c "import pynvml; pynvml.nvmlInit(); print(f'NVML initialized successfully')" || \
+    echo "Warning: NVML not available - running in CPU mode"
 
 USER app
 

@@ -16,6 +16,7 @@ from fastapi.responses import JSONResponse
 
 from services.pest_detection import get_pest_detection_service
 from services.disease_detection import get_disease_detection_service
+from memory_manager import get_memory_manager
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -38,9 +39,20 @@ async def lifespan(app: FastAPI):
         disease_service = await get_disease_detection_service()
         await disease_service.initialize_model()
 
+        # Initialize memory manager and start cleanup
+        memory_manager = get_memory_manager()
+        memory_manager.optimize_for_inference()
+
+        # Start periodic memory cleanup task
+        cleanup_task = asyncio.create_task(memory_manager.periodic_cleanup())
+
         logger.info("Vision Service initialized successfully")
 
         yield
+
+        # Cleanup on shutdown
+        cleanup_task.cancel()
+        memory_manager.full_cleanup()
 
     except Exception as e:
         logger.error(f"Failed to initialize Vision Service: {e}")
@@ -377,6 +389,37 @@ async def disease_detection_health():
     except Exception as e:
         logger.error(f"Disease detection health check failed: {e}")
         raise HTTPException(status_code=503, detail=f"Disease detection service unavailable: {str(e)}")
+
+@app.get("/health/memory")
+async def memory_status():
+    """Get current memory usage statistics."""
+    try:
+        memory_manager = get_memory_manager()
+        stats = memory_manager.get_memory_stats()
+        return {
+            "status": "healthy",
+            "memory_stats": stats,
+            "timestamp": time.time()
+        }
+    except Exception as e:
+        logger.error(f"Memory status check failed: {e}")
+        raise HTTPException(status_code=503, detail=f"Memory status unavailable: {str(e)}")
+
+@app.post("/maintenance/cleanup")
+async def manual_cleanup():
+    """Manually trigger memory cleanup."""
+    try:
+        memory_manager = get_memory_manager()
+        memory_manager.full_cleanup()
+        stats = memory_manager.get_memory_stats()
+        return {
+            "status": "completed",
+            "memory_stats_after": stats,
+            "timestamp": time.time()
+        }
+    except Exception as e:
+        logger.error(f"Manual cleanup failed: {e}")
+        raise HTTPException(status_code=500, detail=f"Cleanup failed: {str(e)}")
 
 @app.get("/info")
 async def get_service_info():
