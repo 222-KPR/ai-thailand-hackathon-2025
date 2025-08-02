@@ -56,8 +56,8 @@ pub fn format_file_size(bytes: u64) -> String {
 
 pub fn create_image_thumbnail(
     data_url: &str,
-    max_width: u32,
-    max_height: u32,
+    _max_width: u32,
+    _max_height: u32,
 ) -> Result<String, String> {
     // This would need to be implemented with canvas manipulation
     // For now, just return the original data URL
