@@ -130,7 +130,7 @@ impl Default for AriaAttributes {
 impl AriaAttributes {
     pub fn to_props(&self) -> Vec<(&'static str, String)> {
         let mut props = Vec::new();
-        
+
         if let Some(role) = &self.role {
             props.push(("role", role.as_str().to_string()));
         }
@@ -185,7 +185,7 @@ impl AriaAttributes {
         if let Some(flowto) = &self.flowto {
             props.push(("aria-flowto", flowto.clone()));
         }
-        
+
         props
     }
 }
@@ -233,7 +233,7 @@ pub fn use_keyboard_navigation(
 #[hook]
 pub fn use_focus_management() -> (NodeRef, Callback<()>, Callback<()>) {
     let element_ref = use_node_ref();
-    
+
     let focus = {
         let element_ref = element_ref.clone();
         Callback::from(move |_| {
@@ -242,7 +242,7 @@ pub fn use_focus_management() -> (NodeRef, Callback<()>, Callback<()>) {
             }
         })
     };
-    
+
     let blur = {
         let element_ref = element_ref.clone();
         Callback::from(move |_| {
@@ -251,7 +251,7 @@ pub fn use_focus_management() -> (NodeRef, Callback<()>, Callback<()>) {
             }
         })
     };
-    
+
     (element_ref, focus, blur)
 }
 
@@ -259,7 +259,7 @@ pub fn use_focus_management() -> (NodeRef, Callback<()>, Callback<()>) {
 #[hook]
 pub fn use_screen_reader() -> Callback<String> {
     let announcement_ref = use_node_ref();
-    
+
     use_effect_with_deps(
         {
             let announcement_ref = announcement_ref.clone();
@@ -283,11 +283,11 @@ pub fn use_screen_reader() -> Callback<String> {
         },
         (),
     );
-    
+
     Callback::from(move |message: String| {
         if let Some(element) = announcement_ref.cast::<HtmlElement>() {
             element.set_text_content(Some(&message));
-            
+
             // Clear after announcement
             gloo_timers::callback::Timeout::new(1000, move || {
                 element.set_text_content(Some(""));
@@ -307,7 +307,7 @@ pub struct SkipLinkProps {
 #[function_component(SkipLink)]
 pub fn skip_link(props: &SkipLinkProps) -> Html {
     html! {
-        <a 
+        <a
             href={props.href.clone()}
             class={classes!("skip-link", props.class.clone())}
         >
@@ -331,9 +331,9 @@ pub struct AccessibleButtonProps {
 pub fn accessible_button(props: &AccessibleButtonProps) -> Html {
     let disabled = props.disabled.unwrap_or(false);
     let (element_ref, focus, _) = use_focus_management();
-    
+
     let aria_props = props.aria.as_ref().unwrap_or(&AriaAttributes::default()).to_props();
-    
+
     let on_keydown = use_keyboard_navigation(
         Some({
             let onclick = props.onclick.clone();
@@ -354,7 +354,7 @@ pub fn accessible_button(props: &AccessibleButtonProps) -> Html {
         None,
         None,
     );
-    
+
     html! {
         <button
             ref={element_ref}
@@ -386,7 +386,7 @@ pub fn live_region(props: &LiveRegionProps) -> Html {
     let politeness = props.politeness.as_deref().unwrap_or("polite");
     let atomic = props.atomic.unwrap_or(true);
     let relevant = props.relevant.as_deref().unwrap_or("all");
-    
+
     html! {
         <div
             class={classes!("live-region", "sr-only", props.class.clone())}
@@ -412,7 +412,7 @@ pub fn focus_trap(props: &FocusTrapProps) -> Html {
     let container_ref = use_node_ref();
     let first_focusable_ref = use_node_ref();
     let last_focusable_ref = use_node_ref();
-    
+
     use_effect_with_deps(
         {
             let container_ref = container_ref.clone();
@@ -422,7 +422,7 @@ pub fn focus_trap(props: &FocusTrapProps) -> Html {
                     if let Some(container) = container_ref.cast::<HtmlElement>() {
                         // Focus first element
                         let _ = container.focus();
-                        
+
                         // Set up focus trap
                         let keydown_handler = Closure::wrap(Box::new(move |e: KeyboardEvent| {
                             if e.key() == "Tab" {
@@ -430,12 +430,12 @@ pub fn focus_trap(props: &FocusTrapProps) -> Html {
                                 // Implementation would check for first/last focusable elements
                             }
                         }) as Box<dyn Fn(KeyboardEvent)>);
-                        
+
                         let _ = container.add_event_listener_with_callback(
                             "keydown",
                             keydown_handler.as_ref().unchecked_ref()
                         );
-                        
+
                         keydown_handler.forget();
                     }
                 }
@@ -444,7 +444,7 @@ pub fn focus_trap(props: &FocusTrapProps) -> Html {
         },
         props.active,
     );
-    
+
     html! {
         <div
             ref={container_ref}
@@ -745,7 +745,7 @@ pub fn generate_accessibility_css() -> String {
   .accessible-nav a {
     transition: none;
   }
-  
+
   .skip-link {
     transition: none;
   }
@@ -756,11 +756,11 @@ pub fn generate_accessibility_css() -> String {
   .accessible-button {
     border: 2px solid currentColor;
   }
-  
+
   .accessible-input {
     border-width: 3px;
   }
-  
+
   .accessible-table th,
   .accessible-table td {
     border-width: 2px;
@@ -812,7 +812,7 @@ pub fn generate_accessibility_css() -> String {
     min-height: 48px;
     min-width: 48px;
   }
-  
+
   .accessible-input {
     font-size: 16px; /* Prevent zoom on iOS */
   }
@@ -847,7 +847,7 @@ mod tests {
             expanded: Some(true),
             ..Default::default()
         };
-        
+
         let props = attrs.to_props();
         assert_eq!(props.len(), 3);
         assert!(props.contains(&("role", "button".to_string())));

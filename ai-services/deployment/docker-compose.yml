@@ -1,4 +1,4 @@
-# AI4Thai Crop Guardian - AI Services Deployment  
+# AI4Thai Crop Guardian - AI Services Deployment
 # Vision Service and Queue Worker for agricultural analysis
 
 version: '3.8'
@@ -18,38 +18,38 @@ services:
       - MODEL_CACHE_DIR=/app/models
       - HUGGINGFACE_HUB_CACHE=/app/models/hub
       - TRANSFORMERS_CACHE=/app/models/transformers
-      
+
       # HuggingFace Configuration
       - HUGGINGFACE_HUB_TOKEN=${HUGGINGFACE_HUB_TOKEN}
       - HF_HOME=/app/models
-      
+
       # Service Configuration
       - SERVICE_HOST=0.0.0.0
       - SERVICE_PORT=2001
       - MAX_WORKERS=1
       - WORKER_TIMEOUT=300  # Extended for LLaVA model
-      
+
       # Model Settings
       - PEST_DETECTION_MODEL=underdogquality/yolo11s-pest-detection
       - DISEASE_DETECTION_MODEL=YuchengShi/LLaVA-v1.5-7B-Plant-Leaf-Diseases-Detection
       - CONFIDENCE_THRESHOLD=0.01
       - MAX_IMAGE_SIZE=10485760  # 10MB
-      
+
       # GPU Configuration
       - CUDA_VISIBLE_DEVICES=${CUDA_VISIBLE_DEVICES:-0}
       - TORCH_CUDA_ARCH_LIST="6.0;6.1;7.0;7.5;8.0;8.6"
-      
+
       # Performance
       - OMP_NUM_THREADS=4
       - MKL_NUM_THREADS=4
-      
+
       # Logging
       - LOG_LEVEL=${LOG_LEVEL:-INFO}
       - PYTHONUNBUFFERED=1
-      
+
       # Redis for caching
       - REDIS_URL=${REDIS_URL:-redis://redis:6379}
-      
+
       # Monitoring
       - ENABLE_METRICS=true
       - METRICS_PORT=9001

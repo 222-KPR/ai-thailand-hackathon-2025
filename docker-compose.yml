@@ -8,8 +8,8 @@ services:
   # Frontend - Yew WebAssembly PWA
   frontend:
     build:
-      context: ./frontend
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: frontend/Dockerfile
       target: production
     container_name: team10-frontend
     ports:
@@ -25,8 +25,8 @@ services:
   # API Gateway - Rust/Axum
   api-gateway:
     build:
-      context: ./api-gateway
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: api-gateway/Dockerfile
       target: production
     container_name: team10-api-gateway
     ports:
@@ -35,14 +35,14 @@ services:
       # External AI Services (for demo)
       - AI4THAI_API_KEY=${AI4THAI_API_KEY}
       - VISION_SERVICE_URL=${VISION_SERVICE_URL:-https://vision-api.ai4thai.com}
-      
+
       # Self-hosted AI Services (uncomment if self-hosting)
       # - VISION_SERVICE_URL=http://vision-service:2001
       # - QUEUE_WORKER_URL=http://queue-worker:2003
-      
+
       # Chat storage
       - REDIS_URL=redis://redis:6379
-      
+
       # Server config
       - SERVER_HOST=0.0.0.0
       - SERVER_PORT=3000

@@ -13,15 +13,15 @@ pub struct MessageProps {
 #[function_component(MessageBubble)]
 pub fn message_bubble(props: &MessageProps) -> Html {
     let _i18n = use_context::<I18nContext>().expect("I18nContext not found");
-    
+
     let message_class = if props.is_bot {
         classes!("message", "message-bot")
     } else {
         classes!("message", "message-user")
     };
-    
+
     let formatted_time = format_time(&props.message.timestamp);
-    
+
     html! {
         <div class={message_class}>
             <div class="message-avatar">
@@ -31,7 +31,7 @@ pub fn message_bubble(props: &MessageProps) -> Html {
                     html! { <span class="avatar-user">{"👤"}</span> }
                 }}
             </div>
-            
+
             <div class="message-content">
                 <div class="message-bubble">
                     <div class="message-text">

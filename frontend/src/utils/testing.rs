@@ -43,14 +43,14 @@ pub struct FeedbackProps {
 pub fn feedback_component(props: &FeedbackProps) -> Html {
     let feedback_text = use_state(String::new);
     let show_feedback = use_state(|| false);
-    
+
     let toggle_feedback = {
         let show_feedback = show_feedback.clone();
         Callback::from(move |_| {
             show_feedback.set(!*show_feedback);
         })
     };
-    
+
     let submit_feedback = {
         let feedback_text = feedback_text.clone();
         let on_submit = props.on_submit.clone();
@@ -60,18 +60,18 @@ pub fn feedback_component(props: &FeedbackProps) -> Html {
             show_feedback.set(false);
         })
     };
-    
+
     html! {
         <div class="feedback-widget">
             <button class="feedback-trigger" onclick={toggle_feedback.clone()}>
                 { "Feedback" }
             </button>
-            
+
             if *show_feedback {
                 <div class="feedback-modal">
                     <div class="feedback-content">
                         <h3>{ "Send Feedback" }</h3>
-                        <textarea 
+                        <textarea
                             placeholder="Your feedback..."
                             value={(*feedback_text).clone()}
                             oninput={
@@ -108,7 +108,7 @@ pub struct RatingProps {
 #[function_component(RatingComponent)]
 pub fn rating_component(props: &RatingProps) -> Html {
     let rating = use_state(|| 0u8);
-    
+
     html! {
         <div class="rating-widget">
             <div class="stars">
@@ -119,9 +119,9 @@ pub fn rating_component(props: &RatingProps) -> Html {
                         rating_clone.set(i);
                         on_rate.emit(i);
                     });
-                    
+
                     html! {
-                        <button 
+                        <button
                             class={if i <= *rating { "star active" } else { "star" }}
                             onclick={star_click}
                         >

@@ -53,7 +53,7 @@ impl ApiService {
             model_version: "v1.0.0".to_string(),
             timestamp: Utc::now(),
         };
-        
+
         Ok(response)
     }
 
@@ -117,7 +117,7 @@ impl ApiService {
             sources: vec!["Agricultural Research Institute".to_string()],
             timestamp: Utc::now(),
         };
-        
+
         Ok(response)
     }
 

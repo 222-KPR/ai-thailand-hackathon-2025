@@ -2,7 +2,7 @@
 // Licensed under the MIT License
 
 //! Layout Components Module
-//! 
+//!
 //! This module contains layout components for organizing content
 //! including the bento grid system and responsive utilities.
 

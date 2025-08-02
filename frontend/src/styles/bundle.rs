@@ -10,14 +10,14 @@ use crate::components::camera::generate_camera_css;
 use crate::components::chat::generate_chat_css;
 use crate::pages::generate_homepage_css;
 use crate::utils::{
-    generate_design_tokens_css, generate_responsive_css, 
+    generate_design_tokens_css, generate_responsive_css,
     generate_performance_css, generate_accessibility_css, DesignTokens
 };
 
 // Generate complete CSS bundle
 pub fn generate_complete_css_bundle() -> String {
     let tokens = DesignTokens::default();
-    
+
     format!(
         r#"/* AI4Thai Crop Guardian - Complete CSS Bundle */
 /* 2025 Design System with Dopamine Colors and Bento Grids */
@@ -371,34 +371,34 @@ body {{
   .no-print {{
     display: none !important;
   }}
-  
+
   .print-only {{
     display: block !important;
   }}
-  
+
   * {{
     background: white !important;
     color: black !important;
     box-shadow: none !important;
     text-shadow: none !important;
   }}
-  
+
   a, a:visited {{
     text-decoration: underline;
   }}
-  
+
   a[href]:after {{
     content: " (" attr(href) ")";
   }}
-  
+
   abbr[title]:after {{
     content: " (" attr(title) ")";
   }}
-  
+
   .bento-grid {{
     display: block !important;
   }}
-  
+
   .bento-card {{
     break-inside: avoid;
     margin-bottom: 1rem;
@@ -427,7 +427,7 @@ body {{
 // Generate minified CSS bundle for production
 pub fn generate_minified_css_bundle() -> String {
     let full_css = generate_complete_css_bundle();
-    
+
     // Simple minification - remove comments, extra whitespace, and newlines
     full_css
         .lines()
@@ -452,12 +452,12 @@ pub fn generate_custom_css_bundle(
 ) -> String {
     let tokens = DesignTokens::default();
     let mut css_parts = Vec::new();
-    
+
     // Always include base styles and tokens
     css_parts.push(generate_design_tokens_css(&tokens));
     css_parts.push(generate_typography_css(&crate::styles::TypographyScale::default()));
     css_parts.push(generate_bento_css());
-    
+
     if include_components {
         css_parts.push(generate_gradient_button_css());
         css_parts.push(generate_status_card_css());
@@ -466,19 +466,19 @@ pub fn generate_custom_css_bundle(
         css_parts.push(generate_chat_css());
         css_parts.push(generate_homepage_css());
     }
-    
+
     if include_responsive {
         css_parts.push(generate_responsive_css());
     }
-    
+
     if include_accessibility {
         css_parts.push(generate_accessibility_css());
     }
-    
+
     if include_utilities {
         css_parts.push(generate_performance_css());
     }
-    
+
     css_parts.join("\n\n")
 }
 

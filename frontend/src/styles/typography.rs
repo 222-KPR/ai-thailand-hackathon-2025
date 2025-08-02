@@ -2,7 +2,7 @@
 // Licensed under the MIT License
 
 //! Typography System with Thai Language Support
-//! 
+//!
 //! This module defines the typography scale, font families, and text styles
 //! optimized for both English and Thai language content.
 
@@ -12,13 +12,13 @@ pub struct FontFamilies;
 impl FontFamilies {
     /// Primary heading font - Bold and expressive
     pub const HEADING: &'static str = r#""Poppins", "Sarabun", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif"#;
-    
+
     /// Body text font - Clean and readable
     pub const BODY: &'static str = r#""Inter", "Sarabun", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif"#;
-    
+
     /// Thai-optimized font for Thai language content
     pub const THAI: &'static str = r#""Sarabun", "Prompt", "Kanit", sans-serif"#;
-    
+
     /// Monospace font for code and technical content
     pub const MONO: &'static str = r#""JetBrains Mono", "SF Mono", Monaco, "Cascadia Code", "Roboto Mono", Consolas, "Courier New", monospace"#;
 }
@@ -43,59 +43,59 @@ impl TypographyScale {
     pub const DISPLAY_SIZE: &'static str = "clamp(2.5rem, 5vw, 4rem)";
     pub const DISPLAY_LINE_HEIGHT: f32 = 1.1;
     pub const DISPLAY_LETTER_SPACING: &'static str = "-0.02em";
-    
+
     /// H1 - Main page headings
     pub const H1_SIZE: &'static str = "clamp(2rem, 4vw, 3rem)";
     pub const H1_LINE_HEIGHT: f32 = 1.2;
     pub const H1_LETTER_SPACING: &'static str = "-0.01em";
-    
+
     /// H2 - Section headings
     pub const H2_SIZE: &'static str = "clamp(1.5rem, 3vw, 2.25rem)";
     pub const H2_LINE_HEIGHT: f32 = 1.3;
     pub const H2_LETTER_SPACING: &'static str = "-0.005em";
-    
+
     /// H3 - Subsection headings
     pub const H3_SIZE: &'static str = "clamp(1.25rem, 2.5vw, 1.875rem)";
     pub const H3_LINE_HEIGHT: f32 = 1.4;
     pub const H3_LETTER_SPACING: &'static str = "0";
-    
+
     /// H4 - Component headings
     pub const H4_SIZE: &'static str = "clamp(1.125rem, 2vw, 1.5rem)";
     pub const H4_LINE_HEIGHT: f32 = 1.4;
     pub const H4_LETTER_SPACING: &'static str = "0";
-    
+
     /// H5 - Small headings
     pub const H5_SIZE: &'static str = "clamp(1rem, 1.5vw, 1.25rem)";
     pub const H5_LINE_HEIGHT: f32 = 1.5;
     pub const H5_LETTER_SPACING: &'static str = "0";
-    
+
     /// H6 - Smallest headings
     pub const H6_SIZE: &'static str = "clamp(0.875rem, 1.25vw, 1.125rem)";
     pub const H6_LINE_HEIGHT: f32 = 1.5;
     pub const H6_LETTER_SPACING: &'static str = "0.01em";
-    
+
     /// Body large - Prominent body text
     pub const BODY_LARGE_SIZE: &'static str = "1.125rem";
     pub const BODY_LARGE_LINE_HEIGHT: f32 = 1.6;
-    
+
     /// Body regular - Standard body text
     pub const BODY_SIZE: &'static str = "1rem";
     pub const BODY_LINE_HEIGHT: f32 = 1.6;
-    
+
     /// Body small - Secondary body text
     pub const BODY_SMALL_SIZE: &'static str = "0.875rem";
     pub const BODY_SMALL_LINE_HEIGHT: f32 = 1.5;
-    
+
     /// Caption - Small descriptive text
     pub const CAPTION_SIZE: &'static str = "0.75rem";
     pub const CAPTION_LINE_HEIGHT: f32 = 1.4;
     pub const CAPTION_LETTER_SPACING: &'static str = "0.02em";
-    
+
     /// Button text - UI button labels
     pub const BUTTON_SIZE: &'static str = "0.875rem";
     pub const BUTTON_LINE_HEIGHT: f32 = 1.2;
     pub const BUTTON_LETTER_SPACING: &'static str = "0.01em";
-    
+
     /// Label - Form labels and small UI text
     pub const LABEL_SIZE: &'static str = "0.75rem";
     pub const LABEL_LINE_HEIGHT: f32 = 1.3;
@@ -108,10 +108,10 @@ pub struct ThaiTypography;
 impl ThaiTypography {
     /// Increased line height for Thai text readability
     pub const THAI_LINE_HEIGHT_MULTIPLIER: f32 = 1.2;
-    
+
     /// Thai text tends to be taller, so we adjust spacing
     pub const THAI_LETTER_SPACING: &'static str = "0.01em";
-    
+
     /// Thai-specific font size adjustments
     pub const THAI_SIZE_MULTIPLIER: f32 = 1.05;
 }
@@ -131,7 +131,7 @@ impl TextStyles {
             TypographyScale::DISPLAY_LETTER_SPACING
         )
     }
-    
+
     /// Page title style
     pub fn page_title() -> String {
         format!(
@@ -143,7 +143,7 @@ impl TextStyles {
             TypographyScale::H1_LETTER_SPACING
         )
     }
-    
+
     /// Section heading style
     pub fn section_heading() -> String {
         format!(
@@ -154,7 +154,7 @@ impl TextStyles {
             TypographyScale::H2_LINE_HEIGHT
         )
     }
-    
+
     /// Body text style
     pub fn body_text() -> String {
         format!(
@@ -165,7 +165,7 @@ impl TextStyles {
             TypographyScale::BODY_LINE_HEIGHT
         )
     }
-    
+
     /// Thai body text style with adjustments
     pub fn thai_body_text() -> String {
         format!(
@@ -177,7 +177,7 @@ impl TextStyles {
             ThaiTypography::THAI_LETTER_SPACING
         )
     }
-    
+
     /// Button text style
     pub fn button_text() -> String {
         format!(
@@ -189,7 +189,7 @@ impl TextStyles {
             TypographyScale::BUTTON_LETTER_SPACING
         )
     }
-    
+
     /// Caption text style
     pub fn caption_text() -> String {
         format!(
@@ -217,7 +217,7 @@ impl TypographyCSS {
   --font-body: {};
   --font-thai: {};
   --font-mono: {};
-  
+
   /* Font Weights */
   --font-weight-light: {};
   --font-weight-regular: {};
@@ -225,7 +225,7 @@ impl TypographyCSS {
   --font-weight-semibold: {};
   --font-weight-bold: {};
   --font-weight-extrabold: {};
-  
+
   /* Font Sizes */
   --font-size-display: {};
   --font-size-h1: {};
@@ -240,7 +240,7 @@ impl TypographyCSS {
   --font-size-caption: {};
   --font-size-button: {};
   --font-size-label: {};
-  
+
   /* Line Heights */
   --line-height-display: {};
   --line-height-h1: {};
@@ -255,7 +255,7 @@ impl TypographyCSS {
   --line-height-caption: {};
   --line-height-button: {};
   --line-height-label: {};
-  
+
   /* Letter Spacing */
   --letter-spacing-display: {};
   --letter-spacing-h1: {};

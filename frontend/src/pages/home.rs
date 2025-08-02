@@ -37,26 +37,26 @@ impl Default for FarmStats {
 pub fn home_page(props: &HomePageProps) -> Html {
     let theme = use_theme();
     let colors = &theme.colors;
-    
+
     let user_name = props.user_name.as_deref().unwrap_or("เกษตรกร");
     let farm_stats = props.farm_stats.as_ref().unwrap_or(&FarmStats::default());
-    
+
     // Navigation callbacks
     let navigate_to_camera = Callback::from(|_| {
         // Navigate to camera page
         web_sys::console::log_1(&"Navigate to camera".into());
     });
-    
+
     let navigate_to_chat = Callback::from(|_| {
         // Navigate to chat page
         web_sys::console::log_1(&"Navigate to chat".into());
     });
-    
+
     let navigate_to_history = Callback::from(|_| {
         // Navigate to diagnosis history
         web_sys::console::log_1(&"Navigate to history".into());
     });
-    
+
     let navigate_to_profile = Callback::from(|_| {
         // Navigate to profile
         web_sys::console::log_1(&"Navigate to profile".into());
@@ -75,7 +75,7 @@ pub fn home_page(props: &HomePageProps) -> Html {
                             {format!("สวัสดี {}! ระบบตรวจจับโรคพืชด้วย AI สำหรับเกษตรกรไทย", user_name)}
                         </Typography>
                     </div>
-                    
+
                     <div class="hero-cta">
                         <GradientButton
                             variant={ButtonVariant::Primary}
@@ -88,7 +88,7 @@ pub fn home_page(props: &HomePageProps) -> Html {
                         </GradientButton>
                     </div>
                 </div>
-                
+
                 // Decorative background elements
                 <div class="hero-bg-elements">
                     <div class="hero-bg-circle hero-bg-circle-1"></div>
@@ -98,16 +98,16 @@ pub fn home_page(props: &HomePageProps) -> Html {
             </section>
 
             // Dashboard Section with Bento Grid
-            <BentoSection 
-                title="แดชบอร์ดฟาร์ม" 
+            <BentoSection
+                title="แดชบอร์ดฟาร์ม"
                 subtitle="ภาพรวมสุขภาพพืชผลและการจัดการฟาร์มของคุณ"
                 class="dashboard-section"
             >
                 <BentoGrid columns={4} gap="1.5rem" responsive={true}>
                     // Quick Camera Action - Large Card (2x2)
-                    <BentoCard 
-                        span_cols={2} 
-                        span_rows={2} 
+                    <BentoCard
+                        span_cols={2}
+                        span_rows={2}
                         gradient={colors.get_primary_gradient()}
                         hover_effect={true}
                         clickable={true}
@@ -154,9 +154,9 @@ pub fn home_page(props: &HomePageProps) -> Html {
                     </BentoCard>
 
                     // Chat Assistant - Wide Card (2x1)
-                    <BentoCard 
-                        span_cols={2} 
-                        span_rows={1} 
+                    <BentoCard
+                        span_cols={2}
+                        span_rows={1}
                         gradient={format!("linear-gradient(135deg, {}, {})", colors.accent_purple, colors.primary_energetic_pink)}
                         hover_effect={true}
                         clickable={true}
@@ -189,8 +189,8 @@ pub fn home_page(props: &HomePageProps) -> Html {
             </BentoSection>
 
             // Quick Actions Section
-            <BentoSection 
-                title="การดำเนินการด่วน" 
+            <BentoSection
+                title="การดำเนินการด่วน"
                 subtitle="เข้าถึงฟีเจอร์หลักได้อย่างรวดเร็ว"
                 class="quick-actions-section"
             >
@@ -228,8 +228,8 @@ pub fn home_page(props: &HomePageProps) -> Html {
             </BentoSection>
 
             // Recent Activity Section
-            <BentoSection 
-                title="กิจกรรมล่าสุด" 
+            <BentoSection
+                title="กิจกรรมล่าสุด"
                 class="recent-activity-section"
             >
                 <BentoGrid columns={1}>
@@ -582,29 +582,29 @@ pub fn generate_homepage_css() -> String {
     padding: var(--space-xl) var(--space-md);
     margin-bottom: var(--space-xl);
   }
-  
+
   .hero-title {
     font-size: var(--text-3xl);
   }
-  
+
   .hero-subtitle {
     font-size: var(--text-base);
   }
-  
+
   .quick-action-icon {
     font-size: 2rem;
   }
-  
+
   .hero-bg-circle {
     display: none;
   }
-  
+
   .chat-action-content {
     flex-direction: column;
     text-align: center;
     gap: var(--space-sm);
   }
-  
+
   .chat-action-arrow {
     display: none;
   }
@@ -614,11 +614,11 @@ pub fn generate_homepage_css() -> String {
   .hero-section {
     padding: var(--space-lg) var(--space-sm);
   }
-  
+
   .activity-item {
     padding: var(--space-sm);
   }
-  
+
   .activity-icon {
     width: 32px;
     height: 32px;
@@ -631,7 +631,7 @@ pub fn generate_homepage_css() -> String {
   .hero-bg-circle {
     animation: none;
   }
-  
+
   .chat-action-arrow {
     transition: none;
   }

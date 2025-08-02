@@ -8,11 +8,11 @@ pub fn validate_text_input(text: &str) -> Result<(), String> {
     if text.trim().is_empty() {
         return Err("Text cannot be empty".to_string());
     }
-    
+
     if text.len() > 1000 {
         return Err("Text too long".to_string());
     }
-    
+
     Ok(())
 }
 

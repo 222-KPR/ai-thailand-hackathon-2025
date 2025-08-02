@@ -46,86 +46,86 @@ export BUILD_TARGET="${BUILD_TARGET:-production}"
 # Functions
 check_requirements() {
     log "Checking deployment requirements..."
-    
+
     if ! command -v docker &> /dev/null; then
         error "Docker is not installed or not in PATH"
     fi
-    
+
     if ! command -v docker-compose &> /dev/null; then
         error "Docker Compose is not installed or not in PATH"
     fi
-    
+
     if ! docker info &> /dev/null; then
         error "Docker daemon is not running"
     fi
-    
+
     success "All requirements satisfied"
 }
 
 build_services() {
     log "Building AI services..."
-    
+
     cd "$AI_SERVICES_DIR"
-    
+
     # Build with docker-compose
     docker-compose build --no-cache
-    
+
     success "AI services built successfully"
 }
 
 deploy_services() {
     log "Deploying AI services..."
-    
+
     cd "$AI_SERVICES_DIR"
-    
+
     # Stop existing services
     log "Stopping existing services..."
     docker-compose down --remove-orphans || true
-    
+
     # Start services
     log "Starting AI services..."
     docker-compose up -d
-    
+
     success "AI services deployed successfully"
 }
 
 wait_for_services() {
     log "Waiting for services to be ready..."
-    
+
     local max_attempts=30
     local attempt=1
-    
+
     while [[ $attempt -le $max_attempts ]]; do
         log "Health check attempt $attempt/$max_attempts"
-        
+
         # Check Vision Service
         if curl -f "http://localhost:$VISION_SERVICE_PORT/health" &> /dev/null; then
             success "Vision Service is healthy"
             break
         fi
-        
+
         if [[ $attempt -eq $max_attempts ]]; then
             error "Vision Service failed to become healthy after $max_attempts attempts"
         fi
-        
+
         sleep 10
         ((attempt++))
     done
-    
+
     # Check Queue Worker
     attempt=1
     while [[ $attempt -le $max_attempts ]]; do
         log "Queue Worker health check attempt $attempt/$max_attempts"
-        
+
         if curl -f "http://localhost:$QUEUE_WORKER_PORT/health" &> /dev/null; then
             success "Queue Worker is healthy"
             break
         fi
-        
+
         if [[ $attempt -eq $max_attempts ]]; then
             error "Queue Worker failed to become healthy after $max_attempts attempts"
         fi
-        
+
         sleep 10
         ((attempt++))
     done
@@ -134,15 +134,15 @@ wait_for_services() {
 show_status() {
     log "Deployment Status:"
     echo
-    
+
     log "Running Containers:"
     docker ps --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}" | grep team10 || warn "No team10 containers found"
     echo
-    
+
     log "Team10 Volumes:"
     docker volume ls | grep team10 || warn "No team10 volumes found"
     echo
-    
+
     log "Service URLs:"
     echo "  • Vision Service:    http://localhost:$VISION_SERVICE_PORT"
     echo "  • Queue Worker:      http://localhost:$QUEUE_WORKER_PORT"
@@ -154,22 +154,22 @@ show_status() {
 
 cleanup_services() {
     log "Cleaning up AI services..."
-    
+
     cd "$AI_SERVICES_DIR"
-    
+
     # Stop and remove containers, networks, and volumes
     docker-compose down --volumes --remove-orphans
-    
+
     # Clean up Docker system
     docker system prune -f
-    
+
     success "Cleanup completed"
 }
 
 # Main deployment function
 main() {
     local action="${1:-deploy}"
-    
+
     case "$action" in
         "deploy")
             log "Starting AI services deployment..."

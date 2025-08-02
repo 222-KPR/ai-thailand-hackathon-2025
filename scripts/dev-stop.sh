@@ -36,7 +36,7 @@ warn() {
 # Stop API Gateway
 stop_api_gateway() {
     log "Stopping API Gateway..."
-    
+
     # Stop by PID file if exists
     if [[ -f "$PROJECT_ROOT/logs/api-gateway.pid" ]]; then
         local api_pid=$(cat "$PROJECT_ROOT/logs/api-gateway.pid")
@@ -48,7 +48,7 @@ stop_api_gateway() {
         fi
         rm -f "$PROJECT_ROOT/logs/api-gateway.pid"
     fi
-    
+
     # Kill any remaining processes
     if pgrep -f "target.*api-gateway" > /dev/null; then
         pkill -f "target.*api-gateway"
@@ -59,7 +59,7 @@ stop_api_gateway() {
 # Stop Frontend
 stop_frontend() {
     log "Stopping Frontend development server..."
-    
+
     # Stop by PID file if exists
     if [[ -f "$PROJECT_ROOT/logs/frontend.pid" ]]; then
         local frontend_pid=$(cat "$PROJECT_ROOT/logs/frontend.pid")
@@ -71,7 +71,7 @@ stop_frontend() {
         fi
         rm -f "$PROJECT_ROOT/logs/frontend.pid"
     fi
-    
+
     # Kill any remaining trunk serve processes
     if pgrep -f "trunk serve" > /dev/null; then
         pkill -f "trunk serve"
@@ -82,9 +82,9 @@ stop_frontend() {
 # Stop Redis
 stop_redis() {
     log "Stopping Redis..."
-    
+
     cd "$PROJECT_ROOT"
-    
+
     if docker ps --format "table {{.Names}}" | grep -q "team10-redis"; then
         docker-compose stop redis
         success "Redis container stopped"
@@ -96,15 +96,15 @@ stop_redis() {
 # Clean up logs and temporary files
 cleanup_files() {
     log "Cleaning up temporary files..."
-    
+
     # Remove PID files
     rm -f "$PROJECT_ROOT/logs/api-gateway.pid"
     rm -f "$PROJECT_ROOT/logs/frontend.pid"
-    
+
     # Optionally clean up log files (commented out to preserve logs)
     # rm -f "$PROJECT_ROOT/logs/api-gateway.log"
     # rm -f "$PROJECT_ROOT/logs/frontend.log"
-    
+
     success "Cleanup completed"
 }
 
@@ -129,13 +129,13 @@ show_status() {
 # Main execution
 main() {
     log "Stopping AI4Thai Crop Guardian development services..."
-    
+
     stop_api_gateway
     stop_frontend
     stop_redis
     cleanup_files
     show_status
-    
+
     success "All development services stopped successfully"
 }
 

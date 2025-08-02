@@ -1,5 +1,5 @@
 //! Components Module
-//! 
+//!
 //! This module contains all UI components organized by category.
 
 pub mod layout;

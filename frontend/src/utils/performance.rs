@@ -34,7 +34,7 @@ impl Default for PerformanceMetrics {
 #[hook]
 pub fn use_performance_monitor() -> PerformanceMetrics {
     let metrics = use_state(PerformanceMetrics::default);
-    
+
     use_effect_with_deps(
         {
             let metrics = metrics.clone();
@@ -50,7 +50,7 @@ pub fn use_performance_monitor() -> PerformanceMetrics {
         },
         (),
     );
-    
+
     (*metrics).clone()
 }
 
@@ -70,7 +70,7 @@ fn monitor_core_web_vitals(metrics: UseStateHandle<PerformanceMetrics>, performa
             }
         }
     }
-    
+
     // Largest Contentful Paint
     let metrics_clone = metrics.clone();
     let lcp_observer = PerformanceObserver::new(&Closure::wrap(Box::new(move |entries: js_sys::Array| {
@@ -84,7 +84,7 @@ fn monitor_core_web_vitals(metrics: UseStateHandle<PerformanceMetrics>, performa
             }
         }
     }) as Box<dyn Fn(js_sys::Array)>).into_js_value().unchecked_ref()).unwrap();
-    
+
     let _ = lcp_observer.observe(&js_sys::Object::from(JsValue::from_str(r#"{"entryTypes": ["largest-contentful-paint"]}"#)));
 }
 
@@ -94,7 +94,7 @@ pub fn use_lazy_image(src: &str, placeholder: Option<&str>) -> (String, bool) {
     let is_loaded = use_state(|| false);
     let current_src = use_state(|| placeholder.unwrap_or("").to_string());
     let src = src.to_string();
-    
+
     use_effect_with_deps(
         {
             let is_loaded = is_loaded.clone();
@@ -121,7 +121,7 @@ pub fn use_lazy_image(src: &str, placeholder: Option<&str>) -> (String, bool) {
                                 }
                             }
                         }) as Box<dyn Fn(js_sys::Array)>);
-                        
+
                         if let Ok(observer) = web_sys::IntersectionObserver::new(callback.as_ref().unchecked_ref()) {
                             // Observer would be attached to image element in component
                             callback.forget();
@@ -133,7 +133,7 @@ pub fn use_lazy_image(src: &str, placeholder: Option<&str>) -> (String, bool) {
         },
         src,
     );
-    
+
     ((*current_src).clone(), *is_loaded)
 }
 
@@ -141,7 +141,7 @@ pub fn use_lazy_image(src: &str, placeholder: Option<&str>) -> (String, bool) {
 #[hook]
 pub fn use_debounce<T: Clone + PartialEq + 'static>(value: T, delay: u32) -> T {
     let debounced_value = use_state(|| value.clone());
-    
+
     use_effect_with_deps(
         {
             let debounced_value = debounced_value.clone();
@@ -150,7 +150,7 @@ pub fn use_debounce<T: Clone + PartialEq + 'static>(value: T, delay: u32) -> T {
                 let timeout = gloo_timers::callback::Timeout::new(delay, move || {
                     debounced_value.set(value);
                 });
-                
+
                 move || {
                     timeout.cancel();
                 }
@@ -158,7 +158,7 @@ pub fn use_debounce<T: Clone + PartialEq + 'static>(value: T, delay: u32) -> T {
         },
         value,
     );
-    
+
     (*debounced_value).clone()
 }
 
@@ -166,7 +166,7 @@ pub fn use_debounce<T: Clone + PartialEq + 'static>(value: T, delay: u32) -> T {
 #[hook]
 pub fn use_throttle<F: Fn() + 'static>(callback: F, delay: u32) -> Callback<()> {
     let last_call = use_state(|| 0.0);
-    
+
     Callback::from({
         let last_call = last_call.clone();
         move |_| {
@@ -197,13 +197,13 @@ pub fn use_virtual_scroll<T: Clone>(
     config: VirtualScrollConfig,
 ) -> (Vec<(usize, T)>, f64, Callback<f64>) {
     let scroll_top = use_state(|| 0.0);
-    
+
     let visible_items = {
         let start_index = (*scroll_top / config.item_height).floor() as usize;
         let visible_count = (config.container_height / config.item_height).ceil() as usize;
         let end_index = (start_index + visible_count + config.overscan).min(items.len());
         let start_index = start_index.saturating_sub(config.overscan);
-        
+
         items
             .iter()
             .enumerate()
@@ -212,16 +212,16 @@ pub fn use_virtual_scroll<T: Clone>(
             .map(|(i, item)| (i, item.clone()))
             .collect::<Vec<_>>()
     };
-    
+
     let total_height = items.len() as f64 * config.item_height;
-    
+
     let on_scroll = {
         let scroll_top = scroll_top.clone();
         Callback::from(move |new_scroll_top: f64| {
             scroll_top.set(new_scroll_top);
         })
     };
-    
+
     (visible_items, total_height, on_scroll)
 }
 
@@ -235,7 +235,7 @@ where
 {
     let memoized = use_state(|| None::<T>);
     let prev_deps = use_state(|| None::<D>);
-    
+
     if prev_deps.as_ref() != Some(&deps) || memoized.is_none() {
         let value = compute();
         memoized.set(Some(value.clone()));
@@ -264,7 +264,7 @@ pub fn lazy_image(props: &LazyImageProps) -> Html {
     let is_loaded = use_state(|| false);
     let has_error = use_state(|| false);
     let is_intersecting = use_state(|| false);
-    
+
     // Intersection Observer for lazy loading
     use_effect_with_deps(
         {
@@ -286,11 +286,11 @@ pub fn lazy_image(props: &LazyImageProps) -> Html {
                             }
                         }
                     }) as Box<dyn Fn(js_sys::Array)>);
-                    
+
                     if let Ok(observer) = web_sys::IntersectionObserver::new(callback.as_ref().unchecked_ref()) {
                         let _ = observer.observe(&img_element);
                         callback.forget();
-                        
+
                         return move || {
                             let _ = observer.unobserve(&img_element);
                         };
@@ -301,7 +301,7 @@ pub fn lazy_image(props: &LazyImageProps) -> Html {
         },
         (),
     );
-    
+
     let on_load = {
         let is_loaded = is_loaded.clone();
         let on_load = props.on_load.clone();
@@ -312,7 +312,7 @@ pub fn lazy_image(props: &LazyImageProps) -> Html {
             }
         })
     };
-    
+
     let on_error = {
         let has_error = has_error.clone();
         let on_error = props.on_error.clone();
@@ -323,20 +323,20 @@ pub fn lazy_image(props: &LazyImageProps) -> Html {
             }
         })
     };
-    
+
     let src = if *is_intersecting {
         &props.src
     } else {
         props.placeholder.as_deref().unwrap_or("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='1' height='1'%3E%3C/svg%3E")
     };
-    
+
     let img_classes = classes!(
         "lazy-image",
         if *is_loaded { "lazy-image-loaded" } else { "lazy-image-loading" },
         if *has_error { "lazy-image-error" } else { "" },
         props.class.clone()
     );
-    
+
     html! {
         <img
             ref={img_ref}
@@ -362,7 +362,7 @@ pub struct PerformanceMonitorProps {
 pub fn performance_monitor(props: &PerformanceMonitorProps) -> Html {
     let enabled = props.enabled.unwrap_or(true);
     let metrics = use_performance_monitor();
-    
+
     use_effect_with_deps(
         {
             let on_metrics = props.on_metrics.clone();
@@ -378,7 +378,7 @@ pub fn performance_monitor(props: &PerformanceMonitorProps) -> Html {
         },
         (enabled, metrics),
     );
-    
+
     html! {}
 }
 
@@ -553,7 +553,7 @@ pub fn generate_performance_css() -> String {
     -webkit-backface-visibility: hidden;
     backface-visibility: hidden;
   }
-  
+
   .mobile-simple {
     border-radius: var(--radius-sm);
     box-shadow: var(--shadow-sm);
@@ -568,7 +568,7 @@ pub fn generate_performance_css() -> String {
     transform: none !important;
     filter: none !important;
   }
-  
+
   .low-end-optimized .complex-paint {
     border-radius: 0;
     box-shadow: none;
@@ -582,7 +582,7 @@ pub fn generate_performance_css() -> String {
     animation: none !important;
     transition: none !important;
   }
-  
+
   .respect-motion-preference * {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
@@ -607,7 +607,7 @@ pub fn generate_performance_css() -> String {
     box-shadow: none !important;
     border-radius: 0 !important;
   }
-  
+
   .print-hidden {
     display: none !important;
   }

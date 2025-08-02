@@ -76,7 +76,7 @@ impl AppState {
 /// Route switch component
 fn switch(routes: Route) -> Html {
     match routes {
-        Route::Home => html! { 
+        Route::Home => html! {
             <div class="home-page">
                 <h1>{ "AI4Thai Crop Guardian" }</h1>
                 <p>{ "Chat interface coming soon..." }</p>
@@ -93,13 +93,13 @@ fn switch(routes: Route) -> Html {
 #[function_component(App)]
 pub fn app() -> Html {
     let state = use_state(AppState::default);
-    
+
     // Initialize i18n context
     let i18n_ctx = use_memo(
         state.language.clone(),
         |language| I18nContext::new(language.clone()),
     );
-    
+
     // Check API health on mount
     {
         let state = state.clone();
@@ -122,7 +122,7 @@ pub fn app() -> Html {
             });
         });
     }
-    
+
     html! {
         <BrowserRouter>
             <ContextProvider<UseStateHandle<AppState>> context={state.clone()}>
@@ -131,7 +131,7 @@ pub fn app() -> Html {
                         <header class="app-header">
                             <h1>{ "AI4Thai Crop Guardian" }</h1>
                         </header>
-                        
+
                         {if !state.api_health {
                             html! {
                                 <div class="api-error-banner">
@@ -142,11 +142,11 @@ pub fn app() -> Html {
                         } else {
                             html! {}
                         }}
-                        
+
                         <main class="main-content">
                             <Switch<Route> render={switch} />
                         </main>
-                        
+
                         <footer class="app-footer">
                             <p>{"AI4Thai Crop Guardian © 2025"}</p>
                         </footer>

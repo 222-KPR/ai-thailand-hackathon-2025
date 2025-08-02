@@ -42,7 +42,7 @@ impl Default for BreakpointConfig {
 impl Breakpoint {
     pub fn from_width(width: u32) -> Self {
         let config = BreakpointConfig::default();
-        
+
         if width < config.xs {
             Breakpoint::XS
         } else if width < config.sm {
@@ -57,19 +57,19 @@ impl Breakpoint {
             Breakpoint::XXL
         }
     }
-    
+
     pub fn is_mobile(&self) -> bool {
         matches!(self, Breakpoint::XS | Breakpoint::SM)
     }
-    
+
     pub fn is_tablet(&self) -> bool {
         matches!(self, Breakpoint::MD | Breakpoint::LG)
     }
-    
+
     pub fn is_desktop(&self) -> bool {
         matches!(self, Breakpoint::XL | Breakpoint::XXL)
     }
-    
+
     pub fn get_columns(&self, mobile: usize, tablet: usize, desktop: usize) -> usize {
         if self.is_mobile() {
             mobile
@@ -85,7 +85,7 @@ impl Breakpoint {
 #[hook]
 pub fn use_breakpoint() -> Breakpoint {
     let breakpoint = use_state(|| Breakpoint::LG);
-    
+
     use_effect_with_deps(
         {
             let breakpoint = breakpoint.clone();
@@ -103,16 +103,16 @@ pub fn use_breakpoint() -> Breakpoint {
                         }
                     }
                 };
-                
+
                 // Initial check
                 update_breakpoint();
-                
+
                 // Add resize listener
                 let closure = Closure::wrap(Box::new(update_breakpoint) as Box<dyn Fn()>);
                 if let Some(window) = window() {
                     let _ = window.add_event_listener_with_callback("resize", closure.as_ref().unchecked_ref());
                 }
-                
+
                 move || {
                     if let Some(window) = window() {
                         let _ = window.remove_event_listener_with_callback("resize", closure.as_ref().unchecked_ref());
@@ -122,7 +122,7 @@ pub fn use_breakpoint() -> Breakpoint {
         },
         (),
     );
-    
+
     (*breakpoint).clone()
 }
 
@@ -131,7 +131,7 @@ pub fn use_breakpoint() -> Breakpoint {
 pub fn use_media_query(query: &str) -> bool {
     let matches = use_state(|| false);
     let query = query.to_string();
-    
+
     use_effect_with_deps(
         {
             let matches = matches.clone();
@@ -142,15 +142,15 @@ pub fn use_media_query(query: &str) -> bool {
                         if let Some(mql) = media_query {
                             // Set initial value
                             matches.set(mql.matches());
-                            
+
                             // Add change listener
                             let matches_clone = matches.clone();
                             let closure = Closure::wrap(Box::new(move |event: web_sys::MediaQueryListEvent| {
                                 matches_clone.set(event.matches());
                             }) as Box<dyn Fn(web_sys::MediaQueryListEvent)>);
-                            
+
                             let _ = mql.add_listener_with_opt_callback(Some(closure.as_ref().unchecked_ref()));
-                            
+
                             return move || {
                                 let _ = mql.remove_listener_with_opt_callback(Some(closure.as_ref().unchecked_ref()));
                             };
@@ -162,7 +162,7 @@ pub fn use_media_query(query: &str) -> bool {
         },
         query,
     );
-    
+
     *matches
 }
 
@@ -170,7 +170,7 @@ pub fn use_media_query(query: &str) -> bool {
 #[hook]
 pub fn use_window_size() -> (u32, u32) {
     let size = use_state(|| (1024u32, 768u32));
-    
+
     use_effect_with_deps(
         {
             let size = size.clone();
@@ -185,16 +185,16 @@ pub fn use_window_size() -> (u32, u32) {
                         }
                     }
                 };
-                
+
                 // Initial check
                 update_size();
-                
+
                 // Add resize listener
                 let closure = Closure::wrap(Box::new(update_size) as Box<dyn Fn()>);
                 if let Some(window) = window() {
                     let _ = window.add_event_listener_with_callback("resize", closure.as_ref().unchecked_ref());
                 }
-                
+
                 move || {
                     if let Some(window) = window() {
                         let _ = window.remove_event_listener_with_callback("resize", closure.as_ref().unchecked_ref());
@@ -204,7 +204,7 @@ pub fn use_window_size() -> (u32, u32) {
         },
         (),
     );
-    
+
     *size
 }
 
@@ -221,7 +221,7 @@ pub struct ResponsiveProps {
 #[function_component(Responsive)]
 pub fn responsive(props: &ResponsiveProps) -> Html {
     let breakpoint = use_breakpoint();
-    
+
     let content = if breakpoint.is_mobile() && props.mobile.is_some() {
         props.mobile.clone().unwrap()
     } else if breakpoint.is_tablet() && props.tablet.is_some() {
@@ -231,7 +231,7 @@ pub fn responsive(props: &ResponsiveProps) -> Html {
     } else {
         html! { { for props.children.iter() } }
     };
-    
+
     html! {
         <div class={classes!("responsive-container", props.class.clone())}>
             {content}
@@ -252,7 +252,7 @@ pub struct ShowProps {
 #[function_component(Show)]
 pub fn show(props: &ShowProps) -> Html {
     let breakpoint = use_breakpoint();
-    
+
     let should_show = if breakpoint.is_mobile() {
         props.mobile.unwrap_or(true)
     } else if breakpoint.is_tablet() {
@@ -260,7 +260,7 @@ pub fn show(props: &ShowProps) -> Html {
     } else {
         props.desktop.unwrap_or(true)
     };
-    
+
     if should_show {
         html! {
             <div class={classes!("show-container", props.class.clone())}>
@@ -284,7 +284,7 @@ pub struct HideProps {
 #[function_component(Hide)]
 pub fn hide(props: &HideProps) -> Html {
     let breakpoint = use_breakpoint();
-    
+
     let should_hide = if breakpoint.is_mobile() {
         props.mobile.unwrap_or(false)
     } else if breakpoint.is_tablet() {
@@ -292,7 +292,7 @@ pub fn hide(props: &HideProps) -> Html {
     } else {
         props.desktop.unwrap_or(false)
     };
-    
+
     if !should_hide {
         html! {
             <div class={classes!("hide-container", props.class.clone())}>
@@ -319,7 +319,7 @@ pub fn container(props: &ContainerProps) -> Html {
     let breakpoint = use_breakpoint();
     let padding = props.padding.unwrap_or(true);
     let center = props.center.unwrap_or(true);
-    
+
     let max_width = props.max_width.as_deref().unwrap_or_else(|| {
         match breakpoint {
             Breakpoint::XS => "100%",
@@ -330,7 +330,7 @@ pub fn container(props: &ContainerProps) -> Html {
             Breakpoint::XXL => "1536px",
         }
     });
-    
+
     let padding_value = if padding {
         match breakpoint {
             Breakpoint::XS => "var(--space-md)",
@@ -340,16 +340,16 @@ pub fn container(props: &ContainerProps) -> Html {
     } else {
         "0"
     };
-    
+
     let style = format!(
         "max-width: {}; padding: 0 {}; {}",
         max_width,
         padding_value,
         if center { "margin: 0 auto;" } else { "" }
     );
-    
+
     html! {
-        <div 
+        <div
             class={classes!("container", props.class.clone())}
             {style}
         >
@@ -425,7 +425,7 @@ pub fn generate_responsive_css() -> String {
   .mobile-only {
     display: none;
   }
-  
+
   .tablet-up {
     display: block;
   }
@@ -600,7 +600,7 @@ pub fn generate_responsive_css() -> String {
     min-width: 44px;
     padding: var(--space-sm);
   }
-  
+
   .touch-friendly-large {
     min-height: 56px;
     min-width: 56px;
@@ -629,11 +629,11 @@ pub fn generate_responsive_css() -> String {
   .no-print {
     display: none !important;
   }
-  
+
   .print-only {
     display: block !important;
   }
-  
+
   .responsive-container,
   .container {
     max-width: none !important;
@@ -660,7 +660,7 @@ mod tests {
         let mobile = Breakpoint::XS;
         let tablet = Breakpoint::MD;
         let desktop = Breakpoint::XL;
-        
+
         assert!(mobile.is_mobile());
         assert!(tablet.is_tablet());
         assert!(desktop.is_desktop());

@@ -25,7 +25,7 @@ COPY app.py tasks.py ./
 # Development stage
 FROM base as development
 RUN pip install --no-cache-dir pytest pytest-asyncio
-CMD ["uvicorn", "app:app", "--host", "0.0.0.0", "--port", "8003", "--reload"]
+CMD ["uvicorn", "app:app", "--host", "0.0.0.0", "--port", "2003", "--reload"]
 
 # Production stage
 FROM base as production
@@ -35,7 +35,7 @@ USER worker
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=30s --start-period=5s --retries=3 \
-    CMD curl -f http://localhost:8003/health || exit 1
+    CMD curl -f http://localhost:2003/health || exit 1
 
 # Start the application
-CMD ["uvicorn", "app:app", "--host", "0.0.0.0", "--port", "8003"]
+CMD ["uvicorn", "app:app", "--host", "0.0.0.0", "--port", "2003"]

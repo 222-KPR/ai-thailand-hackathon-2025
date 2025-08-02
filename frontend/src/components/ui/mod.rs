@@ -2,7 +2,7 @@
 // Licensed under the MIT License
 
 //! UI Components Module
-//! 
+//!
 //! This module contains reusable UI components with dopamine colors
 //! and modern design patterns.
 

@@ -40,31 +40,31 @@ body {
   --color-accent-lime-green: #32D74B;
   --color-accent-purple: #AF52DE;
   --color-accent-yellow: #FFD60A;
-  
+
   /* Backgrounds */
   --color-bg-light: #FAFAFA;
   --color-bg-dark: #1C1C1E;
   --color-surface-light: #FFFFFF;
   --color-surface-dark: #2C2C2E;
-  
+
   /* Semantic colors */
   --color-success: #32D74B;
   --color-warning: #FFD60A;
   --color-error: #FF453A;
   --color-info: #0066FF;
-  
+
   /* Text colors */
   --color-text-primary: #1C1C1E;
   --color-text-secondary: #6B7280;
   --color-text-disabled: #9CA3AF;
   --color-text-inverse: #FFFFFF;
-  
+
   /* Font families */
   --font-heading: 'Poppins', 'Sarabun', -apple-system, BlinkMacSystemFont, sans-serif;
   --font-body: 'Inter', 'Sarabun', -apple-system, BlinkMacSystemFont, sans-serif;
   --font-mono: 'JetBrains Mono', 'Courier New', monospace;
   --font-thai: 'Sarabun', 'Prompt', 'Kanit', sans-serif;
-  
+
   /* Font sizes */
   --text-xs: 0.75rem;
   --text-sm: 0.875rem;
@@ -75,7 +75,7 @@ body {
   --text-3xl: 1.875rem;
   --text-4xl: 2.25rem;
   --text-5xl: 3rem;
-  
+
   /* Font weights */
   --weight-light: 300;
   --weight-normal: 400;
@@ -83,13 +83,13 @@ body {
   --weight-semibold: 600;
   --weight-bold: 700;
   --weight-extrabold: 800;
-  
+
   /* Line heights */
   --leading-tight: 1.25;
   --leading-normal: 1.5;
   --leading-relaxed: 1.625;
   --leading-loose: 2;
-  
+
   /* Spacing scale */
   --space-xs: 0.25rem;
   --space-sm: 0.5rem;
@@ -100,7 +100,7 @@ body {
   --space-3xl: 4rem;
   --space-4xl: 5rem;
   --space-5xl: 6rem;
-  
+
   /* Border radius */
   --radius-none: 0;
   --radius-sm: 4px;
@@ -109,7 +109,7 @@ body {
   --radius-xl: 16px;
   --radius-2xl: 24px;
   --radius-full: 9999px;
-  
+
   /* Shadows */
   --shadow-none: none;
   --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
@@ -118,20 +118,20 @@ body {
   --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
   --shadow-2xl: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
   --shadow-inner: inset 0 2px 4px 0 rgba(0, 0, 0, 0.06);
-  
+
   /* Dopamine shadows */
   --shadow-primary: 0 4px 20px rgba(0, 102, 255, 0.3);
   --shadow-success: 0 4px 20px rgba(50, 215, 75, 0.3);
   --shadow-warning: 0 4px 20px rgba(255, 214, 10, 0.3);
   --shadow-error: 0 4px 20px rgba(255, 69, 58, 0.3);
   --shadow-hover: 0 8px 30px rgba(0, 0, 0, 0.12);
-  
+
   /* Gradients */
   --gradient-primary: linear-gradient(135deg, var(--color-primary-electric-blue), var(--color-primary-energetic-pink));
   --gradient-success: linear-gradient(135deg, var(--color-accent-lime-green), var(--color-primary-electric-blue));
   --gradient-warning: linear-gradient(135deg, var(--color-accent-yellow), var(--color-primary-vibrant-orange));
   --gradient-hero: linear-gradient(135deg, var(--color-primary-electric-blue) 0%, var(--color-primary-energetic-pink) 50%, var(--color-accent-purple) 100%);
-  
+
   /* Animation */
   --duration-fast: 150ms;
   --duration-normal: 300ms;
@@ -140,7 +140,7 @@ body {
   --ease-in-out: cubic-bezier(0.4, 0, 0.2, 1);
   --ease-bounce: cubic-bezier(0.68, -0.55, 0.265, 1.55);
   --ease-elastic: cubic-bezier(0.175, 0.885, 0.32, 1.275);
-  
+
   /* Breakpoints */
   --breakpoint-xs: 475px;
   --breakpoint-sm: 640px;
@@ -393,16 +393,16 @@ p {
 
 /* Loading Animations */
 @keyframes pulse-dopamine {
-  0%, 100% { 
+  0%, 100% {
     background: var(--color-primary-electric-blue);
   }
-  25% { 
+  25% {
     background: var(--color-primary-vibrant-orange);
   }
-  50% { 
+  50% {
     background: var(--color-primary-energetic-pink);
   }
-  75% { 
+  75% {
     background: var(--color-accent-lime-green);
   }
 }
@@ -473,25 +473,25 @@ p {
     --text-3xl: 1.5rem;
     --text-2xl: 1.25rem;
   }
-  
+
   .bento-grid {
     grid-template-columns: 1fr !important;
     gap: var(--space-md);
     padding: var(--space-md);
   }
-  
+
   .bento-card {
     grid-column: 1 !important;
     grid-row: auto !important;
     min-height: 100px;
     padding: var(--space-md);
   }
-  
+
   .btn {
     width: 100%;
     justify-content: center;
   }
-  
+
   .btn-sm {
     width: auto;
   }
@@ -504,12 +504,12 @@ p {
     --text-3xl: 1.25rem;
     --text-2xl: 1.125rem;
   }
-  
+
   .bento-grid {
     padding: var(--space-sm);
     gap: var(--space-sm);
   }
-  
+
   .bento-card {
     padding: var(--space-sm);
   }
@@ -524,11 +524,11 @@ p {
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
   }
-  
+
   .bento-card:hover {
     transform: none;
   }
-  
+
   .btn:hover:not(:disabled) {
     transform: none;
   }
@@ -546,11 +546,11 @@ p {
     --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.3);
     --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.3);
   }
-  
+
   .bento-card {
     border: 1px solid var(--color-text-secondary);
   }
-  
+
   .btn {
     border: 2px solid currentColor;
   }
@@ -562,7 +562,7 @@ p {
     box-shadow: none;
     border: 1px solid #ccc;
   }
-  
+
   .btn {
     background: none !important;
     color: #000 !important;

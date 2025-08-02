@@ -1,5 +1,5 @@
 //! Chat Window Component
-//! 
+//!
 //! This module provides the main chat interface for the AI4Thai Crop Guardian
 //! application, supporting multimodal conversations with AI agricultural advisors.
 
@@ -17,15 +17,15 @@ use chrono::Utc;
 pub struct ChatWindowProps {
     /// Current conversation ID
     pub conversation_id: Uuid,
-    
+
     /// Language for the chat interface
     #[prop_or(Language::Thai)]
     pub language: Language,
-    
+
     /// Whether the chat is in loading state
     #[prop_or(false)]
     pub loading: bool,
-    
+
     /// Callback when a new message is sent
     #[prop_or_default]
     pub on_message_sent: Callback<ChatMessage>,
@@ -35,13 +35,13 @@ pub struct ChatWindowProps {
 #[function_component(ChatWindow)]
 pub fn chat_window(props: &ChatWindowProps) -> Html {
     let i18n = use_context::<I18nContext>().expect("I18nContext not found");
-    
+
     // State management
     let messages = use_state(Vec::<ChatMessage>::new);
     let input_value = use_state(String::new);
     let is_sending = use_state(|| false);
     let input_ref = use_node_ref();
-    
+
     // Send message handler
     let on_send_message = {
         let messages = messages.clone();
@@ -50,36 +50,36 @@ pub fn chat_window(props: &ChatWindowProps) -> Html {
         let conversation_id = props.conversation_id;
         let language = props.language.clone();
         let on_message_sent = props.on_message_sent.clone();
-        
+
         Callback::from(move |_| {
             let message_content = (*input_value).clone();
             if message_content.trim().is_empty() || *is_sending {
                 return;
             }
-            
+
             is_sending.set(true);
             input_value.set(String::new());
-            
+
             // Create user message
             let user_message = ChatMessage {
                 role: ChatRole::User,
                 content: message_content.clone(),
                 timestamp: Utc::now(),
             };
-            
+
             // Add user message to chat
             let mut current_messages = (*messages).clone();
             current_messages.push(user_message.clone());
             messages.set(current_messages);
-            
+
             // Emit message sent event
             on_message_sent.emit(user_message);
-            
+
             // Send to API
             let messages_clone = messages.clone();
             let is_sending_clone = is_sending.clone();
             let language_clone = language.clone();
-            
+
             wasm_bindgen_futures::spawn_local(async move {
                 match ApiService::send_chat_message(
                     message_content,
@@ -92,7 +92,7 @@ pub fn chat_window(props: &ChatWindowProps) -> Html {
                             content: response,
                             timestamp: Utc::now(),
                         };
-                        
+
                         let mut current_messages = (*messages_clone).clone();
                         current_messages.push(ai_message);
                         messages_clone.set(current_messages);
@@ -104,18 +104,18 @@ pub fn chat_window(props: &ChatWindowProps) -> Html {
                             content: i18n.t("error.network"),
                             timestamp: Utc::now(),
                         };
-                        
+
                         let mut current_messages = (*messages_clone).clone();
                         current_messages.push(error_message);
                         messages_clone.set(current_messages);
                     }
                 }
-                
+
                 is_sending_clone.set(false);
             });
         })
     };
-    
+
     // Input change handler
     let on_input_change = {
         let input_value = input_value.clone();
@@ -124,7 +124,7 @@ pub fn chat_window(props: &ChatWindowProps) -> Html {
             input_value.set(input.value());
         })
     };
-    
+
     // Key press handler for Enter key
     let on_key_press = {
         let on_send_message = on_send_message.clone();
@@ -135,7 +135,7 @@ pub fn chat_window(props: &ChatWindowProps) -> Html {
             }
         })
     };
-    
+
     html! {
         <div class="chat-window">
             <div class="chat-header">
@@ -154,7 +154,7 @@ pub fn chat_window(props: &ChatWindowProps) -> Html {
                     }
                 </div>
             </div>
-            
+
             <div class="chat-messages">
                 if messages.is_empty() {
                     <div class="welcome-message">
@@ -183,7 +183,7 @@ pub fn chat_window(props: &ChatWindowProps) -> Html {
                         }
                     })}
                 }
-                
+
                 if *is_sending {
                     <div class="typing-indicator">
                         <div class="typing-dots">
@@ -197,7 +197,7 @@ pub fn chat_window(props: &ChatWindowProps) -> Html {
                     </div>
                 }
             </div>
-            
+
             <div class="chat-input">
                 <div class="input-container">
                     <textarea
@@ -221,7 +221,7 @@ pub fn chat_window(props: &ChatWindowProps) -> Html {
                         </GradientButton>
                     </div>
                 </div>
-                
+
                 <div class="input-tools">
                     <button class="tool-button" title={i18n.t("chat.upload_image")}>
                         <span class="icon">{"📷"}</span>
@@ -242,7 +242,7 @@ pub fn chat_window(props: &ChatWindowProps) -> Html {
 pub struct MessageBubbleProps {
     /// The chat message to display
     pub message: ChatMessage,
-    
+
     /// Language for formatting
     #[prop_or(Language::Thai)]
     pub language: Language,
@@ -253,30 +253,30 @@ pub struct MessageBubbleProps {
 pub fn message_bubble(props: &MessageBubbleProps) -> Html {
     let message = &props.message;
     let is_user = matches!(message.role, ChatRole::User);
-    
+
     let bubble_class = if is_user { "user-bubble" } else { "ai-bubble" };
     let message_class = if is_user { "user-message" } else { "ai-message" };
-    
+
     html! {
         <div class={classes!("message", message_class)}>
             if !is_user {
                 <div class="message-avatar">{"🤖"}</div>
             }
-            
+
             <div class="message-content">
                 <div class={classes!("message-bubble", bubble_class)}>
                     <div class="message-text">
                         { &message.content }
                     </div>
                 </div>
-                
+
                 <div class="message-meta">
                     <span class="message-time">
                         { message.timestamp.format("%H:%M").to_string() }
                     </span>
                 </div>
             </div>
-            
+
             if is_user {
                 <div class="message-avatar user-avatar">{"👤"}</div>
             }
@@ -295,7 +295,7 @@ mod tests {
             content: "Test message".to_string(),
             timestamp: Utc::now(),
         };
-        
+
         // Test that user messages are properly identified
         assert_eq!(message.role, ChatRole::User);
         assert_eq!(message.content, "Test message");
@@ -308,7 +308,7 @@ mod tests {
             content: "AI response".to_string(),
             timestamp: Utc::now(),
         };
-        
+
         // Test that assistant messages are properly identified
         assert_eq!(message.role, ChatRole::Assistant);
         assert_eq!(message.content, "AI response");

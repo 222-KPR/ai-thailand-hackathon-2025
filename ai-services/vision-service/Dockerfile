@@ -80,14 +80,14 @@ USER app
 # RUN python3 -c "from models.model_registry import ModelRegistry; ModelRegistry.download_models()"
 
 # Expose port
-EXPOSE 8001
+EXPOSE 2001
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=30s --start-period=60s --retries=3 \
-    CMD curl -f http://localhost:8001/health || exit 1
+    CMD curl -f http://localhost:2001/health || exit 1
 
 # Production command
-CMD ["gunicorn", "app:app", "-w", "1", "-k", "uvicorn.workers.UvicornWorker", "--bind", "0.0.0.0:8001", "--timeout", "120"]
+CMD ["gunicorn", "app:app", "-w", "1", "-k", "uvicorn.workers.UvicornWorker", "--bind", "0.0.0.0:2001", "--timeout", "120"]
 
 # GPU-optimized production stage
 FROM production as gpu-production
@@ -105,4 +105,4 @@ ENV CUDA_VISIBLE_DEVICES=0
 ENV TORCH_CUDA_ARCH_LIST="6.0;6.1;7.0;7.5;8.0;8.6"
 
 # GPU production command with optimizations
-CMD ["gunicorn", "app:app", "-w", "1", "-k", "uvicorn.workers.UvicornWorker", "--bind", "0.0.0.0:8001", "--timeout", "120", "--preload"]
+CMD ["gunicorn", "app:app", "-w", "1", "-k", "uvicorn.workers.UvicornWorker", "--bind", "0.0.0.0:2001", "--timeout", "120", "--preload"]

@@ -30,12 +30,12 @@ build-ai-services:
     - echo "Building Vision Service..."
     - docker build -t team10-vision-service:$CI_COMMIT_SHA ../vision-service/
     - docker tag team10-vision-service:$CI_COMMIT_SHA team10-vision-service:latest
-    
+
     # Build Queue Worker
     - echo "Building Queue Worker..."
     - docker build -t team10-queue-worker:$CI_COMMIT_SHA ../queue-worker/
     - docker tag team10-queue-worker:$CI_COMMIT_SHA team10-queue-worker:latest
-    
+
     # Save images for deployment stage
     - docker save team10-vision-service:latest | gzip > vision-service.tar.gz
     - docker save team10-queue-worker:latest | gzip > queue-worker.tar.gz
@@ -66,17 +66,17 @@ deploy-ai-services:
     - echo "Loading Docker images..."
     - docker load < vision-service.tar.gz
     - docker load < queue-worker.tar.gz
-    
+
     # Verify images loaded
     - docker images | grep team10
-    
+
     # Stop existing services if running
     - echo "Stopping existing AI services..."
     - docker-compose down --remove-orphans || true
-    
+
     # Clean up old containers and volumes (optional)
     - docker container prune -f || true
-    
+
     # Set environment variables for deployment
     - export VISION_SERVICE_PORT=$VISION_SERVICE_PORT
     - export QUEUE_WORKER_PORT=$QUEUE_WORKER_PORT
@@ -85,24 +85,24 @@ deploy-ai-services:
     - export PROMETHEUS_PORT=$PROMETHEUS_PORT
     - export GRAFANA_PORT=$GRAFANA_PORT
     - export BUILD_TARGET=production
-    
+
     # Deploy AI services
     - echo "Deploying AI services..."
     - docker-compose up -d
-    
+
     # Wait for services to be healthy
     - echo "Waiting for services to be ready..."
     - sleep 30
-    
+
     # Health checks
     - echo "Performing health checks..."
     - curl -f http://localhost:$VISION_SERVICE_PORT/health || exit 1
     - curl -f http://localhost:$QUEUE_WORKER_PORT/health || exit 1
-    
+
     # Display running containers
     - echo "AI Services deployment completed successfully!"
     - docker ps --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}"
-    
+
     # Display volume usage
     - echo "Team10 volumes:"
     - docker volume ls | grep team10 || echo "No team10 volumes found"

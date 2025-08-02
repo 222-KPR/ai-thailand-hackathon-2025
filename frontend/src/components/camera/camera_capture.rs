@@ -37,7 +37,7 @@ pub struct CameraCaptureProps {
 pub fn camera_capture(props: &CameraCaptureProps) -> Html {
     let theme = use_theme();
     let colors = &theme.colors;
-    
+
     let video_ref = use_node_ref();
     let canvas_ref = use_node_ref();
     let camera_state = use_state(|| CameraState::Inactive);
@@ -45,22 +45,22 @@ pub fn camera_capture(props: &CameraCaptureProps) -> Html {
     let stream_handle = use_state(|| None::<MediaStream>);
     let captured_image = use_state(|| None::<String>);
     let show_tips = use_state(|| true);
-    
+
     // Start camera
     let start_camera = {
         let video_ref = video_ref.clone();
         let camera_state = camera_state.clone();
         let camera_facing = camera_facing.clone();
         let stream_handle = stream_handle.clone();
-        
+
         Callback::from(move |_| {
             let video_ref = video_ref.clone();
             let camera_state = camera_state.clone();
             let camera_facing = camera_facing.clone();
             let stream_handle = stream_handle.clone();
-            
+
             camera_state.set(CameraState::Loading);
-            
+
             wasm_bindgen_futures::spawn_local(async move {
                 match get_user_media(&camera_facing).await {
                     Ok(stream) => {
@@ -77,12 +77,12 @@ pub fn camera_capture(props: &CameraCaptureProps) -> Html {
             });
         })
     };
-    
+
     // Switch camera
     let switch_camera = {
         let camera_facing = camera_facing.clone();
         let start_camera = start_camera.clone();
-        
+
         Callback::from(move |_| {
             let new_facing = match *camera_facing {
                 CameraFacing::User => CameraFacing::Environment,
@@ -92,7 +92,7 @@ pub fn camera_capture(props: &CameraCaptureProps) -> Html {
             start_camera.emit(());
         })
     };
-    
+
     // Capture image
     let capture_image = {
         let video_ref = video_ref.clone();
@@ -100,16 +100,16 @@ pub fn camera_capture(props: &CameraCaptureProps) -> Html {
         let camera_state = camera_state.clone();
         let captured_image = captured_image.clone();
         let on_capture = props.on_capture.clone();
-        
+
         Callback::from(move |_| {
             let video_ref = video_ref.clone();
             let canvas_ref = canvas_ref.clone();
             let camera_state = camera_state.clone();
             let captured_image = captured_image.clone();
             let on_capture = on_capture.clone();
-            
+
             camera_state.set(CameraState::Capturing);
-            
+
             if let (Some(video), Some(canvas)) = (
                 video_ref.cast::<HtmlVideoElement>(),
                 canvas_ref.cast::<HtmlCanvasElement>()
@@ -120,44 +120,44 @@ pub fn camera_capture(props: &CameraCaptureProps) -> Html {
                     .unwrap()
                     .dyn_into::<web_sys::CanvasRenderingContext2d>()
                     .unwrap();
-                
+
                 // Set canvas size to video size
                 let video_width = video.video_width();
                 let video_height = video.video_height();
                 canvas.set_width(video_width);
                 canvas.set_height(video_height);
-                
+
                 // Draw video frame to canvas
                 context.draw_image_with_html_video_element(&video, 0.0, 0.0).unwrap();
-                
+
                 // Get image data as base64
                 let image_data = canvas.to_data_url().unwrap();
                 captured_image.set(Some(image_data.clone()));
                 camera_state.set(CameraState::Preview);
-                
+
                 // Emit captured image
                 on_capture.emit(image_data);
             }
         })
     };
-    
+
     // Retake photo
     let retake_photo = {
         let camera_state = camera_state.clone();
         let captured_image = captured_image.clone();
-        
+
         Callback::from(move |_| {
             captured_image.set(None);
             camera_state.set(CameraState::Active);
         })
     };
-    
+
     // Open gallery
     let open_gallery = Callback::from(|_| {
         // Implement gallery opening logic
         web_sys::console::log_1(&"Open gallery".into());
     });
-    
+
     // Toggle tips
     let toggle_tips = {
         let show_tips = show_tips.clone();
@@ -165,7 +165,7 @@ pub fn camera_capture(props: &CameraCaptureProps) -> Html {
             show_tips.set(!*show_tips);
         })
     };
-    
+
     // Cancel callback
     let on_cancel = {
         let on_cancel = props.on_cancel.clone();
@@ -201,18 +201,18 @@ pub fn camera_capture(props: &CameraCaptureProps) -> Html {
                         }
                     } else {
                         // Live camera feed
-                        <video 
+                        <video
                             ref={video_ref.clone()}
-                            autoplay=true 
-                            playsinline=true 
+                            autoplay=true
+                            playsinline=true
                             muted=true
                             class="camera-video"
                         />
                     }
-                    
+
                     // Hidden canvas for capture
                     <canvas ref={canvas_ref.clone()} style="display: none;"></canvas>
-                    
+
                     // Camera Overlay
                     <div class="camera-overlay">
                         // Focus frame
@@ -222,14 +222,14 @@ pub fn camera_capture(props: &CameraCaptureProps) -> Html {
                             <div class="focus-corner focus-corner-bl"></div>
                             <div class="focus-corner focus-corner-br"></div>
                         </div>
-                        
+
                         // Guidance text
                         <div class="guidance-text">
                             <Typography variant={TypographyVariant::Body2} color={TypographyColor::Inverse} class="thai-text">
                                 {"📍 วางใบพืชที่เป็นโรคให้อยู่ในกรอบ"}
                             </Typography>
                         </div>
-                        
+
                         // Loading indicator
                         if matches!(*camera_state, CameraState::Loading) {
                             <div class="camera-loading">
@@ -239,7 +239,7 @@ pub fn camera_capture(props: &CameraCaptureProps) -> Html {
                                 </Typography>
                             </div>
                         }
-                        
+
                         // Capturing indicator
                         if matches!(*camera_state, CameraState::Capturing) {
                             <div class="camera-capturing">
@@ -271,7 +271,7 @@ pub fn camera_capture(props: &CameraCaptureProps) -> Html {
                                     {"ใช้รูปนี้"}
                                 </GradientButton>
                             </BentoCard>
-                            
+
                             <BentoCard color={colors.text_secondary} hover_effect={true}>
                                 <GradientButton
                                     variant={ButtonVariant::Secondary}
@@ -299,9 +299,9 @@ pub fn camera_capture(props: &CameraCaptureProps) -> Html {
                                     {"เปลี่ยนกล้อง"}
                                 </GradientButton>
                             </BentoCard>
-                            
-                            <BentoCard 
-                                gradient={colors.get_primary_gradient()} 
+
+                            <BentoCard
+                                gradient={colors.get_primary_gradient()}
                                 hover_effect={true}
                             >
                                 if matches!(*camera_state, CameraState::Inactive) {
@@ -328,12 +328,12 @@ pub fn camera_capture(props: &CameraCaptureProps) -> Html {
                                     </GradientButton>
                                 }
                             </BentoCard>
-                            
+
                             <BentoCard color={colors.accent_purple} hover_effect={true}>
                                 <GradientButton
-                                    variant={ButtonVariant::Custom { 
-                                        primary: colors.accent_purple.to_string(), 
-                                        secondary: colors.primary_energetic_pink.to_string() 
+                                    variant={ButtonVariant::Custom {
+                                        primary: colors.accent_purple.to_string(),
+                                        secondary: colors.primary_energetic_pink.to_string()
                                     }}
                                     size={ButtonSize::Medium}
                                     onclick={open_gallery}
@@ -376,7 +376,7 @@ pub fn camera_capture(props: &CameraCaptureProps) -> Html {
                         </Typography>
                         <button class="tips-close" onclick={toggle_tips}>{"×"}</button>
                     </div>
-                    
+
                     <BentoGrid columns={2} gap="0.75rem">
                         <BentoCard class="tip-card">
                             <div class="tip-content">
@@ -386,7 +386,7 @@ pub fn camera_capture(props: &CameraCaptureProps) -> Html {
                                 </Typography>
                             </div>
                         </BentoCard>
-                        
+
                         <BentoCard class="tip-card">
                             <div class="tip-content">
                                 <div class="tip-icon">{"🔍"}</div>
@@ -395,7 +395,7 @@ pub fn camera_capture(props: &CameraCaptureProps) -> Html {
                                 </Typography>
                             </div>
                         </BentoCard>
-                        
+
                         <BentoCard class="tip-card">
                             <div class="tip-content">
                                 <div class="tip-icon">{"📐"}</div>
@@ -404,7 +404,7 @@ pub fn camera_capture(props: &CameraCaptureProps) -> Html {
                                 </Typography>
                             </div>
                         </BentoCard>
-                        
+
                         <BentoCard class="tip-card">
                             <div class="tip-content">
                                 <div class="tip-icon">{"🎯"}</div>
@@ -440,9 +440,9 @@ async fn get_user_media(facing: &CameraFacing) -> Result<MediaStream, String> {
     let media_devices = navigator
         .media_devices()
         .map_err(|_| "MediaDevices not supported")?;
-    
+
     let mut constraints = web_sys::MediaStreamConstraints::new();
-    
+
     // Video constraints
     let video_constraints = js_sys::Object::new();
     js_sys::Reflect::set(
@@ -453,18 +453,18 @@ async fn get_user_media(facing: &CameraFacing) -> Result<MediaStream, String> {
             CameraFacing::Environment => "environment".into(),
         },
     ).unwrap();
-    
+
     constraints.video(&video_constraints);
     constraints.audio(&false.into());
-    
+
     let promise = media_devices
         .get_user_media_with_constraints(&constraints)
         .map_err(|_| "Failed to get user media")?;
-    
+
     let stream = JsFuture::from(promise)
         .await
         .map_err(|_| "Failed to get media stream")?;
-    
+
     Ok(stream.dyn_into::<MediaStream>().unwrap())
 }
 
@@ -722,20 +722,20 @@ pub fn generate_camera_css() -> String {
   .camera-interface {
     padding: var(--space-md);
   }
-  
+
   .camera-viewfinder {
     aspect-ratio: 3/4;
   }
-  
+
   .camera-overlay {
     padding: var(--space-md);
   }
-  
+
   .focus-frame {
     width: 90%;
     height: 70%;
   }
-  
+
   .tips-header {
     flex-direction: column;
     gap: var(--space-sm);
@@ -748,12 +748,12 @@ pub fn generate_camera_css() -> String {
     padding: var(--space-sm);
     gap: var(--space-md);
   }
-  
+
   .camera-loading,
   .camera-capturing {
     padding: var(--space-lg);
   }
-  
+
   .tip-content {
     flex-direction: column;
     text-align: center;
@@ -766,7 +766,7 @@ pub fn generate_camera_css() -> String {
   .camera-loading-spinner {
     animation: none;
   }
-  
+
   .capture-flash {
     animation: none;
   }

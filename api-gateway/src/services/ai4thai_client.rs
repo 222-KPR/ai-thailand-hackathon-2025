@@ -50,9 +50,7 @@ impl AI4ThaiClient {
         let voice = voice.unwrap_or_else(|| self.config.tts.get_voice_for_language(language));
 
         if !self.config.tts.is_voice_supported(voice) {
-            return Err(AppError::Validation(format!(
-                "Unsupported voice: {voice}"
-            )));
+            return Err(AppError::Validation(format!("Unsupported voice: {voice}")));
         }
 
         // Prepare request

@@ -35,21 +35,21 @@ print_error() {
 # Check prerequisites
 check_prerequisites() {
     print_status "Checking prerequisites..."
-    
+
     # Check Docker
     if ! command -v docker &> /dev/null; then
         print_error "Docker is not installed. Please install Docker first."
         exit 1
     fi
     print_success "Docker found: $(docker --version)"
-    
+
     # Check Docker Compose
     if ! command -v docker-compose &> /dev/null; then
         print_error "Docker Compose is not installed. Please install Docker Compose first."
         exit 1
     fi
     print_success "Docker Compose found: $(docker-compose --version)"
-    
+
     # Check if Docker daemon is running
     if ! docker info &> /dev/null; then
         print_error "Docker daemon is not running. Please start Docker first."
@@ -61,7 +61,7 @@ check_prerequisites() {
 # Setup environment
 setup_environment() {
     print_status "Setting up environment..."
-    
+
     if [ ! -f ".env" ]; then
         if [ -f ".env.example" ]; then
             cp .env.example .env
@@ -74,7 +74,7 @@ setup_environment() {
     else
         print_success "Environment file already exists"
     fi
-    
+
     # Check if AI4THAI_API_KEY is set
     if grep -q "AI4THAI_API_KEY=your_ai4thai_api_key_here" .env; then
         print_warning "Please update AI4THAI_API_KEY in .env file with your actual API key"
@@ -85,7 +85,7 @@ setup_environment() {
 # Check port availability
 check_ports() {
     print_status "Checking port availability..."
-    
+
     PORTS=(3000 8080 5432 6379)
     for port in "${PORTS[@]}"; do
         if lsof -Pi :$port -sTCP:LISTEN -t >/dev/null 2>&1; then
@@ -100,23 +100,23 @@ check_ports() {
 # Start services
 start_services() {
     print_status "Starting AI4Thai Crop Guardian services..."
-    
+
     # Pull latest images
     print_status "Pulling Docker images..."
     docker-compose pull
-    
+
     # Build local services
     print_status "Building local services..."
     docker-compose build
-    
+
     # Start services
     print_status "Starting services..."
     docker-compose up -d
-    
+
     # Wait for services to be ready
     print_status "Waiting for services to be ready..."
     sleep 10
-    
+
     # Check service health
     check_service_health
 }
@@ -124,7 +124,7 @@ start_services() {
 # Check service health
 check_service_health() {
     print_status "Checking service health..."
-    
+
     # Check if containers are running
     if docker-compose ps | grep -q "Up"; then
         print_success "Services are running"
@@ -133,7 +133,7 @@ check_service_health() {
         docker-compose ps
         exit 1
     fi
-    
+
     # Check API Gateway health
     print_status "Checking API Gateway health..."
     for i in {1..30}; do
@@ -147,7 +147,7 @@ check_service_health() {
         fi
         sleep 2
     done
-    
+
     # Check Frontend availability
     print_status "Checking Frontend availability..."
     for i in {1..15}; do
@@ -223,7 +223,7 @@ cleanup() {
 # Main execution
 main() {
     print_status "Starting AI4Thai Crop Guardian demo deployment..."
-    
+
     check_prerequisites
     setup_environment
     check_ports

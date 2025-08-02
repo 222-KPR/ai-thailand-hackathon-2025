@@ -339,11 +339,11 @@ done
 # 7. Set up Git hooks (if .git exists)
 if [ -d ".git" ]; then
     print_status "=== GIT HOOKS SETUP ==="
-    
+
     if [ ! -d ".git/hooks" ]; then
         mkdir -p .git/hooks
     fi
-    
+
     # Pre-commit hook
     cat > .git/hooks/pre-commit << 'EOF'
 #!/bin/bash
@@ -363,25 +363,25 @@ fi
 if [ -d "ai-services/venv" ]; then
     echo "Checking Python formatting..."
     source ai-services/venv/bin/activate
-    
+
     if [ -d "ai-services/vision-service" ]; then
         cd ai-services/vision-service
         python -m black --check .
         cd ../..
     fi
-    
+
     if [ -d "ai-services/llm-service" ]; then
         cd ai-services/llm-service
         python -m black --check .
         cd ../..
     fi
-    
+
     deactivate
 fi
 
 echo "Pre-commit checks passed!"
 EOF
-    
+
     chmod +x .git/hooks/pre-commit
     print_success "Git pre-commit hook installed"
 fi
@@ -497,7 +497,7 @@ echo ""
 
 if $rust_tools_ok && $python_ok && $node_ok; then
     print_success "🎉 Development environment setup completed successfully!"
-    
+
     echo ""
     print_status "Next steps:"
     echo "  1. Edit .env file with your API keys and configuration"
@@ -510,7 +510,7 @@ if $rust_tools_ok && $python_ok && $node_ok; then
     echo "  • Frontend tests: ./scripts/test-frontend.sh"
     echo "  • Start all services: ./scripts/dev-start.sh"
     echo "  • View documentation: cargo doc --open"
-    
+
 else
     print_warning "⚠️  Setup completed with some issues. Please resolve the failed components."
     echo ""

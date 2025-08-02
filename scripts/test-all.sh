@@ -39,13 +39,13 @@ run_test() {
     local test_name="$1"
     local test_command="$2"
     local directory="$3"
-    
+
     print_status "Running $test_name..."
-    
+
     if [ -n "$directory" ]; then
         cd "$directory"
     fi
-    
+
     if eval "$test_command"; then
         print_success "$test_name passed"
         if [ -n "$directory" ]; then
@@ -110,13 +110,13 @@ print_status "=== RUST BACKEND TESTS ==="
 if [ -d "api-gateway" ]; then
     run_test "API Gateway Unit Tests" "cargo test --lib" "api-gateway"
     update_results $?
-    
+
     run_test "API Gateway Integration Tests" "cargo test --test '*'" "api-gateway"
     update_results $?
-    
+
     run_test "API Gateway Clippy Lints" "cargo clippy -- -D warnings" "api-gateway"
     update_results $?
-    
+
     run_test "API Gateway Format Check" "cargo fmt -- --check" "api-gateway"
     update_results $?
 else
@@ -127,7 +127,7 @@ fi
 if [ -d "shared" ]; then
     run_test "Shared Library Tests" "cargo test" "shared"
     update_results $?
-    
+
     run_test "Shared Library Clippy" "cargo clippy -- -D warnings" "shared"
     update_results $?
 else
@@ -138,7 +138,7 @@ fi
 if [ -d "queue-worker" ]; then
     run_test "Queue Worker Tests" "cargo test" "queue-worker"
     update_results $?
-    
+
     run_test "Queue Worker Clippy" "cargo clippy -- -D warnings" "queue-worker"
     update_results $?
 else
@@ -160,40 +160,40 @@ if [ -d "ai-services" ]; then
         pip install pytest pytest-cov black flake8
         cd ..
     fi
-    
+
     # Activate virtual environment
     source ai-services/venv/bin/activate
-    
+
     # Vision Service Tests
     if [ -d "ai-services/vision-service" ]; then
         run_test "Vision Service Unit Tests" "python -m pytest tests/ -v" "ai-services/vision-service"
         update_results $?
-        
+
         run_test "Vision Service Code Coverage" "python -m pytest tests/ --cov=. --cov-report=term-missing --cov-fail-under=80" "ai-services/vision-service"
         update_results $?
-        
+
         run_test "Vision Service Code Format" "python -m black --check ." "ai-services/vision-service"
         update_results $?
-        
+
         run_test "Vision Service Linting" "python -m flake8 . --max-line-length=88 --extend-ignore=E203,W503" "ai-services/vision-service"
         update_results $?
     fi
-    
+
     # LLM Service Tests
     if [ -d "ai-services/llm-service" ]; then
         run_test "LLM Service Unit Tests" "python -m pytest tests/ -v" "ai-services/llm-service"
         update_results $?
-        
+
         run_test "LLM Service Code Coverage" "python -m pytest tests/ --cov=. --cov-report=term-missing --cov-fail-under=80" "ai-services/llm-service"
         update_results $?
-        
+
         run_test "LLM Service Code Format" "python -m black --check ." "ai-services/llm-service"
         update_results $?
-        
+
         run_test "LLM Service Linting" "python -m flake8 . --max-line-length=88 --extend-ignore=E203,W503" "ai-services/llm-service"
         update_results $?
     fi
-    
+
     deactivate
 else
     print_warning "AI Services directory not found, skipping Python tests"
@@ -208,26 +208,26 @@ if [ -d "frontend" ]; then
         print_warning "WebAssembly target not installed. Installing..."
         rustup target add wasm32-unknown-unknown
     fi
-    
+
     run_test "Frontend Unit Tests" "wasm-pack test --headless --firefox" "frontend"
     update_results $?
-    
+
     run_test "Frontend Component Tests" "wasm-pack test --headless --firefox -- --test component_tests" "frontend"
     update_results $?
-    
+
     run_test "Frontend Design System Tests" "wasm-pack test --headless --firefox -- --test design_system_tests" "frontend"
     update_results $?
-    
+
     run_test "Frontend Clippy Lints" "cargo clippy --target wasm32-unknown-unknown -- -D warnings" "frontend"
     update_results $?
-    
+
     run_test "Frontend Format Check" "cargo fmt -- --check" "frontend"
     update_results $?
-    
+
     # Build test to ensure everything compiles
     run_test "Frontend Build Test" "trunk build --release" "frontend"
     update_results $?
-    
+
     # Clean up build artifacts
     if [ -d "frontend/dist" ]; then
         rm -rf frontend/dist
@@ -242,10 +242,10 @@ print_status "=== INTEGRATION TESTS ==="
 if [ -d "tests" ]; then
     run_test "API Integration Tests" "cargo test --test api_integration" "tests"
     update_results $?
-    
+
     run_test "Service Integration Tests" "cargo test --test service_integration" "tests"
     update_results $?
-    
+
     run_test "Database Integration Tests" "cargo test --test database_integration" "tests"
     update_results $?
 else
@@ -321,24 +321,24 @@ echo ""
 
 if [ $FAILED_TESTS -eq 0 ]; then
     print_success "All tests passed! 🎉"
-    
+
     # Generate coverage report if tarpaulin is available
     if command_exists cargo-tarpaulin; then
         print_status "Generating coverage report..."
         cargo tarpaulin --out Html --output-dir coverage/ --skip-clean
         print_success "Coverage report generated in coverage/tarpaulin-report.html"
     fi
-    
+
     exit 0
 else
     print_error "$FAILED_TESTS test(s) failed"
-    
+
     echo ""
     print_status "To run specific test categories:"
     echo "  Backend only:     ./scripts/test-backend.sh"
     echo "  Frontend only:    ./scripts/test-frontend.sh"
     echo "  Python only:      ./scripts/test-python.sh"
     echo "  Integration only: ./scripts/test-integration.sh"
-    
+
     exit 1
 fi

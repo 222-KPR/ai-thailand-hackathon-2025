@@ -5,7 +5,7 @@ use crate::i18n::I18nContext;
 #[function_component(WelcomeMessage)]
 pub fn welcome_message() -> Html {
     let i18n = use_context::<I18nContext>().expect("I18nContext not found");
-    
+
     html! {
         <div class="welcome-message">
             <div class="welcome-hero">
@@ -13,7 +13,7 @@ pub fn welcome_message() -> Html {
                 <h2 class="welcome-title">{i18n.t("welcome.title")}</h2>
                 <p class="welcome-subtitle">{i18n.t("welcome.subtitle")}</p>
             </div>
-            
+
             <div class="welcome-content">
                 <div class="how-to-use">
                     <h3 class="section-title">{i18n.t("welcome.how_to_use")}</h3>
@@ -36,7 +36,7 @@ pub fn welcome_message() -> Html {
                         </div>
                     </div>
                 </div>
-                
+
                 <div class="supported-crops">
                     <h3 class="section-title">{"พืชที่รองรับ / Supported Crops"}</h3>
                     <div class="crops-grid">

@@ -8,7 +8,7 @@ use crate::i18n::I18nContext;
 pub fn header() -> Html {
     let state = use_context::<UseStateHandle<AppState>>().expect("AppState not found");
     let i18n = use_context::<I18nContext>().expect("I18nContext not found");
-    
+
     let toggle_language = {
         let state = state.clone();
         Callback::from(move |_: MouseEvent| {
@@ -21,7 +21,7 @@ pub fn header() -> Html {
             state.set(new_state);
         })
     };
-    
+
     let start_new_conversation = {
         let state = state.clone();
         Callback::from(move |_: MouseEvent| {
@@ -32,7 +32,7 @@ pub fn header() -> Html {
             state.set(new_state);
         })
     };
-    
+
     html! {
         <header class="header">
             <div class="header-content">
@@ -45,14 +45,14 @@ pub fn header() -> Html {
                         </div>
                     </div>
                 </div>
-                
+
                 <div class="header-center">
                     <div class="connection-status status-connected">
                         <span class="status-indicator"></span>
                         <span class="status-text">{i18n.t("status.connected")}</span>
                     </div>
                 </div>
-                
+
                 <div class="header-right">
                     <button
                         class="btn btn-secondary btn-sm"
@@ -62,7 +62,7 @@ pub fn header() -> Html {
                         <span class="icon">{"🔄"}</span>
                         <span class="btn-text">{i18n.t("chat.clear")}</span>
                     </button>
-                    
+
                     <button
                         class="btn btn-outline btn-sm language-toggle"
                         onclick={toggle_language}

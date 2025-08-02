@@ -79,10 +79,10 @@ FAILED_TESTS=0
 run_test() {
     local test_name="$1"
     local test_command="$2"
-    
+
     print_status "Running $test_name..."
     TOTAL_TESTS=$((TOTAL_TESTS + 1))
-    
+
     if eval "$test_command"; then
         print_success "$test_name passed"
         PASSED_TESTS=$((PASSED_TESTS + 1))
@@ -130,25 +130,25 @@ run_test "Production Build" "trunk build --release"
 # 10. Bundle Size Check
 if [ -f "dist/index.html" ]; then
     print_status "Checking bundle sizes..."
-    
+
     # Check WASM bundle size
     wasm_size=$(find dist -name "*.wasm" -exec wc -c {} + | tail -1 | awk '{print $1}')
     wasm_size_kb=$((wasm_size / 1024))
-    
+
     print_status "WASM bundle size: ${wasm_size_kb}KB"
-    
+
     if [ $wasm_size_kb -gt 500 ]; then
         print_warning "WASM bundle size (${wasm_size_kb}KB) exceeds recommended 500KB"
     else
         print_success "WASM bundle size within limits"
     fi
-    
+
     # Check total asset size
     total_size=$(find dist -type f -exec wc -c {} + | tail -1 | awk '{print $1}')
     total_size_mb=$((total_size / 1024 / 1024))
-    
+
     print_status "Total asset size: ${total_size_mb}MB"
-    
+
     if [ $total_size_mb -gt 2 ]; then
         print_warning "Total asset size (${total_size_mb}MB) exceeds recommended 2MB"
     else
@@ -159,38 +159,38 @@ fi
 # 11. Lighthouse Audit (if available)
 if command_exists lighthouse; then
     print_status "Running Lighthouse audit..."
-    
+
     # Start development server in background
     trunk serve --port 8080 &
     SERVER_PID=$!
-    
+
     # Wait for server to start
     sleep 5
-    
+
     # Run Lighthouse audit
     if lighthouse http://localhost:8080 --only-categories=pwa,performance,accessibility --chrome-flags="--headless" --output=json --output-path=lighthouse-report.json; then
         print_success "Lighthouse audit completed"
-        
+
         # Parse and display key metrics
         if command_exists jq; then
             pwa_score=$(jq '.categories.pwa.score * 100' lighthouse-report.json)
             performance_score=$(jq '.categories.performance.score * 100' lighthouse-report.json)
             accessibility_score=$(jq '.categories.accessibility.score * 100' lighthouse-report.json)
-            
+
             print_status "Lighthouse Scores:"
             echo "  PWA: ${pwa_score}%"
             echo "  Performance: ${performance_score}%"
             echo "  Accessibility: ${accessibility_score}%"
         fi
-        
+
         PASSED_TESTS=$((PASSED_TESTS + 1))
     else
         print_error "Lighthouse audit failed"
         FAILED_TESTS=$((FAILED_TESTS + 1))
     fi
-    
+
     TOTAL_TESTS=$((TOTAL_TESTS + 1))
-    
+
     # Stop development server
     kill $SERVER_PID 2>/dev/null || true
 else
@@ -219,7 +219,7 @@ echo ""
 
 if [ $FAILED_TESTS -eq 0 ]; then
     print_success "All frontend tests passed! 🎉"
-    
+
     echo ""
     print_status "Frontend Test Coverage Summary:"
     echo "  ✅ Component Unit Tests"
@@ -230,17 +230,17 @@ if [ $FAILED_TESTS -eq 0 ]; then
     echo "  ✅ PWA Functionality"
     echo "  ✅ Code Quality"
     echo "  ✅ Build Validation"
-    
+
     exit 0
 else
     print_error "$FAILED_TESTS frontend test(s) failed"
-    
+
     echo ""
     print_status "Common issues and solutions:"
     echo "  • WASM compilation errors: Check Rust version and target installation"
     echo "  • Test failures: Review test output and fix failing assertions"
     echo "  • Bundle size issues: Optimize imports and enable tree shaking"
     echo "  • Lighthouse failures: Check PWA manifest and service worker"
-    
+
     exit 1
 fi

@@ -2,7 +2,7 @@
 // Licensed under the MIT License
 
 //! Gradient Button Component
-//! 
+//!
 //! This module implements vibrant gradient buttons with dopamine colors,
 //! micro-interactions, and accessibility features.
 
@@ -32,7 +32,7 @@ impl ButtonSize {
             ButtonSize::ExtraLarge => "3.5rem",
         }
     }
-    
+
     /// Get the padding for the button size
     pub fn padding(&self) -> &'static str {
         match self {
@@ -42,7 +42,7 @@ impl ButtonSize {
             ButtonSize::ExtraLarge => "1.25rem 2.5rem",
         }
     }
-    
+
     /// Get the font size for the button size
     pub fn font_size(&self) -> &'static str {
         match self {
@@ -118,7 +118,7 @@ impl ButtonVariant {
             ),
         }
     }
-    
+
     /// Get the text color for the variant
     pub fn color(&self) -> &'static str {
         match self {
@@ -127,7 +127,7 @@ impl ButtonVariant {
             _ => SurfaceColors::SURFACE_LIGHT,
         }
     }
-    
+
     /// Get the border style for the variant
     pub fn border(&self) -> String {
         match self {
@@ -135,7 +135,7 @@ impl ButtonVariant {
             _ => "none".to_string(),
         }
     }
-    
+
     /// Get the hover background for the variant
     pub fn hover_background(&self) -> String {
         match self {
@@ -156,47 +156,47 @@ impl ButtonVariant {
 pub struct GradientButtonProps {
     /// Button text content
     pub children: Children,
-    
+
     /// Button size variant
     #[prop_or(ButtonSize::Medium)]
     pub size: ButtonSize,
-    
+
     /// Button style variant
     #[prop_or(ButtonVariant::Primary)]
     pub variant: ButtonVariant,
-    
+
     /// Whether the button is disabled
     #[prop_or(false)]
     pub disabled: bool,
-    
+
     /// Whether the button is in loading state
     #[prop_or(false)]
     pub loading: bool,
-    
+
     /// Whether the button should take full width
     #[prop_or(false)]
     pub full_width: bool,
-    
+
     /// Optional icon to display before text
     #[prop_or_default]
     pub icon: Option<Html>,
-    
+
     /// Optional icon to display after text
     #[prop_or_default]
     pub end_icon: Option<Html>,
-    
+
     /// Click handler
     #[prop_or_default]
     pub onclick: Callback<MouseEvent>,
-    
+
     /// Button type for forms
     #[prop_or_else(|| "button".to_string())]
     pub button_type: String,
-    
+
     /// Additional CSS classes
     #[prop_or_default]
     pub class: Classes,
-    
+
     /// ARIA label for accessibility
     #[prop_or_default]
     pub aria_label: Option<String>,
@@ -211,14 +211,14 @@ pub fn gradient_button(props: &GradientButtonProps) -> Html {
             100% { background-position: 200% 0; }
         }
     "#;
-    
+
     let loading_animation = r#"
         @keyframes spin {
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
         }
     "#;
-    
+
     let base_styles = format!(
         "position: relative;
          display: inline-flex;
@@ -243,7 +243,7 @@ pub fn gradient_button(props: &GradientButtonProps) -> Html {
          user-select: none;
          white-space: nowrap;
          {}
-         
+
          /* Shimmer effect overlay */
          &::before {{
            content: '';
@@ -263,33 +263,33 @@ pub fn gradient_button(props: &GradientButtonProps) -> Html {
            opacity: 0;
            transition: opacity 0.2s ease;
          }}
-         
+
          &:hover::before {{
            opacity: 1;
          }}
-         
+
          &:hover {{
            transform: translateY(-1px);
            box-shadow: {};
            background: {};
          }}
-         
+
          &:active {{
            transform: translateY(0);
            transition: transform 0.1s ease;
          }}
-         
+
          &:focus-visible {{
            outline: 2px solid {};
            outline-offset: 2px;
          }}
-         
+
          &:disabled {{
            opacity: 0.6;
            cursor: not-allowed;
            transform: none;
          }}
-         
+
          &:disabled:hover {{
            transform: none;
            box-shadow: {};
@@ -313,18 +313,18 @@ pub fn gradient_button(props: &GradientButtonProps) -> Html {
         PrimaryColors::ELECTRIC_BLUE,
         Shadows::MD,
     );
-    
+
     let loading_spinner = if props.loading {
         html! {
-            <div style="width: 1rem; height: 1rem; border: 2px solid currentColor; 
-                 border-top-color: transparent; border-radius: 50%; 
+            <div style="width: 1rem; height: 1rem; border: 2px solid currentColor;
+                 border-top-color: transparent; border-radius: 50%;
                  animation: spin 1s linear infinite;">
             </div>
         }
     } else {
         html! {}
     };
-    
+
     let content = if props.loading {
         html! {
             <>
@@ -345,7 +345,7 @@ pub fn gradient_button(props: &GradientButtonProps) -> Html {
             </>
         }
     };
-    
+
     html! {
         <>
             <style>{ shimmer_animation }{ loading_animation }</style>
@@ -368,15 +368,15 @@ pub fn gradient_button(props: &GradientButtonProps) -> Html {
 pub struct ButtonGroupProps {
     /// Button components to group
     pub children: Children,
-    
+
     /// Gap between buttons
     #[prop_or_else(|| Spacing::MD.to_string())]
     pub gap: String,
-    
+
     /// Whether buttons should stack vertically on mobile
     #[prop_or(true)]
     pub responsive: bool,
-    
+
     /// Additional CSS classes
     #[prop_or_default]
     pub class: Classes,
@@ -396,7 +396,7 @@ pub fn button_group(props: &ButtonGroupProps) -> Html {
     } else {
         String::new()
     };
-    
+
     let style = format!(
         "display: flex;
          align-items: center;
@@ -405,7 +405,7 @@ pub fn button_group(props: &ButtonGroupProps) -> Html {
         props.gap,
         responsive_styles
     );
-    
+
     html! {
         <div class={classes!("button-group", props.class.clone())} style={style}>
             { for props.children.iter() }
@@ -425,7 +425,7 @@ impl ButtonVariants {
             </GradientButton>
         }
     }
-    
+
     /// Create a secondary action button
     pub fn secondary(text: &str, onclick: Callback<MouseEvent>) -> Html {
         html! {
@@ -434,7 +434,7 @@ impl ButtonVariants {
             </GradientButton>
         }
     }
-    
+
     /// Create a button with icon
     pub fn with_icon(text: &str, icon: Html, onclick: Callback<MouseEvent>) -> Html {
         html! {
@@ -443,7 +443,7 @@ impl ButtonVariants {
             </GradientButton>
         }
     }
-    
+
     /// Create a loading button
     pub fn loading(text: &str) -> Html {
         html! {
@@ -452,7 +452,7 @@ impl ButtonVariants {
             </GradientButton>
         }
     }
-    
+
     /// Create a full-width button
     pub fn full_width(text: &str, onclick: Callback<MouseEvent>) -> Html {
         html! {

@@ -49,7 +49,7 @@ pub struct BorderScale {
     pub width_thin: &'static str,    // 1px
     pub width_normal: &'static str,  // 2px
     pub width_thick: &'static str,   // 4px
-    
+
     pub radius_none: &'static str,   // 0
     pub radius_sm: &'static str,     // 4px
     pub radius_md: &'static str,     // 8px
@@ -68,7 +68,7 @@ pub struct ShadowScale {
     pub xl: &'static str,
     pub xl2: &'static str,
     pub inner: &'static str,
-    
+
     // Dopamine-colored shadows
     pub primary: &'static str,
     pub success: &'static str,
@@ -83,7 +83,7 @@ pub struct AnimationScale {
     pub duration_normal: &'static str,   // 300ms
     pub duration_slow: &'static str,     // 500ms
     pub duration_slower: &'static str,   // 750ms
-    
+
     // Easing functions
     pub ease_linear: &'static str,
     pub ease_in: &'static str,
@@ -157,7 +157,7 @@ impl Default for BorderScale {
             width_thin: "1px",
             width_normal: "2px",
             width_thick: "4px",
-            
+
             radius_none: "0",
             radius_sm: "4px",
             radius_md: "8px",
@@ -179,7 +179,7 @@ impl Default for ShadowScale {
             xl: "0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)",
             xl2: "0 25px 50px -12px rgba(0, 0, 0, 0.25)",
             inner: "inset 0 2px 4px 0 rgba(0, 0, 0, 0.06)",
-            
+
             // Dopamine-colored shadows
             primary: "0 4px 20px rgba(0, 102, 255, 0.3)",
             success: "0 4px 20px rgba(50, 215, 75, 0.3)",
@@ -196,7 +196,7 @@ impl Default for AnimationScale {
             duration_normal: "300ms",
             duration_slow: "500ms",
             duration_slower: "750ms",
-            
+
             ease_linear: "linear",
             ease_in: "cubic-bezier(0.4, 0, 1, 1)",
             ease_out: "cubic-bezier(0, 0, 0.2, 1)",
@@ -236,7 +236,7 @@ impl DesignTokens {
             _ => self.spacing.md,
         }
     }
-    
+
     pub fn get_border_radius(&self, size: &str) -> &str {
         match size {
             "none" => self.borders.radius_none,
@@ -249,7 +249,7 @@ impl DesignTokens {
             _ => self.borders.radius_md,
         }
     }
-    
+
     pub fn get_shadow(&self, variant: &str) -> &str {
         match variant {
             "none" => self.shadows.none,
@@ -266,7 +266,7 @@ impl DesignTokens {
             _ => self.shadows.md,
         }
     }
-    
+
     pub fn get_animation_duration(&self, speed: &str) -> &str {
         match speed {
             "fast" => self.animations.duration_fast,
@@ -276,7 +276,7 @@ impl DesignTokens {
             _ => self.animations.duration_normal,
         }
     }
-    
+
     pub fn get_animation_easing(&self, easing: &str) -> &str {
         match easing {
             "linear" => self.animations.ease_linear,
@@ -304,7 +304,7 @@ pub fn generate_design_tokens_css(tokens: &DesignTokens) -> String {
   --space-3xl: {};
   --space-4xl: {};
   --space-5xl: {};
-  
+
   /* Sizing Scale */
   --size-xs: {};
   --size-sm: {};
@@ -318,7 +318,7 @@ pub fn generate_design_tokens_css(tokens: &DesignTokens) -> String {
   --size-6xl: {};
   --size-full: {};
   --size-screen: {};
-  
+
   /* Border Scale */
   --border-width-thin: {};
   --border-width-normal: {};
@@ -330,7 +330,7 @@ pub fn generate_design_tokens_css(tokens: &DesignTokens) -> String {
   --radius-xl: {};
   --radius-2xl: {};
   --radius-full: {};
-  
+
   /* Shadow Scale */
   --shadow-none: {};
   --shadow-sm: {};
@@ -343,7 +343,7 @@ pub fn generate_design_tokens_css(tokens: &DesignTokens) -> String {
   --shadow-success: {};
   --shadow-warning: {};
   --shadow-error: {};
-  
+
   /* Animation Scale */
   --duration-fast: {};
   --duration-normal: {};
@@ -355,7 +355,7 @@ pub fn generate_design_tokens_css(tokens: &DesignTokens) -> String {
   --ease-in-out: {};
   --ease-bounce: {};
   --ease-elastic: {};
-  
+
   /* Breakpoints */
   --breakpoint-xs: {};
   --breakpoint-sm: {};
@@ -366,24 +366,24 @@ pub fn generate_design_tokens_css(tokens: &DesignTokens) -> String {
 }}"#,
         tokens.spacing.xs, tokens.spacing.sm, tokens.spacing.md, tokens.spacing.lg,
         tokens.spacing.xl, tokens.spacing.xl2, tokens.spacing.xl3, tokens.spacing.xl4, tokens.spacing.xl5,
-        
+
         tokens.sizing.xs, tokens.sizing.sm, tokens.sizing.md, tokens.sizing.lg,
         tokens.sizing.xl, tokens.sizing.xl2, tokens.sizing.xl3, tokens.sizing.xl4,
         tokens.sizing.xl5, tokens.sizing.xl6, tokens.sizing.full, tokens.sizing.screen,
-        
+
         tokens.borders.width_thin, tokens.borders.width_normal, tokens.borders.width_thick,
         tokens.borders.radius_none, tokens.borders.radius_sm, tokens.borders.radius_md,
         tokens.borders.radius_lg, tokens.borders.radius_xl, tokens.borders.radius_xl2, tokens.borders.radius_full,
-        
+
         tokens.shadows.none, tokens.shadows.sm, tokens.shadows.md, tokens.shadows.lg,
         tokens.shadows.xl, tokens.shadows.xl2, tokens.shadows.inner,
         tokens.shadows.primary, tokens.shadows.success, tokens.shadows.warning, tokens.shadows.error,
-        
+
         tokens.animations.duration_fast, tokens.animations.duration_normal,
         tokens.animations.duration_slow, tokens.animations.duration_slower,
         tokens.animations.ease_linear, tokens.animations.ease_in, tokens.animations.ease_out,
         tokens.animations.ease_in_out, tokens.animations.ease_bounce, tokens.animations.ease_elastic,
-        
+
         tokens.breakpoints.xs, tokens.breakpoints.sm, tokens.breakpoints.md,
         tokens.breakpoints.lg, tokens.breakpoints.xl, tokens.breakpoints.xl2,
     )

@@ -2,7 +2,7 @@
 // Licensed under the MIT License
 
 //! Design System Styles Module
-//! 
+//!
 //! This module exports all design system components including colors,
 //! typography, spacing, and layout utilities.
 
@@ -27,7 +27,7 @@ impl DesignSystem {
             spacing::SpacingCSS::css_variables()
         )
     }
-    
+
     /// Generate base CSS reset and typography styles
     pub fn base_styles() -> String {
         format!(
@@ -195,7 +195,7 @@ input:focus, textarea:focus, select:focus {{
     color: var(--text-primary-dark);
     background-color: var(--bg-dark);
   }}
-  
+
   input, textarea, select {{
     border-color: var(--border-dark);
     background-color: var(--surface-dark);
@@ -227,11 +227,11 @@ input:focus, textarea:focus, select:focus {{
     box-shadow: none !important;
     text-shadow: none !important;
   }}
-  
+
   a, a:visited {{
     text-decoration: underline;
   }}
-  
+
   .no-print {{
     display: none !important;
   }}

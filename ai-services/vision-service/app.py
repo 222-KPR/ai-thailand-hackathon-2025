@@ -27,21 +27,21 @@ async def lifespan(app: FastAPI):
     try:
         # Initialize services
         logger.info("Initializing AI4Thai Vision Service...")
-        
+
         # Initialize pest detection service
         logger.info("Loading pest detection model...")
         pest_service = await get_pest_detection_service()
         await pest_service.initialize_model()
-        
+
         # Initialize disease detection service
         logger.info("Loading disease detection model...")
         disease_service = await get_disease_detection_service()
         await disease_service.initialize_model()
-        
+
         logger.info("Vision Service initialized successfully")
-        
+
         yield
-        
+
     except Exception as e:
         logger.error(f"Failed to initialize Vision Service: {e}")
         raise
@@ -69,7 +69,7 @@ app.add_middleware(
 async def health_check():
     """Basic health check endpoint."""
     return {
-        "status": "healthy", 
+        "status": "healthy",
         "service": "AI4Thai Vision Service - Pest Detection",
         "timestamp": time.time()
     }
@@ -80,7 +80,7 @@ async def detailed_health_check():
     try:
         pest_service = await get_pest_detection_service()
         health_status = await pest_service.health_check()
-        
+
         return {
             "status": "healthy",
             "service": "AI4Thai Vision Service - Pest Detection",
@@ -99,41 +99,41 @@ async def detect_pests(
 ):
     """
     Detect pests in agricultural images using YOLO11s model.
-    
+
     Args:
         image: Uploaded image file
         confidence_threshold: Minimum confidence threshold for pest detection (default: 0.01)
         return_details: Whether to return detailed detection information including bounding boxes
-        
+
     Returns:
         Pest detection results with identified pests and optional bounding boxes
     """
     start_time = time.time()
-    
+
     try:
         # Validate image
         if not image.content_type or not image.content_type.startswith('image/'):
             raise HTTPException(status_code=400, detail="Invalid image file type")
-        
+
         # Read image bytes
         image_bytes = await image.read()
         if len(image_bytes) == 0:
             raise HTTPException(status_code=400, detail="Empty image file")
-        
+
         # Get pest detection service
         pest_service = await get_pest_detection_service()
-        
+
         # Run pest detection
         results = await pest_service.detect_pests_from_bytes(
             image_bytes=image_bytes,
             conf_threshold=confidence_threshold,
             return_details=return_details
         )
-        
+
         processing_time = time.time() - start_time
-        
+
         logger.info(f"Pest detection completed in {processing_time:.2f}s - Found {results['pest_count']} pests")
-        
+
         return JSONResponse(
             status_code=200,
             content={
@@ -143,7 +143,7 @@ async def detect_pests(
                 "timestamp": time.time()
             }
         )
-        
+
     except HTTPException:
         raise
     except Exception as e:
@@ -159,12 +159,12 @@ async def analyze_image(
 ):
     """
     Analyze agricultural image for pests (alias for /detect/pests).
-    
+
     Args:
         image: Uploaded image file
         confidence_threshold: Minimum confidence threshold for pest detection
         include_details: Whether to include detailed detection information
-        
+
     Returns:
         Pest analysis results
     """
@@ -177,39 +177,39 @@ async def detect_disease(
 ):
     """
     Detect diseases in plant leaf images using LLaVA model.
-    
+
     Args:
         image: Uploaded image file (preferably leaf images)
         custom_prompt: Custom prompt for analysis (optional)
-        
+
     Returns:
         Disease detection results with analysis and recommendations
     """
     start_time = time.time()
-    
+
     try:
         # Validate image
         if not image.content_type or not image.content_type.startswith('image/'):
             raise HTTPException(status_code=400, detail="Invalid image file type")
-        
+
         # Read image bytes
         image_bytes = await image.read()
         if len(image_bytes) == 0:
             raise HTTPException(status_code=400, detail="Empty image file")
-        
+
         # Get disease detection service
         disease_service = await get_disease_detection_service()
-        
+
         # Run disease detection
         results = await disease_service.detect_disease(
             image_bytes=image_bytes,
             custom_prompt=custom_prompt
         )
-        
+
         processing_time = time.time() - start_time
-        
+
         logger.info(f"Disease detection completed in {processing_time:.2f}s - Disease: {results['disease_analysis']['disease_name']}")
-        
+
         return JSONResponse(
             status_code=200,
             content={
@@ -219,7 +219,7 @@ async def detect_disease(
                 "timestamp": time.time()
             }
         )
-        
+
     except HTTPException:
         raise
     except Exception as e:
@@ -236,32 +236,32 @@ async def comprehensive_analysis(
 ):
     """
     Comprehensive analysis including both pest and disease detection.
-    
+
     Args:
         image: Uploaded image file
         pest_confidence: Confidence threshold for pest detection
         pest_details: Include pest detection details
         disease_prompt: Custom prompt for disease analysis
-        
+
     Returns:
         Combined results from pest and disease detection
     """
     start_time = time.time()
-    
+
     try:
         # Validate image
         if not image.content_type or not image.content_type.startswith('image/'):
             raise HTTPException(status_code=400, detail="Invalid image file type")
-        
+
         # Read image bytes once
         image_bytes = await image.read()
         if len(image_bytes) == 0:
             raise HTTPException(status_code=400, detail="Empty image file")
-        
+
         # Get services
         pest_service = await get_pest_detection_service()
         disease_service = await get_disease_detection_service()
-        
+
         # Run both analyses in parallel
         pest_task = asyncio.create_task(
             pest_service.detect_pests_from_bytes(
@@ -270,26 +270,26 @@ async def comprehensive_analysis(
                 return_details=pest_details
             )
         )
-        
+
         disease_task = asyncio.create_task(
             disease_service.detect_disease(
                 image_bytes=image_bytes,
                 custom_prompt=disease_prompt
             )
         )
-        
+
         # Wait for both analyses
         pest_results, disease_results = await asyncio.gather(
             pest_task, disease_task, return_exceptions=True
         )
-        
+
         # Process results
         response_data = {
             "pest_analysis": {},
             "disease_analysis": {},
             "summary": {}
         }
-        
+
         # Handle pest results
         if isinstance(pest_results, Exception):
             response_data["pest_analysis"] = {
@@ -301,7 +301,7 @@ async def comprehensive_analysis(
                 "success": True,
                 "results": pest_results
             }
-        
+
         # Handle disease results
         if isinstance(disease_results, Exception):
             response_data["disease_analysis"] = {
@@ -313,25 +313,25 @@ async def comprehensive_analysis(
                 "success": True,
                 "results": disease_results
             }
-        
+
         # Create comprehensive summary
         issues = []
         thai_summaries = []
         recommendations = []
-        
+
         # Check pest results
-        if (response_data["pest_analysis"].get("success") and 
+        if (response_data["pest_analysis"].get("success") and
             response_data["pest_analysis"]["results"].get("has_pests")):
             issues.append("pests")
             thai_summaries.append(response_data["pest_analysis"]["results"]["thai_summary"])
-        
+
         # Check disease results
-        if (response_data["disease_analysis"].get("success") and 
+        if (response_data["disease_analysis"].get("success") and
             not response_data["disease_analysis"]["results"]["disease_analysis"].get("is_healthy", True)):
             issues.append("disease")
             thai_summaries.append(response_data["disease_analysis"]["results"]["disease_analysis"]["thai_summary"])
             recommendations.extend(response_data["disease_analysis"]["results"]["disease_analysis"]["recommendations"])
-        
+
         # Generate summary
         if not issues:
             response_data["summary"] = {
@@ -347,9 +347,9 @@ async def comprehensive_analysis(
                 "thai_summary": " และ ".join(thai_summaries),
                 "recommendations": recommendations if recommendations else ["ปรึกษาผู้เชี่ยวชาญการเกษตร"]
             }
-        
+
         processing_time = time.time() - start_time
-        
+
         return JSONResponse(
             status_code=200,
             content={
@@ -359,7 +359,7 @@ async def comprehensive_analysis(
                 "timestamp": time.time()
             }
         )
-        
+
     except HTTPException:
         raise
     except Exception as e:
@@ -385,10 +385,10 @@ async def get_service_info():
         # Get services info
         pest_service = await get_pest_detection_service()
         disease_service = await get_disease_detection_service()
-        
+
         pest_health = await pest_service.health_check()
         disease_health = await disease_service.health_check()
-        
+
         return {
             "service": "AI4Thai Vision Service",
             "version": "1.0.0",
@@ -412,7 +412,7 @@ async def get_service_info():
             "capabilities": [
                 "Agricultural pest detection",
                 "Plant disease identification",
-                "Multi-pest identification", 
+                "Multi-pest identification",
                 "Disease severity assessment",
                 "Confidence scoring",
                 "Bounding box detection",
@@ -424,7 +424,7 @@ async def get_service_info():
                 "pest_detection": "/detect/pests",
                 "disease_detection": "/detect/disease",
                 "comprehensive": "/analyze/comprehensive",
-                "analyze_alias": "/analyze", 
+                "analyze_alias": "/analyze",
                 "health": "/health",
                 "detailed_health": "/health/detailed",
                 "pest_health": "/health/pests",
@@ -448,7 +448,7 @@ async def get_service_info():
     except Exception as e:
         logger.error(f"Failed to get service info: {e}")
         return {
-            "service": "AI4Thai Vision Service - Pest Detection", 
+            "service": "AI4Thai Vision Service - Pest Detection",
             "version": "1.0.0",
             "status": "error",
             "error": str(e)
@@ -469,7 +469,7 @@ async def root():
             "disease_detection": "/detect/disease",
             "comprehensive_analysis": "/analyze/comprehensive",
             "analyze_alias": "/analyze",
-            "health": "/health", 
+            "health": "/health",
             "info": "/info"
         },
         "usage": {
@@ -479,7 +479,7 @@ async def root():
         },
         "features": [
             "Agricultural pest detection",
-            "Plant disease identification", 
+            "Plant disease identification",
             "Thai language summaries",
             "Treatment recommendations",
             "Parallel processing for comprehensive analysis"

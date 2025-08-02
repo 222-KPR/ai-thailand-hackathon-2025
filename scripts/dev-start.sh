@@ -47,61 +47,61 @@ check_env_file() {
 # Check if required tools are installed
 check_dependencies() {
     log "Checking dependencies..."
-    
+
     local missing_deps=()
-    
+
     # Check Rust and Cargo
     if ! command -v cargo &> /dev/null; then
         missing_deps+=("cargo (Rust)")
     fi
-    
+
     # Check trunk for frontend
     if ! command -v trunk &> /dev/null; then
         missing_deps+=("trunk (install with: cargo install trunk)")
     fi
-    
+
     # Check Docker for Redis
     if ! command -v docker &> /dev/null; then
         missing_deps+=("docker")
     fi
-    
+
     if [[ ${#missing_deps[@]} -gt 0 ]]; then
         error "Missing dependencies: ${missing_deps[*]}"
         error "Please install missing dependencies or run ./scripts/setup-dev.sh"
         exit 1
     fi
-    
+
     success "All dependencies found"
 }
 
 # Start Redis for chat storage
 start_redis() {
     log "Starting Redis for chat storage..."
-    
+
     if docker ps --format "table {{.Names}}" | grep -q "team10-redis"; then
         warn "Redis container already running"
         return 0
     fi
-    
+
     # Start Redis using docker-compose
     cd "$PROJECT_ROOT"
     docker-compose up -d redis
-    
+
     # Wait for Redis to be ready
     local max_attempts=30
     local attempt=1
-    
+
     while [[ $attempt -le $max_attempts ]]; do
         if docker exec team10-redis redis-cli ping &> /dev/null; then
             success "Redis is ready"
             return 0
         fi
-        
+
         log "Waiting for Redis... (attempt $attempt/$max_attempts)"
         sleep 2
         ((attempt++))
     done
-    
+
     error "Redis failed to start within timeout"
     exit 1
 }
@@ -110,7 +110,7 @@ start_redis() {
 build_api_gateway() {
     log "Building API Gateway..."
     cd "$PROJECT_ROOT/api-gateway"
-    
+
     if cargo build; then
         success "API Gateway built successfully"
     else
@@ -123,13 +123,13 @@ build_api_gateway() {
 build_frontend() {
     log "Building Frontend..."
     cd "$PROJECT_ROOT/frontend"
-    
+
     # Check if wasm32-unknown-unknown target is installed
     if ! rustup target list --installed | grep -q "wasm32-unknown-unknown"; then
         log "Installing wasm32-unknown-unknown target..."
         rustup target add wasm32-unknown-unknown
     fi
-    
+
     if trunk build; then
         success "Frontend built successfully"
     else
@@ -142,34 +142,34 @@ build_frontend() {
 start_api_gateway() {
     log "Starting API Gateway..."
     cd "$PROJECT_ROOT/api-gateway"
-    
+
     # Kill existing process if running
     if pgrep -f "target.*api-gateway" > /dev/null; then
         warn "Stopping existing API Gateway process..."
         pkill -f "target.*api-gateway" || true
         sleep 2
     fi
-    
+
     # Start API Gateway
     RUST_LOG=info cargo run > "$PROJECT_ROOT/logs/api-gateway.log" 2>&1 &
     local api_pid=$!
-    
+
     # Wait for API Gateway to be ready
     local max_attempts=30
     local attempt=1
-    
+
     while [[ $attempt -le $max_attempts ]]; do
         if curl -s http://localhost:3000/health > /dev/null 2>&1; then
             success "API Gateway is ready (PID: $api_pid)"
             echo "$api_pid" > "$PROJECT_ROOT/logs/api-gateway.pid"
             return 0
         fi
-        
+
         log "Waiting for API Gateway... (attempt $attempt/$max_attempts)"
         sleep 2
         ((attempt++))
     done
-    
+
     error "API Gateway failed to start within timeout"
     exit 1
 }
@@ -178,24 +178,24 @@ start_api_gateway() {
 start_frontend() {
     log "Starting Frontend development server..."
     cd "$PROJECT_ROOT/frontend"
-    
+
     # Kill existing trunk serve process if running
     if pgrep -f "trunk serve" > /dev/null; then
         warn "Stopping existing Frontend development server..."
         pkill -f "trunk serve" || true
         sleep 2
     fi
-    
+
     # Start Frontend development server
     trunk serve --port 8080 --open > "$PROJECT_ROOT/logs/frontend.log" 2>&1 &
     local frontend_pid=$!
-    
+
     success "Frontend development server started (PID: $frontend_pid)"
     echo "$frontend_pid" > "$PROJECT_ROOT/logs/frontend.pid"
-    
+
     # Wait a bit for the server to start
     sleep 3
-    
+
     if curl -s http://localhost:8080 > /dev/null 2>&1; then
         success "Frontend is ready at http://localhost:8080"
     else
@@ -212,14 +212,14 @@ setup_logging() {
 # Check AI services configuration
 check_ai_services() {
     log "Checking AI services configuration..."
-    
+
     # Source environment variables
     if [[ -f "$ENV_FILE" ]]; then
         set -a
         source "$ENV_FILE"
         set +a
     fi
-    
+
     if [[ -n "${AI4THAI_API_KEY:-}" ]]; then
         success "Using external AI4Thai API services"
         log "Vision Service: ${VISION_SERVICE_URL:-https://vision-api.ai4thai.com}"
@@ -272,7 +272,7 @@ show_services() {
 # Cleanup function
 cleanup() {
     log "Cleaning up..."
-    
+
     # Kill background processes
     if [[ -f "$PROJECT_ROOT/logs/api-gateway.pid" ]]; then
         local api_pid=$(cat "$PROJECT_ROOT/logs/api-gateway.pid")
@@ -281,7 +281,7 @@ cleanup() {
         fi
         rm -f "$PROJECT_ROOT/logs/api-gateway.pid"
     fi
-    
+
     if [[ -f "$PROJECT_ROOT/logs/frontend.pid" ]]; then
         local frontend_pid=$(cat "$PROJECT_ROOT/logs/frontend.pid")
         if kill -0 "$frontend_pid" 2>/dev/null; then
@@ -297,7 +297,7 @@ trap cleanup EXIT INT TERM
 # Main execution
 main() {
     log "Starting AI4Thai Crop Guardian main application..."
-    
+
     check_env_file
     check_dependencies
     setup_logging
@@ -308,18 +308,18 @@ main() {
     start_api_gateway
     start_frontend
     show_services
-    
+
     # Keep script running
     log "Main application is running. Press Ctrl+C to stop."
     while true; do
         sleep 10
-        
+
         # Check if services are still running
         if ! curl -s http://localhost:3000/health > /dev/null 2>&1; then
             error "API Gateway appears to be down"
             exit 1
         fi
-        
+
         if ! curl -s http://localhost:8080 > /dev/null 2>&1; then
             warn "Frontend appears to be down"
         fi
