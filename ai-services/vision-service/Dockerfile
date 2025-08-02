@@ -1,7 +1,7 @@
 # AI4Thai Vision Service - Docker Configuration
 # Multi-stage build optimized for H100 16GB VRAM
 
-# Minimal base image
+# Minimal base image with better optimization
 FROM python:3.9-slim-bullseye AS base
 
 # Set environment variables for optimization
@@ -10,6 +10,8 @@ ENV PYTHONDONTWRITEBYTECODE=1
 ENV DEBIAN_FRONTEND=noninteractive
 ENV PIP_NO_CACHE_DIR=1
 ENV PIP_DISABLE_PIP_VERSION_CHECK=1
+ENV PYTHONFAULTHANDLER=1
+ENV PYTHONHASHSEED=random
 
 # Install minimal system dependencies
 RUN apt-get update && apt-get install -y --no-install-recommends \
@@ -29,9 +31,12 @@ WORKDIR /app
 # Copy requirements first for better caching
 COPY requirements.txt .
 
-# Install Python dependencies with optimizations
+# Install Python dependencies with optimizations and error handling
 RUN pip install --no-cache-dir --upgrade pip setuptools wheel && \
-    pip install --no-cache-dir -r requirements.txt
+    pip install --no-cache-dir -r requirements.txt && \
+    python -c "import torch; print(f'PyTorch version: {torch.__version__}'); print(f'CUDA available: {torch.cuda.is_available()}')" && \
+    python -c "import transformers; print(f'Transformers version: {transformers.__version__}')" && \
+    python -c "import ultralytics; print(f'Ultralytics version: {ultralytics.__version__}')"
 
 # Development stage (minimal)
 FROM base AS development
@@ -81,10 +86,10 @@ FROM production AS h100-optimized
 
 USER root
 
-# Install H100-specific optimizations
-RUN pip install --no-cache-dir \
-    nvidia-ml-py3==12.535.108 \
-    && pip cache purge
+# Install H100-specific optimizations with error handling
+RUN pip install --no-cache-dir nvidia-ml-py3>=12.535.108 && \
+    python -c "import pynvml; pynvml.nvmlInit(); print(f'NVML initialized successfully')" || \
+    echo "Warning: NVML not available - running in CPU mode"
 
 USER app
 

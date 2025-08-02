@@ -34,3 +34,6 @@ psutil==5.9.6
 
 # Production server
 gunicorn==21.2.0
+
+# GPU and optimization libraries (H100 optimized)
+nvidia-ml-py3>=12.535.108
