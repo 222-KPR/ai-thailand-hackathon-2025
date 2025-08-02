@@ -1,8 +1,8 @@
 # AI4Thai Vision Service - Docker Configuration
 # Multi-stage build for optimized production image
 
-# Base image with CUDA support
-FROM nvidia/cuda:11.8-devel-ubuntu22.04 as base
+# Base image with Python support (CPU-only for GitLab deployment)
+FROM python:3.9-slim-bullseye as base
 
 # Set environment variables
 ENV PYTHONUNBUFFERED=1
@@ -11,9 +11,6 @@ ENV DEBIAN_FRONTEND=noninteractive
 
 # Install system dependencies
 RUN apt-get update && apt-get install -y \
-    python3 \
-    python3-pip \
-    python3-dev \
     build-essential \
     curl \
     wget \
@@ -36,14 +33,14 @@ WORKDIR /app
 COPY requirements.txt .
 
 # Install Python dependencies
-RUN pip3 install --no-cache-dir --upgrade pip && \
-    pip3 install --no-cache-dir -r requirements.txt
+RUN pip install --no-cache-dir --upgrade pip && \
+    pip install --no-cache-dir -r requirements.txt
 
 # Development stage
 FROM base as development
 
 # Install development dependencies
-RUN pip3 install --no-cache-dir \
+RUN pip install --no-cache-dir \
     jupyter \
     ipython \
     notebook
@@ -77,7 +74,7 @@ RUN mkdir -p /app/models /app/logs /app/temp && \
 USER app
 
 # Download and cache models (optional - can be done at runtime)
-# RUN python3 -c "from models.model_registry import ModelRegistry; ModelRegistry.download_models()"
+# RUN python -c "from models.model_registry import ModelRegistry; ModelRegistry.download_models()"
 
 # Expose port
 EXPOSE 2001
@@ -94,7 +91,7 @@ FROM production as gpu-production
 
 # Install additional GPU optimizations
 USER root
-RUN pip3 install --no-cache-dir \
+RUN pip install --no-cache-dir \
     nvidia-ml-py3 \
     pynvml
 
