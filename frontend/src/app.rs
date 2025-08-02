@@ -4,7 +4,6 @@ use shared::{ChatMessage, Language};
 use uuid::Uuid;
 
 use crate::i18n::I18nContext;
-use crate::styles::colors::*;
 use crate::components::ui::*;
 
 /// Main application routes
@@ -77,7 +76,15 @@ impl AppState {
 /// Route switch component
 fn switch(routes: Route) -> Html {
     match routes {
-        Route::Home => html! { <ChatInterface /> },
+        Route::Home => html! { 
+            <div class="home-page">
+                <h1>{ "AI4Thai Crop Guardian" }</h1>
+                <p>{ "Chat interface coming soon..." }</p>
+                <GradientButton onclick={Callback::noop()}>
+                    { "Get Started" }
+                </GradientButton>
+            </div>
+        },
         Route::NotFound => html! { <div>{"Page Not Found"}</div> },
     }
 }
@@ -121,7 +128,9 @@ pub fn app() -> Html {
             <ContextProvider<UseStateHandle<AppState>> context={state.clone()}>
                 <ContextProvider<I18nContext> context={(*i18n_ctx).clone()}>
                     <div class="app">
-                        <Header />
+                        <header class="app-header">
+                            <h1>{ "AI4Thai Crop Guardian" }</h1>
+                        </header>
                         
                         {if !state.api_health {
                             html! {

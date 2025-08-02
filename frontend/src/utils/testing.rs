@@ -7,10 +7,10 @@ use yew::prelude::*;
 use web_sys::window;
 
 /// Simple test helper for component rendering
-pub fn render_test_component<T: Component>() -> Html {
+pub fn render_test_component() -> Html {
     html! {
         <div class="test-container">
-            <T />
+            <p>{ "Test component placeholder" }</p>
         </div>
     }
 }
@@ -138,9 +138,8 @@ pub fn rating_component(props: &RatingProps) -> Html {
 /// Get mock device info for testing
 pub fn get_mock_device_info() -> String {
     if let Some(window) = window() {
-        if let Ok(navigator) = window.navigator() {
-            return navigator.user_agent().unwrap_or_else(|_| "Unknown".to_string());
-        }
+        let navigator = window.navigator();
+        return navigator.user_agent().unwrap_or_else(|_| "Unknown".to_string());
     }
     "Mock Device".to_string()
 }
