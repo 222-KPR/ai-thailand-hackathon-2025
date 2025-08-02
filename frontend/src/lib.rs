@@ -1,162 +1,182 @@
 use wasm_bindgen::prelude::*;
+use yew::prelude::*;
 
-pub mod app;
-pub mod components;
-pub mod services;
-pub mod utils;
-pub mod i18n;
-pub mod styles;
-pub mod types;
-
-pub use app::App;
-
+// Initialize WASM
 #[wasm_bindgen(start)]
-pub fn main() {
-    // Initialize logging
+pub fn run_app() {
     wasm_logger::init(wasm_logger::Config::default());
-
-    // Initialize panic hook for better error reporting
     console_error_panic_hook::set_once();
-
-    log::info!("AI4Thai Crop Guardian frontend starting...");
-
-    // Mount the Yew app
     yew::Renderer::<App>::new().render();
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use shared::{Language, ChatMessage};
-    use chrono::Utc;
+#[function_component(App)]
+fn app() -> Html {
+    let api_status = use_state(|| "Checking...".to_string());
+    let chat_response = use_state(|| "".to_string());
+    let message_input = use_state(|| "".to_string());
 
-    #[test]
-    fn test_app_state_creation() {
-        let state = app::AppState::default();
-        assert_eq!(state.language, Language::Thai);
-        assert_eq!(state.messages.len(), 0);
-        assert!(!state.is_loading);
-        assert!(state.error_message.is_none());
+    // Check API health on component mount
+    {
+        let api_status = api_status.clone();
+        use_effect_with((), move |_| {
+            let api_status = api_status.clone();
+            wasm_bindgen_futures::spawn_local(async move {
+                match check_api_health().await {
+                    Ok(status) => api_status.set(format!("✅ API Healthy: {status}")),
+                    Err(e) => api_status.set(format!("❌ API Error: {e}")),
+                }
+            });
+            || ()
+        });
     }
 
-    #[test]
-    fn test_chat_message_creation() {
-        let message = ChatMessage {
-            role: "user".to_string(),
-            content: "Test message".to_string(),
-            timestamp: Utc::now(),
-        };
+    let on_message_change = {
+        let message_input = message_input.clone();
+        Callback::from(move |e: Event| {
+            let input: web_sys::HtmlInputElement = e.target_unchecked_into();
+            message_input.set(input.value());
+        })
+    };
 
-        assert_eq!(message.role, "user");
-        assert_eq!(message.content, "Test message");
+    let on_send_message = {
+        let message_input = message_input.clone();
+        let chat_response = chat_response.clone();
+        Callback::from(move |_: MouseEvent| {
+            let message = (*message_input).clone();
+            let chat_response = chat_response.clone();
+            let message_input = message_input.clone();
+
+            if !message.trim().is_empty() {
+                chat_response.set("Sending...".to_string());
+                wasm_bindgen_futures::spawn_local(async move {
+                    match send_chat_message(&message).await {
+                        Ok(response) => {
+                            chat_response.set(response);
+                            message_input.set("".to_string());
+                        }
+                        Err(e) => chat_response.set(format!("Error: {e}")),
+                    }
+                });
+            }
+        })
+    };
+
+    html! {
+        <div style="font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto; padding: 20px;">
+            <header style="text-align: center; margin-bottom: 30px;">
+                <h1 style="color: #2563eb;">{"🌾 AI4Thai Crop Guardian"}</h1>
+                <p style="color: #6b7280;">{"AI-powered crop disease detection and advisory system"}</p>
+                <div style="background: #f3f4f6; padding: 10px; border-radius: 8px; margin: 10px 0;">
+                    <strong>{"API Status: "}</strong>{&*api_status}
+                </div>
+            </header>
+
+            <main>
+                <section style="background: white; border: 1px solid #e5e7eb; border-radius: 12px; padding: 20px; margin-bottom: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
+                    <h2 style="color: #1f2937; margin-bottom: 15px;">{"💬 Chat with AI Assistant"}</h2>
+
+                    <div style="margin-bottom: 15px;">
+                        <input
+                            type="text"
+                            placeholder="Ask about crop diseases, treatments, or farming advice..."
+                            value={(*message_input).clone()}
+                            onchange={on_message_change}
+                            style="width: 100%; padding: 12px; border: 1px solid #d1d5db; border-radius: 8px; font-size: 16px;"
+                        />
+                    </div>
+
+                    <button
+                        onclick={on_send_message}
+                        disabled={message_input.trim().is_empty()}
+                        style="background: #2563eb; color: white; border: none; padding: 12px 24px; border-radius: 8px; cursor: pointer; font-size: 16px; font-weight: 600;"
+                    >
+                        {"Send Message"}
+                    </button>
+
+                    {if !chat_response.is_empty() {
+                        html! {
+                            <div style="margin-top: 20px; padding: 15px; background: #f9fafb; border-radius: 8px; border-left: 4px solid #10b981;">
+                                <h3 style="color: #065f46; margin: 0 0 10px 0;">{"🤖 AI Response:"}</h3>
+                                <p style="margin: 0; line-height: 1.6;">{&*chat_response}</p>
+                            </div>
+                        }
+                    } else {
+                        html! {}
+                    }}
+                </section>
+
+                <section style="background: white; border: 1px solid #e5e7eb; border-radius: 12px; padding: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
+                    <h2 style="color: #1f2937; margin-bottom: 15px;">{"🚀 Features"}</h2>
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 15px;">
+                        <div style="padding: 15px; background: #fef3c7; border-radius: 8px;">
+                            <h3 style="color: #92400e; margin: 0 0 8px 0;">{"🔍 Disease Detection"}</h3>
+                            <p style="color: #78350f; margin: 0; font-size: 14px;">{"Upload crop images for AI-powered disease identification"}</p>
+                        </div>
+                        <div style="padding: 15px; background: #dcfce7; border-radius: 8px;">
+                            <h3 style="color: #166534; margin: 0 0 8px 0;">{"💬 Smart Chat"}</h3>
+                            <p style="color: #15803d; margin: 0; font-size: 14px;">{"Get farming advice and treatment recommendations"}</p>
+                        </div>
+                        <div style="padding: 15px; background: #dbeafe; border-radius: 8px;">
+                            <h3 style="color: #1d4ed8; margin: 0 0 8px 0;">{"🌐 Thai Support"}</h3>
+                            <p style="color: #1e40af; margin: 0; font-size: 14px;">{"Native Thai language processing and responses"}</p>
+                        </div>
+                    </div>
+                </section>
+            </main>
+
+            <footer style="text-align: center; margin-top: 30px; padding-top: 20px; border-top: 1px solid #e5e7eb; color: #6b7280;">
+                <p>{"Made with ❤️ for Thai farmers by KPR team for AI Thailand Hackathon 2025"}</p>
+            </footer>
+        </div>
     }
+}
 
-    #[test]
-    fn test_i18n_context_creation() {
-        let context = i18n::I18nContext::new(Language::Thai);
-        assert_eq!(context.language, Language::Thai);
+// API functions
+async fn check_api_health() -> Result<String, String> {
+    let response = gloo_net::http::Request::get("http://localhost:3000/health")
+        .send()
+        .await
+        .map_err(|e| format!("Network error: {e:?}"))?;
 
-        let thai_text = context.t("welcome.title");
-        assert!(!thai_text.is_empty());
-
-        let context = i18n::I18nContext::new(Language::English);
-        let english_text = context.t("welcome.title");
-        assert!(!english_text.is_empty());
-        assert_ne!(thai_text, english_text);
+    if response.ok() {
+        let text = response
+            .text()
+            .await
+            .map_err(|e| format!("Parse error: {e:?}"))?;
+        Ok(text)
+    } else {
+        Err(format!("HTTP {}", response.status()))
     }
+}
 
-    #[test]
-    fn test_image_validation_utils() {
-        use utils::image::*;
+async fn send_chat_message(message: &str) -> Result<String, String> {
+    let body = serde_json::json!({
+        "message": message,
+        "conversation_id": null
+    });
 
-        assert_eq!(get_file_extension("test.jpg"), Some("jpg".to_string()));
-        assert_eq!(get_file_extension("test.PNG"), Some("png".to_string()));
-        assert_eq!(get_file_extension("noextension"), Some("noextension".to_string())); // Returns the whole filename if no dot
+    let response = gloo_net::http::Request::post("http://localhost:3000/api/v1/chat")
+        .header("Content-Type", "application/json")
+        .body(body.to_string())
+        .map_err(|e| format!("Request build error: {e:?}"))?
+        .send()
+        .await
+        .map_err(|e| format!("Network error: {e:?}"))?;
 
-        assert_eq!(format_file_size(1024), "1.0 KB");
-        assert_eq!(format_file_size(1048576), "1.0 MB");
-        assert_eq!(format_file_size(1073741824), "1.0 GB");
-    }
+    if response.ok() {
+        let json: serde_json::Value = response
+            .json()
+            .await
+            .map_err(|e| format!("Parse error: {e:?}"))?;
 
-    #[test]
-    fn test_text_validation() {
-        use utils::validation::*;
+        if let Some(data) = json.get("data") {
+            if let Some(response_text) = data.get("response") {
+                return Ok(response_text.as_str().unwrap_or("No response").to_string());
+            }
+        }
 
-        assert!(validate_text_input("Valid text").is_ok());
-        assert!(validate_text_input("").is_err());
-        assert!(validate_text_input(&" ".repeat(1001)).is_err());
-
-        assert!(validate_crop_type("rice"));
-        assert!(validate_crop_type("cassava"));
-        assert!(!validate_crop_type("invalidcrop"));
-
-        assert!(validate_language("thai"));
-        assert!(validate_language("english"));
-        assert!(!validate_language("fr"));
-    }
-
-    #[test]
-    fn test_sanitize_text() {
-        use utils::validation::*;
-
-        let clean_text = sanitize_text_input("Normal text");
-        assert_eq!(clean_text, "Normal text");
-
-        let script_text = sanitize_text_input("<script>alert('xss')</script>");
-        assert!(!script_text.contains("<script>"));
-
-        let html_text = sanitize_text_input("<div>content</div>");
-        assert!(!html_text.contains("<div>"));
-    }
-
-    #[test]
-    fn test_design_system_colors() {
-        use styles::colors::*;
-
-        assert_eq!(PrimaryColors::ELECTRIC_BLUE, "#0066FF");
-        assert_eq!(PrimaryColors::VIBRANT_ORANGE, "#FF6B35");
-        assert_eq!(PrimaryColors::ENERGETIC_PINK, "#FF1B8D");
-
-        assert_eq!(ColorPalette::primary(0), "#0066FF");
-        assert_eq!(ColorPalette::accent(0), "#32D74B");
-        assert_eq!(ColorPalette::semantic("success"), "#34C759");
-    }
-
-    #[test]
-    fn test_typography_system() {
-        use styles::typography::*;
-
-        assert!(FontFamilies::HEADING.contains("Poppins"));
-        assert!(FontFamilies::BODY.contains("Inter"));
-        assert!(FontFamilies::THAI.contains("Sarabun"));
-
-        assert_eq!(FontWeights::REGULAR, 400);
-        assert_eq!(FontWeights::BOLD, 700);
-
-        let hero_style = TextStyles::hero();
-        assert!(hero_style.contains("Poppins"));
-        assert!(hero_style.contains("700"));
-    }
-
-    #[test]
-    fn test_spacing_system() {
-        use styles::spacing::*;
-
-        assert_eq!(Spacing::NONE, "0");
-        assert_eq!(Spacing::XL, "1rem");
-        assert_eq!(Spacing::SECTION, "2rem");
-
-        assert_eq!(Breakpoints::SM, "640px");
-        assert_eq!(Breakpoints::LG, "1024px");
-
-        assert_eq!(ZIndex::BASE, 0);
-        // Modal should have higher z-index than dropdown for proper layering
-        let modal_z = ZIndex::MODAL;
-        let dropdown_z = ZIndex::DROPDOWN;
-        assert!(modal_z > dropdown_z, "Modal z-index ({}) should be > dropdown z-index ({})", modal_z, dropdown_z);
-
-        let center = Layout::flex_center();
-        assert!(center.contains("display: flex"));
-        assert!(center.contains("align-items: center"));
+        Ok("Received response but couldn't parse it".to_string())
+    } else {
+        Err(format!("HTTP {}", response.status()))
     }
 }

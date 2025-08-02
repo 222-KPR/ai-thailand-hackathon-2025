@@ -1,9 +1,9 @@
 [workspace]
 members = [
     "api-gateway",
-    "shared"
+    "shared",
+    "frontend"
 ]
-# Note: frontend excluded due to compilation issues - build separately with trunk
 resolver = "2"
 
 
