@@ -1,417 +1,316 @@
-// Typography system for AI4Thai Crop Guardian - 2025 Design
-// Supports Thai language with optimized font rendering
+// Copyright (c) 2025 AI4Thai Crop Guardian
+// Licensed under the MIT License
 
-use yew::prelude::*;
+//! Typography System with Thai Language Support
+//! 
+//! This module defines the typography scale, font families, and text styles
+//! optimized for both English and Thai language content.
 
-#[derive(Debug, Clone, PartialEq)]
-pub struct TypographyScale {
-    // Font families
-    pub font_heading: &'static str,
-    pub font_body: &'static str,
-    pub font_mono: &'static str,
-    pub font_thai: &'static str,
+/// Font families optimized for readability and Thai language support
+pub struct FontFamilies;
+
+impl FontFamilies {
+    /// Primary heading font - Bold and expressive
+    pub const HEADING: &'static str = r#""Poppins", "Sarabun", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif"#;
     
-    // Font sizes (rem units)
-    pub text_xs: &'static str,
-    pub text_sm: &'static str,
-    pub text_base: &'static str,
-    pub text_lg: &'static str,
-    pub text_xl: &'static str,
-    pub text_2xl: &'static str,
-    pub text_3xl: &'static str,
-    pub text_4xl: &'static str,
-    pub text_5xl: &'static str,
+    /// Body text font - Clean and readable
+    pub const BODY: &'static str = r#""Inter", "Sarabun", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif"#;
     
-    // Font weights
-    pub weight_light: u16,
-    pub weight_normal: u16,
-    pub weight_medium: u16,
-    pub weight_semibold: u16,
-    pub weight_bold: u16,
-    pub weight_extrabold: u16,
+    /// Thai-optimized font for Thai language content
+    pub const THAI: &'static str = r#""Sarabun", "Prompt", "Kanit", sans-serif"#;
     
-    // Line heights
-    pub leading_tight: &'static str,
-    pub leading_normal: &'static str,
-    pub leading_relaxed: &'static str,
-    pub leading_loose: &'static str,
-    
-    // Letter spacing
-    pub tracking_tight: &'static str,
-    pub tracking_normal: &'static str,
-    pub tracking_wide: &'static str,
+    /// Monospace font for code and technical content
+    pub const MONO: &'static str = r#""JetBrains Mono", "SF Mono", Monaco, "Cascadia Code", "Roboto Mono", Consolas, "Courier New", monospace"#;
 }
 
-impl Default for TypographyScale {
-    fn default() -> Self {
-        Self {
-            // Font families optimized for Thai language
-            font_heading: "'Poppins', 'Sarabun', -apple-system, BlinkMacSystemFont, sans-serif",
-            font_body: "'Inter', 'Sarabun', -apple-system, BlinkMacSystemFont, sans-serif",
-            font_mono: "'JetBrains Mono', 'Courier New', monospace",
-            font_thai: "'Sarabun', 'Prompt', 'Kanit', sans-serif",
-            
-            // Font sizes
-            text_xs: "0.75rem",    // 12px
-            text_sm: "0.875rem",   // 14px
-            text_base: "1rem",     // 16px
-            text_lg: "1.125rem",   // 18px
-            text_xl: "1.25rem",    // 20px
-            text_2xl: "1.5rem",    // 24px
-            text_3xl: "1.875rem",  // 30px
-            text_4xl: "2.25rem",   // 36px
-            text_5xl: "3rem",      // 48px
-            
-            // Font weights
-            weight_light: 300,
-            weight_normal: 400,
-            weight_medium: 500,
-            weight_semibold: 600,
-            weight_bold: 700,
-            weight_extrabold: 800,
-            
-            // Line heights optimized for Thai text
-            leading_tight: "1.25",
-            leading_normal: "1.5",
-            leading_relaxed: "1.625",
-            leading_loose: "2",
-            
-            // Letter spacing
-            tracking_tight: "-0.025em",
-            tracking_normal: "0",
-            tracking_wide: "0.025em",
-        }
+/// Font weights for different text emphasis levels
+pub struct FontWeights;
+
+impl FontWeights {
+    pub const LIGHT: u16 = 300;
+    pub const REGULAR: u16 = 400;
+    pub const MEDIUM: u16 = 500;
+    pub const SEMIBOLD: u16 = 600;
+    pub const BOLD: u16 = 700;
+    pub const EXTRABOLD: u16 = 800;
+}
+
+/// Typography scale with responsive sizing
+pub struct TypographyScale;
+
+impl TypographyScale {
+    /// Display text - Largest heading for hero sections
+    pub const DISPLAY_SIZE: &'static str = "clamp(2.5rem, 5vw, 4rem)";
+    pub const DISPLAY_LINE_HEIGHT: f32 = 1.1;
+    pub const DISPLAY_LETTER_SPACING: &'static str = "-0.02em";
+    
+    /// H1 - Main page headings
+    pub const H1_SIZE: &'static str = "clamp(2rem, 4vw, 3rem)";
+    pub const H1_LINE_HEIGHT: f32 = 1.2;
+    pub const H1_LETTER_SPACING: &'static str = "-0.01em";
+    
+    /// H2 - Section headings
+    pub const H2_SIZE: &'static str = "clamp(1.5rem, 3vw, 2.25rem)";
+    pub const H2_LINE_HEIGHT: f32 = 1.3;
+    pub const H2_LETTER_SPACING: &'static str = "-0.005em";
+    
+    /// H3 - Subsection headings
+    pub const H3_SIZE: &'static str = "clamp(1.25rem, 2.5vw, 1.875rem)";
+    pub const H3_LINE_HEIGHT: f32 = 1.4;
+    pub const H3_LETTER_SPACING: &'static str = "0";
+    
+    /// H4 - Component headings
+    pub const H4_SIZE: &'static str = "clamp(1.125rem, 2vw, 1.5rem)";
+    pub const H4_LINE_HEIGHT: f32 = 1.4;
+    pub const H4_LETTER_SPACING: &'static str = "0";
+    
+    /// H5 - Small headings
+    pub const H5_SIZE: &'static str = "clamp(1rem, 1.5vw, 1.25rem)";
+    pub const H5_LINE_HEIGHT: f32 = 1.5;
+    pub const H5_LETTER_SPACING: &'static str = "0";
+    
+    /// H6 - Smallest headings
+    pub const H6_SIZE: &'static str = "clamp(0.875rem, 1.25vw, 1.125rem)";
+    pub const H6_LINE_HEIGHT: f32 = 1.5;
+    pub const H6_LETTER_SPACING: &'static str = "0.01em";
+    
+    /// Body large - Prominent body text
+    pub const BODY_LARGE_SIZE: &'static str = "1.125rem";
+    pub const BODY_LARGE_LINE_HEIGHT: f32 = 1.6;
+    
+    /// Body regular - Standard body text
+    pub const BODY_SIZE: &'static str = "1rem";
+    pub const BODY_LINE_HEIGHT: f32 = 1.6;
+    
+    /// Body small - Secondary body text
+    pub const BODY_SMALL_SIZE: &'static str = "0.875rem";
+    pub const BODY_SMALL_LINE_HEIGHT: f32 = 1.5;
+    
+    /// Caption - Small descriptive text
+    pub const CAPTION_SIZE: &'static str = "0.75rem";
+    pub const CAPTION_LINE_HEIGHT: f32 = 1.4;
+    pub const CAPTION_LETTER_SPACING: &'static str = "0.02em";
+    
+    /// Button text - UI button labels
+    pub const BUTTON_SIZE: &'static str = "0.875rem";
+    pub const BUTTON_LINE_HEIGHT: f32 = 1.2;
+    pub const BUTTON_LETTER_SPACING: &'static str = "0.01em";
+    
+    /// Label - Form labels and small UI text
+    pub const LABEL_SIZE: &'static str = "0.75rem";
+    pub const LABEL_LINE_HEIGHT: f32 = 1.3;
+    pub const LABEL_LETTER_SPACING: &'static str = "0.02em";
+}
+
+/// Thai language specific typography adjustments
+pub struct ThaiTypography;
+
+impl ThaiTypography {
+    /// Increased line height for Thai text readability
+    pub const THAI_LINE_HEIGHT_MULTIPLIER: f32 = 1.2;
+    
+    /// Thai text tends to be taller, so we adjust spacing
+    pub const THAI_LETTER_SPACING: &'static str = "0.01em";
+    
+    /// Thai-specific font size adjustments
+    pub const THAI_SIZE_MULTIPLIER: f32 = 1.05;
+}
+
+/// Text style presets for common use cases
+pub struct TextStyles;
+
+impl TextStyles {
+    /// Hero text style for landing pages
+    pub fn hero() -> String {
+        format!(
+            "font-family: {}; font-size: {}; font-weight: {}; line-height: {}; letter-spacing: {};",
+            FontFamilies::HEADING,
+            TypographyScale::DISPLAY_SIZE,
+            FontWeights::BOLD,
+            TypographyScale::DISPLAY_LINE_HEIGHT,
+            TypographyScale::DISPLAY_LETTER_SPACING
+        )
+    }
+    
+    /// Page title style
+    pub fn page_title() -> String {
+        format!(
+            "font-family: {}; font-size: {}; font-weight: {}; line-height: {}; letter-spacing: {};",
+            FontFamilies::HEADING,
+            TypographyScale::H1_SIZE,
+            FontWeights::BOLD,
+            TypographyScale::H1_LINE_HEIGHT,
+            TypographyScale::H1_LETTER_SPACING
+        )
+    }
+    
+    /// Section heading style
+    pub fn section_heading() -> String {
+        format!(
+            "font-family: {}; font-size: {}; font-weight: {}; line-height: {};",
+            FontFamilies::HEADING,
+            TypographyScale::H2_SIZE,
+            FontWeights::SEMIBOLD,
+            TypographyScale::H2_LINE_HEIGHT
+        )
+    }
+    
+    /// Body text style
+    pub fn body_text() -> String {
+        format!(
+            "font-family: {}; font-size: {}; font-weight: {}; line-height: {};",
+            FontFamilies::BODY,
+            TypographyScale::BODY_SIZE,
+            FontWeights::REGULAR,
+            TypographyScale::BODY_LINE_HEIGHT
+        )
+    }
+    
+    /// Thai body text style with adjustments
+    pub fn thai_body_text() -> String {
+        format!(
+            "font-family: {}; font-size: {}; font-weight: {}; line-height: {}; letter-spacing: {};",
+            FontFamilies::THAI,
+            TypographyScale::BODY_SIZE,
+            FontWeights::REGULAR,
+            TypographyScale::BODY_LINE_HEIGHT * ThaiTypography::THAI_LINE_HEIGHT_MULTIPLIER,
+            ThaiTypography::THAI_LETTER_SPACING
+        )
+    }
+    
+    /// Button text style
+    pub fn button_text() -> String {
+        format!(
+            "font-family: {}; font-size: {}; font-weight: {}; line-height: {}; letter-spacing: {};",
+            FontFamilies::BODY,
+            TypographyScale::BUTTON_SIZE,
+            FontWeights::MEDIUM,
+            TypographyScale::BUTTON_LINE_HEIGHT,
+            TypographyScale::BUTTON_LETTER_SPACING
+        )
+    }
+    
+    /// Caption text style
+    pub fn caption_text() -> String {
+        format!(
+            "font-family: {}; font-size: {}; font-weight: {}; line-height: {}; letter-spacing: {};",
+            FontFamilies::BODY,
+            TypographyScale::CAPTION_SIZE,
+            FontWeights::REGULAR,
+            TypographyScale::CAPTION_LINE_HEIGHT,
+            TypographyScale::CAPTION_LETTER_SPACING
+        )
     }
 }
 
-// Typography component variants
-#[derive(Debug, Clone, PartialEq)]
-pub enum TypographyVariant {
-    H1,
-    H2,
-    H3,
-    H4,
-    H5,
-    H6,
-    Body1,
-    Body2,
-    Caption,
-    Overline,
-    Button,
-}
+/// CSS custom properties for typography system
+pub struct TypographyCSS;
 
-#[derive(Debug, Clone, PartialEq)]
-pub enum TypographyColor {
-    Primary,
-    Secondary,
-    Disabled,
-    Inverse,
-    Success,
-    Warning,
-    Error,
-    Info,
-}
-
-#[derive(Properties, PartialEq)]
-pub struct TypographyProps {
-    pub children: Children,
-    pub variant: Option<TypographyVariant>,
-    pub color: Option<TypographyColor>,
-    pub class: Option<String>,
-    pub style: Option<String>,
-    pub align: Option<String>,
-    pub weight: Option<u16>,
-    pub size: Option<String>,
-    pub thai_optimized: Option<bool>,
-}
-
-#[function_component(Typography)]
-pub fn typography(props: &TypographyProps) -> Html {
-    let scale = TypographyScale::default();
-    let variant = props.variant.as_ref().unwrap_or(&TypographyVariant::Body1);
-    let color = props.color.as_ref().unwrap_or(&TypographyColor::Primary);
-    let thai_optimized = props.thai_optimized.unwrap_or(false);
-    
-    let (tag, base_class, font_size, font_weight, line_height) = match variant {
-        TypographyVariant::H1 => ("h1", "typography-h1", scale.text_5xl, scale.weight_extrabold, scale.leading_tight),
-        TypographyVariant::H2 => ("h2", "typography-h2", scale.text_4xl, scale.weight_bold, scale.leading_tight),
-        TypographyVariant::H3 => ("h3", "typography-h3", scale.text_3xl, scale.weight_bold, scale.leading_normal),
-        TypographyVariant::H4 => ("h4", "typography-h4", scale.text_2xl, scale.weight_semibold, scale.leading_normal),
-        TypographyVariant::H5 => ("h5", "typography-h5", scale.text_xl, scale.weight_semibold, scale.leading_normal),
-        TypographyVariant::H6 => ("h6", "typography-h6", scale.text_lg, scale.weight_medium, scale.leading_normal),
-        TypographyVariant::Body1 => ("p", "typography-body1", scale.text_base, scale.weight_normal, scale.leading_relaxed),
-        TypographyVariant::Body2 => ("p", "typography-body2", scale.text_sm, scale.weight_normal, scale.leading_relaxed),
-        TypographyVariant::Caption => ("span", "typography-caption", scale.text_xs, scale.weight_normal, scale.leading_normal),
-        TypographyVariant::Overline => ("span", "typography-overline", scale.text_xs, scale.weight_medium, scale.leading_normal),
-        TypographyVariant::Button => ("span", "typography-button", scale.text_sm, scale.weight_semibold, scale.leading_normal),
-    };
-    
-    let color_class = match color {
-        TypographyColor::Primary => "text-primary",
-        TypographyColor::Secondary => "text-secondary",
-        TypographyColor::Disabled => "text-disabled",
-        TypographyColor::Inverse => "text-inverse",
-        TypographyColor::Success => "text-success",
-        TypographyColor::Warning => "text-warning",
-        TypographyColor::Error => "text-error",
-        TypographyColor::Info => "text-info",
-    };
-    
-    let font_family = if thai_optimized {
-        scale.font_thai
-    } else {
-        match variant {
-            TypographyVariant::H1 | TypographyVariant::H2 | TypographyVariant::H3 | 
-            TypographyVariant::H4 | TypographyVariant::H5 | TypographyVariant::H6 => scale.font_heading,
-            _ => scale.font_body,
-        }
-    };
-    
-    let style = format!(
-        "font-family: {}; font-size: {}; font-weight: {}; line-height: {}; {}",
-        font_family,
-        props.size.as_deref().unwrap_or(font_size),
-        props.weight.unwrap_or(font_weight),
-        line_height,
-        props.style.as_deref().unwrap_or("")
-    );
-    
-    let align_class = props.align.as_ref().map(|a| format!("text-{}", a)).unwrap_or_default();
-    
-    let classes = classes!(
-        base_class,
-        color_class,
-        align_class,
-        if thai_optimized { "thai-optimized" } else { "" },
-        props.class.clone()
-    );
-    
-    match tag {
-        "h1" => html! { <h1 class={classes} {style}>{ for props.children.iter() }</h1> },
-        "h2" => html! { <h2 class={classes} {style}>{ for props.children.iter() }</h2> },
-        "h3" => html! { <h3 class={classes} {style}>{ for props.children.iter() }</h3> },
-        "h4" => html! { <h4 class={classes} {style}>{ for props.children.iter() }</h4> },
-        "h5" => html! { <h5 class={classes} {style}>{ for props.children.iter() }</h5> },
-        "h6" => html! { <h6 class={classes} {style}>{ for props.children.iter() }</h6> },
-        "p" => html! { <p class={classes} {style}>{ for props.children.iter() }</p> },
-        _ => html! { <span class={classes} {style}>{ for props.children.iter() }</span> },
-    }
-}
-
-// CSS generator for typography system
-pub fn generate_typography_css(scale: &TypographyScale) -> String {
-    format!(
-        r#"/* Typography System - 2025 Design */
-
-/* Font imports */
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Poppins:wght@600;700;800&display=swap');
-@import url('https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700;800&family=Prompt:wght@300;400;500;600;700;800&family=Kanit:wght@300;400;500;600;700;800&display=swap');
-
+impl TypographyCSS {
+    /// Generate CSS custom properties for the typography system
+    pub fn css_variables() -> String {
+        format!(
+            r#"
 :root {{
-  /* Font families */
+  /* Font Families */
   --font-heading: {};
   --font-body: {};
-  --font-mono: {};
   --font-thai: {};
+  --font-mono: {};
   
-  /* Font sizes */
-  --text-xs: {};
-  --text-sm: {};
-  --text-base: {};
-  --text-lg: {};
-  --text-xl: {};
-  --text-2xl: {};
-  --text-3xl: {};
-  --text-4xl: {};
-  --text-5xl: {};
+  /* Font Weights */
+  --font-weight-light: {};
+  --font-weight-regular: {};
+  --font-weight-medium: {};
+  --font-weight-semibold: {};
+  --font-weight-bold: {};
+  --font-weight-extrabold: {};
   
-  /* Font weights */
-  --weight-light: {};
-  --weight-normal: {};
-  --weight-medium: {};
-  --weight-semibold: {};
-  --weight-bold: {};
-  --weight-extrabold: {};
+  /* Font Sizes */
+  --font-size-display: {};
+  --font-size-h1: {};
+  --font-size-h2: {};
+  --font-size-h3: {};
+  --font-size-h4: {};
+  --font-size-h5: {};
+  --font-size-h6: {};
+  --font-size-body-large: {};
+  --font-size-body: {};
+  --font-size-body-small: {};
+  --font-size-caption: {};
+  --font-size-button: {};
+  --font-size-label: {};
   
-  /* Line heights */
-  --leading-tight: {};
-  --leading-normal: {};
-  --leading-relaxed: {};
-  --leading-loose: {};
+  /* Line Heights */
+  --line-height-display: {};
+  --line-height-h1: {};
+  --line-height-h2: {};
+  --line-height-h3: {};
+  --line-height-h4: {};
+  --line-height-h5: {};
+  --line-height-h6: {};
+  --line-height-body-large: {};
+  --line-height-body: {};
+  --line-height-body-small: {};
+  --line-height-caption: {};
+  --line-height-button: {};
+  --line-height-label: {};
   
-  /* Letter spacing */
-  --tracking-tight: {};
-  --tracking-normal: {};
-  --tracking-wide: {};
+  /* Letter Spacing */
+  --letter-spacing-display: {};
+  --letter-spacing-h1: {};
+  --letter-spacing-h2: {};
+  --letter-spacing-caption: {};
+  --letter-spacing-button: {};
+  --letter-spacing-label: {};
+  --letter-spacing-thai: {};
 }}
-
-/* Base typography styles */
-body {{
-  font-family: var(--font-body);
-  font-size: var(--text-base);
-  font-weight: var(--weight-normal);
-  line-height: var(--leading-relaxed);
-  color: var(--color-text-primary);
-}}
-
-/* Typography component classes */
-.typography-h1 {{
-  font-family: var(--font-heading);
-  font-size: var(--text-5xl);
-  font-weight: var(--weight-extrabold);
-  line-height: var(--leading-tight);
-  margin-bottom: 1.5rem;
-}}
-
-.typography-h2 {{
-  font-family: var(--font-heading);
-  font-size: var(--text-4xl);
-  font-weight: var(--weight-bold);
-  line-height: var(--leading-tight);
-  margin-bottom: 1.25rem;
-}}
-
-.typography-h3 {{
-  font-family: var(--font-heading);
-  font-size: var(--text-3xl);
-  font-weight: var(--weight-bold);
-  line-height: var(--leading-normal);
-  margin-bottom: 1rem;
-}}
-
-.typography-h4 {{
-  font-family: var(--font-heading);
-  font-size: var(--text-2xl);
-  font-weight: var(--weight-semibold);
-  line-height: var(--leading-normal);
-  margin-bottom: 0.875rem;
-}}
-
-.typography-h5 {{
-  font-family: var(--font-heading);
-  font-size: var(--text-xl);
-  font-weight: var(--weight-semibold);
-  line-height: var(--leading-normal);
-  margin-bottom: 0.75rem;
-}}
-
-.typography-h6 {{
-  font-family: var(--font-heading);
-  font-size: var(--text-lg);
-  font-weight: var(--weight-medium);
-  line-height: var(--leading-normal);
-  margin-bottom: 0.625rem;
-}}
-
-.typography-body1 {{
-  font-family: var(--font-body);
-  font-size: var(--text-base);
-  font-weight: var(--weight-normal);
-  line-height: var(--leading-relaxed);
-  margin-bottom: 1rem;
-}}
-
-.typography-body2 {{
-  font-family: var(--font-body);
-  font-size: var(--text-sm);
-  font-weight: var(--weight-normal);
-  line-height: var(--leading-relaxed);
-  margin-bottom: 0.875rem;
-}}
-
-.typography-caption {{
-  font-family: var(--font-body);
-  font-size: var(--text-xs);
-  font-weight: var(--weight-normal);
-  line-height: var(--leading-normal);
-  color: var(--color-text-secondary);
-}}
-
-.typography-overline {{
-  font-family: var(--font-body);
-  font-size: var(--text-xs);
-  font-weight: var(--weight-medium);
-  line-height: var(--leading-normal);
-  text-transform: uppercase;
-  letter-spacing: var(--tracking-wide);
-  color: var(--color-text-secondary);
-}}
-
-.typography-button {{
-  font-family: var(--font-body);
-  font-size: var(--text-sm);
-  font-weight: var(--weight-semibold);
-  line-height: var(--leading-normal);
-  letter-spacing: var(--tracking-normal);
-}}
-
-/* Thai language optimizations */
-.thai-optimized {{
-  font-family: var(--font-thai) !important;
-  line-height: var(--leading-loose);
-  word-break: break-word;
-  overflow-wrap: break-word;
-}}
-
-/* Text color utilities */
-.text-primary {{ color: var(--color-text-primary); }}
-.text-secondary {{ color: var(--color-text-secondary); }}
-.text-disabled {{ color: var(--color-text-disabled); }}
-.text-inverse {{ color: var(--color-text-inverse); }}
-.text-success {{ color: var(--color-success); }}
-.text-warning {{ color: var(--color-warning); }}
-.text-error {{ color: var(--color-error); }}
-.text-info {{ color: var(--color-info); }}
-
-/* Text alignment utilities */
-.text-left {{ text-align: left; }}
-.text-center {{ text-align: center; }}
-.text-right {{ text-align: right; }}
-.text-justify {{ text-align: justify; }}
-
-/* Responsive typography */
-@media (max-width: 768px) {{
-  .typography-h1 {{ font-size: var(--text-4xl); }}
-  .typography-h2 {{ font-size: var(--text-3xl); }}
-  .typography-h3 {{ font-size: var(--text-2xl); }}
-  .typography-h4 {{ font-size: var(--text-xl); }}
-  .typography-h5 {{ font-size: var(--text-lg); }}
-  .typography-h6 {{ font-size: var(--text-base); }}
-}}
-
-@media (max-width: 480px) {{
-  .typography-h1 {{ font-size: var(--text-3xl); }}
-  .typography-h2 {{ font-size: var(--text-2xl); }}
-  .typography-h3 {{ font-size: var(--text-xl); }}
-  .typography-h4 {{ font-size: var(--text-lg); }}
-}}"#,
-        scale.font_heading,
-        scale.font_body,
-        scale.font_mono,
-        scale.font_thai,
-        scale.text_xs,
-        scale.text_sm,
-        scale.text_base,
-        scale.text_lg,
-        scale.text_xl,
-        scale.text_2xl,
-        scale.text_3xl,
-        scale.text_4xl,
-        scale.text_5xl,
-        scale.weight_light,
-        scale.weight_normal,
-        scale.weight_medium,
-        scale.weight_semibold,
-        scale.weight_bold,
-        scale.weight_extrabold,
-        scale.leading_tight,
-        scale.leading_normal,
-        scale.leading_relaxed,
-        scale.leading_loose,
-        scale.tracking_tight,
-        scale.tracking_normal,
-        scale.tracking_wide,
-    )
+"#,
+            FontFamilies::HEADING,
+            FontFamilies::BODY,
+            FontFamilies::THAI,
+            FontFamilies::MONO,
+            FontWeights::LIGHT,
+            FontWeights::REGULAR,
+            FontWeights::MEDIUM,
+            FontWeights::SEMIBOLD,
+            FontWeights::BOLD,
+            FontWeights::EXTRABOLD,
+            TypographyScale::DISPLAY_SIZE,
+            TypographyScale::H1_SIZE,
+            TypographyScale::H2_SIZE,
+            TypographyScale::H3_SIZE,
+            TypographyScale::H4_SIZE,
+            TypographyScale::H5_SIZE,
+            TypographyScale::H6_SIZE,
+            TypographyScale::BODY_LARGE_SIZE,
+            TypographyScale::BODY_SIZE,
+            TypographyScale::BODY_SMALL_SIZE,
+            TypographyScale::CAPTION_SIZE,
+            TypographyScale::BUTTON_SIZE,
+            TypographyScale::LABEL_SIZE,
+            TypographyScale::DISPLAY_LINE_HEIGHT,
+            TypographyScale::H1_LINE_HEIGHT,
+            TypographyScale::H2_LINE_HEIGHT,
+            TypographyScale::H3_LINE_HEIGHT,
+            TypographyScale::H4_LINE_HEIGHT,
+            TypographyScale::H5_LINE_HEIGHT,
+            TypographyScale::H6_LINE_HEIGHT,
+            TypographyScale::BODY_LARGE_LINE_HEIGHT,
+            TypographyScale::BODY_LINE_HEIGHT,
+            TypographyScale::BODY_SMALL_LINE_HEIGHT,
+            TypographyScale::CAPTION_LINE_HEIGHT,
+            TypographyScale::BUTTON_LINE_HEIGHT,
+            TypographyScale::LABEL_LINE_HEIGHT,
+            TypographyScale::DISPLAY_LETTER_SPACING,
+            TypographyScale::H1_LETTER_SPACING,
+            TypographyScale::H2_LETTER_SPACING,
+            TypographyScale::CAPTION_LETTER_SPACING,
+            TypographyScale::BUTTON_LETTER_SPACING,
+            TypographyScale::LABEL_LETTER_SPACING,
+            ThaiTypography::THAI_LETTER_SPACING,
+        )
+    }
 }
 
 #[cfg(test)]
@@ -419,19 +318,27 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_typography_scale_default() {
-        let scale = TypographyScale::default();
-        assert!(scale.font_heading.contains("Poppins"));
-        assert!(scale.font_body.contains("Inter"));
-        assert!(scale.font_thai.contains("Sarabun"));
+    fn test_font_families() {
+        assert!(FontFamilies::HEADING.contains("Poppins"));
+        assert!(FontFamilies::BODY.contains("Inter"));
+        assert!(FontFamilies::THAI.contains("Sarabun"));
     }
 
     #[test]
-    fn test_css_generation() {
-        let scale = TypographyScale::default();
-        let css = generate_typography_css(&scale);
-        assert!(css.contains("--font-heading"));
-        assert!(css.contains("typography-h1"));
-        assert!(css.contains("thai-optimized"));
+    fn test_font_weights() {
+        assert_eq!(FontWeights::REGULAR, 400);
+        assert_eq!(FontWeights::BOLD, 700);
+    }
+
+    #[test]
+    fn test_text_styles() {
+        let hero_style = TextStyles::hero();
+        assert!(hero_style.contains("Poppins"));
+        assert!(hero_style.contains("700"));
+    }
+
+    #[test]
+    fn test_thai_typography() {
+        assert!(ThaiTypography::THAI_LINE_HEIGHT_MULTIPLIER > 1.0);
     }
 }
