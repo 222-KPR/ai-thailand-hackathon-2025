@@ -19,6 +19,9 @@ End-user documentation and tutorials.
 ### 💻 [Development](development/README.md)
 Developer setup, coding standards, and contribution guidelines.
 
+### 🎨 [Design](design/README.md)
+Visual design specifications and guidelines.
+
 ## 🎯 Quick Navigation
 
 | Topic | Description | Link |
