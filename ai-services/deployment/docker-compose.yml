@@ -74,6 +74,61 @@ services:
       start_period: 60s
     restart: unless-stopped
 
+  # Vision SGlang Service
+  sglang-server:
+    image: lmsysorg/sglang:latest
+    container_name: plant-disease-sglang
+    ports:
+      - "2300:2300"
+    volumes:
+      - huggingface_cache:/root/.cache/huggingface
+      - ./models:/app/models
+    environment:
+      - CUDA_VISIBLE_DEVICES=0
+      - HF_HOME=/root/.cache/huggingface
+      - TRANSFORMERS_CACHE=/root/.cache/huggingface
+    command: >
+      python -m sglang.launch_server
+      --model-path YuchengShi/LLaVA-v1.5-7B-Plant-Leaf-Diseases-Detection
+      --host 0.0.0.0
+      --port 2100
+      --quantization bitsandbytes
+      --load-in-4bit
+      --mem-fraction-static 0.7
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:30000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 120s
+
+  plant-disease-api:
+    build:
+      context: .
+      dockerfile: Dockerfile.api
+    container_name: plant-disease-api
+    ports:
+      - "2800:2800"
+    volumes:
+      - ./images:/app/images
+      - ./results:/app/results
+    environment:
+      - SGLANG_ENDPOINT=http://sglang-server:21000
+      - UPLOAD_DIR=/app/images
+      - RESULTS_DIR=/app/results
+    depends_on:
+      sglang-server:
+        condition: service_healthy
+    restart: unless-stopped
+
   # LLM Service
   llm-service:
     build:
@@ -265,6 +320,7 @@ networks:
       config:
         - subnet: 172.20.0.0/16
 
+
 volumes:
   vision_models:
     driver: local
@@ -284,3 +340,8 @@ volumes:
     driver: local
   grafana_data:
     driver: local
+  huggingface_cache:
+    driver: local
+
+
+  
