@@ -1,31 +1,49 @@
-# Development Docker for AI4Thai Crop Guardian Frontend
-FROM rust:1.75-slim
+# Frontend Development Dockerfile for AI4Thai Crop Guardian
+# Optimized for Yew WebAssembly development with hot reload
+
+FROM rust:1.75-slim as base
 
 # Install system dependencies
 RUN apt-get update && apt-get install -y \
     pkg-config \
     libssl-dev \
     curl \
+    wget \
+    gnupg \
+    ca-certificates \
     && rm -rf /var/lib/apt/lists/*
+
+# Install Node.js for frontend tooling
+RUN curl -fsSL https://deb.nodesource.com/setup_18.x | bash - \
+    && apt-get install -y nodejs
 
 # Install WebAssembly target
 RUN rustup target add wasm32-unknown-unknown
 
-# Install trunk and wasm-pack
+# Install Trunk (WebAssembly build tool)
 RUN cargo install trunk wasm-pack
 
-# Create app directory
+# Install additional Rust tools for development
+RUN cargo install cargo-watch
+
+# Install Node.js development tools
+RUN npm install -g serve lighthouse
+
+# Set working directory
 WORKDIR /app
 
-# Copy workspace files (for shared dependencies)
-COPY ../Cargo.toml /workspace/Cargo.toml
-COPY ../shared /workspace/shared
+# Copy package files first for better caching
+COPY Cargo.toml Cargo.lock ./
+COPY Trunk.toml ./
 
-# Set workspace root
-ENV CARGO_MANIFEST_DIR=/workspace
+# Copy source code
+COPY src/ ./src/
+COPY static/ ./static/
+COPY styles/ ./styles/
+COPY index.html ./
 
-# Expose port for trunk dev server
+# Expose development server port
 EXPOSE 8080
 
-# Default command (can be overridden)
-CMD ["trunk", "serve", "--address", "0.0.0.0", "--port", "8080"]
+# Development command with hot reload
+CMD ["trunk", "serve", "--address", "0.0.0.0", "--port", "8080", "--open"]

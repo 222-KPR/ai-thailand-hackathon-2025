@@ -1,0 +1,99 @@
+version: '3.8'
+
+services:
+  frontend-dev:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    container_name: ai4thai-frontend-dev
+    ports:
+      - "8080:8080"
+    volumes:
+      # Mount source code for hot reload
+      - ./src:/app/src
+      - ./static:/app/static
+      - ./styles:/app/styles
+      - ./index.html:/app/index.html
+      - ./Trunk.toml:/app/Trunk.toml
+      - ./Cargo.toml:/app/Cargo.toml
+      # Cache Cargo registry and target directory
+      - cargo-cache:/usr/local/cargo/registry
+      - target-cache:/app/target
+    environment:
+      - RUST_LOG=debug
+      - TRUNK_SERVE_HOST=0.0.0.0
+      - TRUNK_SERVE_PORT=8080
+    networks:
+      - ai4thai-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # Optional: Add API Gateway for full-stack development
+  api-gateway:
+    image: ai4thai/api-gateway:latest
+    container_name: ai4thai-api-gateway
+    ports:
+      - "3000:3000"
+    environment:
+      - DATABASE_URL=postgresql://postgres:password@postgres:5432/ai4thai
+      - REDIS_URL=redis://redis:6379
+      - RUST_LOG=debug
+    networks:
+      - ai4thai-network
+    depends_on:
+      - postgres
+      - redis
+    restart: unless-stopped
+    profiles:
+      - fullstack
+
+  # Database for full-stack development
+  postgres:
+    image: postgres:15-alpine
+    container_name: ai4thai-postgres
+    environment:
+      - POSTGRES_DB=ai4thai
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=password
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    networks:
+      - ai4thai-network
+    restart: unless-stopped
+    profiles:
+      - fullstack
+
+  # Redis for caching and sessions
+  redis:
+    image: redis:7-alpine
+    container_name: ai4thai-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    networks:
+      - ai4thai-network
+    restart: unless-stopped
+    profiles:
+      - fullstack
+
+volumes:
+  cargo-cache:
+    driver: local
+  target-cache:
+    driver: local
+  postgres-data:
+    driver: local
+  redis-data:
+    driver: local
+
+networks:
+  ai4thai-network:
+    driver: bridge
