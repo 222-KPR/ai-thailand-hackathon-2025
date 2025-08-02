@@ -3,6 +3,7 @@
 
 pub mod gradient_button;
 pub mod status_card;
+pub mod loading;
 
 pub use gradient_button::{
     GradientButton, GradientButtonProps, ButtonSize, ButtonVariant,
@@ -15,6 +16,13 @@ pub use status_card::{
     generate_status_card_css
 };
 
+pub use loading::{
+    Loading, LoadingProps, LoadingVariant, LoadingSize,
+    LoadingOverlay, ProgressBar, Skeleton,
+    generate_loading_css
+};
+
 // Re-export commonly used types
 pub use gradient_button::{ButtonSize as BtnSize, ButtonVariant as BtnVariant};
 pub use status_card::{StatusCardVariant as CardVariant, TrendDirection as Trend};
+pub use loading::{LoadingVariant as LoadVariant, LoadingSize as LoadSize};
