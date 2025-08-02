@@ -149,7 +149,10 @@ mod tests {
         assert_eq!(Breakpoints::LG, "1024px");
         
         assert_eq!(ZIndex::BASE, 0);
-        assert!(ZIndex::MODAL > ZIndex::DROPDOWN);
+        // Modal should have higher z-index than dropdown for proper layering
+        let modal_z = ZIndex::MODAL;
+        let dropdown_z = ZIndex::DROPDOWN;
+        assert!(modal_z > dropdown_z, "Modal z-index ({}) should be > dropdown z-index ({})", modal_z, dropdown_z);
         
         let center = Layout::flex_center();
         assert!(center.contains("display: flex"));

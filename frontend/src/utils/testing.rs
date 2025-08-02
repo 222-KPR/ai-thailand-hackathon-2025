@@ -41,7 +41,7 @@ pub struct FeedbackProps {
 
 #[function_component(FeedbackComponent)]
 pub fn feedback_component(props: &FeedbackProps) -> Html {
-    let feedback_text = use_state(|| String::new());
+    let feedback_text = use_state(String::new);
     let show_feedback = use_state(|| false);
     
     let toggle_feedback = {

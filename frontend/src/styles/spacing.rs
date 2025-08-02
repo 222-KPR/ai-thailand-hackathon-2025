@@ -389,7 +389,10 @@ mod tests {
     #[test]
     fn test_z_index() {
         assert_eq!(ZIndex::BASE, 0);
-        assert!(ZIndex::MODAL > ZIndex::DROPDOWN);
+        // Modal should have higher z-index than dropdown for proper layering
+        let modal_z = ZIndex::MODAL;
+        let dropdown_z = ZIndex::DROPDOWN;
+        assert!(modal_z > dropdown_z, "Modal z-index ({}) should be > dropdown z-index ({})", modal_z, dropdown_z);
     }
 
     #[test]

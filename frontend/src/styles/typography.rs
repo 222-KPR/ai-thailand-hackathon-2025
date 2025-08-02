@@ -339,6 +339,8 @@ mod tests {
 
     #[test]
     fn test_thai_typography() {
-        assert!(ThaiTypography::THAI_LINE_HEIGHT_MULTIPLIER > 1.0);
+        // Thai line height multiplier should be greater than 1.0 for better readability
+        let multiplier = ThaiTypography::THAI_LINE_HEIGHT_MULTIPLIER;
+        assert!(multiplier > 1.0, "Thai line height multiplier should be > 1.0, got {}", multiplier);
     }
 }

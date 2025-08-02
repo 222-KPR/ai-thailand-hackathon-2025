@@ -114,8 +114,7 @@ impl ButtonVariant {
             ButtonVariant::Ghost => "transparent".to_string(),
             ButtonVariant::Outline => "transparent".to_string(),
             ButtonVariant::Custom { from, to } => format!(
-                "linear-gradient(135deg, {} 0%, {} 100%)",
-                from, to
+                "linear-gradient(135deg, {from} 0%, {to} 100%)"
             ),
         }
     }
@@ -317,11 +316,9 @@ pub fn gradient_button(props: &GradientButtonProps) -> Html {
     
     let loading_spinner = if props.loading {
         html! {
-            <div style={format!(
-                "width: 1rem; height: 1rem; border: 2px solid currentColor; 
+            <div style="width: 1rem; height: 1rem; border: 2px solid currentColor; 
                  border-top-color: transparent; border-radius: 50%; 
-                 animation: spin 1s linear infinite;"
-            )}>
+                 animation: spin 1s linear infinite;">
             </div>
         }
     } else {
