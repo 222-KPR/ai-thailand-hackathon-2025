@@ -7,13 +7,32 @@
 
 > AI-powered crop disease detection and advisory system for Thai farmers
 
+## Challenge
+
+Thai farmers are facing unprecedented challenges due to climate change, economic pressure, and widespread crop diseases. Key issues include:
+
+-   **Climate Impact**: Unpredictable weather patterns leading to droughts and floods.
+-   **Economic Pressure**: Rising cultivation costs and volatile crop prices.
+-   **Disease Outbreaks**: Significant yield losses (e.g., over 50% in Durian crops due to fungal diseases).
+-   **Knowledge Gap**: Limited access to timely and accurate agricultural expertise.
+
+## 🎯 Our Objective
+
+Our objective is to empower Thai farmers by democratizing access to advanced AI-powered agricultural technology. We aim to:
+
+-   **Provide Accurate Early Detection**: Deliver a highly accurate (>98%) and rapid crop disease diagnosis tool.
+-   **Bridge the Language Barrier**: Offer a solution fully localized in the Thai language, accessible via text and voice.
+-   **Deliver Actionable Advice**: Provide farmers with clear, step-by-step treatment plans and cost-effective solutions.
+-   **Ensure Accessibility**: Build an offline-first Progressive Web App (PWA) that works reliably even with limited internet connectivity.
+-   **Improve Livelihoods**: Ultimately, help farmers increase their crop yields, reduce costs, and improve their economic stability.
+
 ## 🎯 Overview
 
 AI4Thai Crop Guardian democratizes AI-powered agricultural expertise for Thai farmers through intelligent crop disease detection, multimodal chat interface, and personalized treatment recommendations.
 
 ### Key Features
 
-- 🔍 **Smart Disease Detection**: 98% accuracy crop disease identification using computer vision
+- 🔍 **Smart Disease Detection**: High accuracy crop disease identification using computer vision
 - 💬 **Multimodal Chat**: Text, voice, and image-based farmer interaction
 - 🌐 **Thai Language Support**: Native Thai language processing and responses
 - 📱 **PWA Experience**: Offline-capable progressive web application
@@ -215,9 +234,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## 📞 Support
 
-- 📧 Email: support@ai4thai.com
-- 💬 Discord: [AI4Thai Community](https://discord.gg/ai4thai)
-- 📖 Documentation: [docs.ai4thai.com](https://docs.ai4thai.com)
+- 📧 Email: rpithaksiripan@gmail.com
 
 ---
 

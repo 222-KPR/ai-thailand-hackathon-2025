@@ -1,0 +1,185 @@
+# AI4Thai Crop Guardian - Pre-commit Quality Control Configuration
+# This ensures code quality, security, and consistency across the entire repository
+
+default_stages: [commit, push]
+default_language_version:
+  python: python3.11
+  node: "18.17.0"
+
+repos:
+  # ============================================================================
+  # General Code Quality and Formatting
+  # ============================================================================
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.5.0
+    hooks:
+      - id: trailing-whitespace
+        exclude: \.(md|rst)$
+      - id: end-of-file-fixer
+        exclude: \.(md|rst)$
+      - id: check-yaml
+      - id: check-toml
+      - id: check-json
+      - id: check-xml
+      - id: check-added-large-files
+        args: ['--maxkb=1000']
+      - id: check-case-conflict
+      - id: check-merge-conflict
+      - id: check-executables-have-shebangs
+      - id: check-shebang-scripts-are-executable
+      - id: mixed-line-ending
+        args: ['--fix=lf']
+      - id: no-commit-to-branch
+        args: ['--branch', 'main', '--branch', 'production']
+
+  # ============================================================================
+  # Rust Code Quality and Security
+  # ============================================================================
+  - repo: local
+    hooks:
+      # Rust formatting
+      - id: cargo-fmt
+        name: cargo fmt
+        entry: cargo fmt --all --
+        language: system
+        files: \.rs$
+        pass_filenames: false
+
+      # Rust linting
+      - id: cargo-clippy
+        name: cargo clippy
+        entry: cargo clippy --all-targets --all-features -- -D warnings -W clippy::all -W clippy::pedantic -W clippy::nursery
+        language: system
+        files: \.rs$
+        pass_filenames: false
+
+      # Rust security audit
+      - id: cargo-audit
+        name: cargo audit
+        entry: cargo audit
+        language: system
+        files: Cargo\.(toml|lock)$
+        pass_filenames: false
+
+      # Rust tests
+      - id: cargo-test
+        name: cargo test
+        entry: cargo test --all-targets --all-features
+        language: system
+        files: \.rs$
+        pass_filenames: false
+
+      # Rust documentation
+      - id: cargo-doc
+        name: cargo doc
+        entry: cargo doc --no-deps --document-private-items
+        language: system
+        files: \.rs$
+        pass_filenames: false
+
+  # ============================================================================
+  # Python Code Quality (AI Services)
+  # ============================================================================
+  - repo: https://github.com/psf/black
+    rev: 23.12.1
+    hooks:
+      - id: black
+        files: ai-services/.*\.py$
+        args: [--line-length=88]
+
+  - repo: https://github.com/pycqa/isort
+    rev: 5.13.2
+    hooks:
+      - id: isort
+        files: ai-services/.*\.py$
+        args: [--profile=black]
+
+  - repo: https://github.com/pycqa/flake8
+    rev: 7.0.0
+    hooks:
+      - id: flake8
+        files: ai-services/.*\.py$
+        args: [--max-line-length=88, --extend-ignore=E203,W503]
+
+  - repo: https://github.com/pycqa/bandit
+    rev: 1.7.6
+    hooks:
+      - id: bandit
+        files: ai-services/.*\.py$
+        args: [-r, -f, json, -o, bandit-report.json]
+
+  - repo: https://github.com/pre-commit/mirrors-mypy
+    rev: v1.8.0
+    hooks:
+      - id: mypy
+        files: ai-services/.*\.py$
+        additional_dependencies: [types-requests, types-PyYAML]
+
+  # ============================================================================
+  # Frontend Quality (JavaScript/WASM)
+  # ============================================================================
+  - repo: https://github.com/pre-commit/mirrors-eslint
+    rev: v8.56.0
+    hooks:
+      - id: eslint
+        files: frontend/static/.*\.(js|ts)$
+        args: [--fix]
+
+  # ============================================================================
+  # Security and Secrets Detection
+  # ============================================================================
+  - repo: https://github.com/Yelp/detect-secrets
+    rev: v1.4.0
+    hooks:
+      - id: detect-secrets
+        args: ['--baseline', '.secrets.baseline']
+        exclude: package.lock.json
+
+  - repo: https://github.com/gitguardian/ggshield
+    rev: v1.25.0
+    hooks:
+      - id: ggshield
+        language: python
+        stages: [commit]
+
+  # ============================================================================
+  # Documentation Quality
+  # ============================================================================
+  - repo: https://github.com/igorshubovych/markdownlint-cli
+    rev: v0.38.0
+    hooks:
+      - id: markdownlint
+        args: [--fix]
+        exclude: ^(CHANGELOG\.md|target/.*\.md)$
+
+  # ============================================================================
+  # Docker and Infrastructure
+  # ============================================================================
+  - repo: https://github.com/hadolint/hadolint
+    rev: v2.12.0
+    hooks:
+      - id: hadolint-docker
+        files: Dockerfile.*
+
+  - repo: local
+    hooks:
+      - id: docker-compose-validate
+        name: docker-compose validate
+        entry: docker-compose config -q
+        language: system
+        files: docker-compose\.ya?ml$
+        pass_filenames: false
+
+  # ============================================================================
+  # License and Legal Compliance
+  # ============================================================================
+  - repo: https://github.com/Lucas-C/pre-commit-hooks
+    rev: v1.5.4
+    hooks:
+      - id: insert-license
+        files: \.(rs|py|js|ts)$
+        args:
+          - --license-filepath
+          - .license-header.txt
+          - --comment-style
+          - //
