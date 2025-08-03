@@ -13,7 +13,7 @@ services:
       target: production
     container_name: team10-frontend
     ports:
-      - "${FRONTEND_PORT:-8080}:80"
+      - "${FRONTEND_PORT:-2090}:80"
     environment:
       - API_GATEWAY_URL=http://api-gateway:3000
     depends_on:
@@ -30,7 +30,7 @@ services:
       target: production
     container_name: team10-api-gateway
     ports:
-      - "${API_GATEWAY_PORT:-3000}:3000"
+      - "${API_GATEWAY_PORT:-2090}:3000"
     environment:
       # External AI Services (for demo)
       - AI4THAI_API_KEY=${AI4THAI_API_KEY}
