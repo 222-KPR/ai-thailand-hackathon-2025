@@ -1,5 +1,5 @@
-# AI4Thai Crop Guardian - AI Services Deployment
-# Vision Service and Queue Worker for agricultural analysis
+# AI4Thai Crop Guardian - AI Services Deployment (Absolute Paths)
+# This version uses absolute paths to prevent CI/CD path issues
 
 version: '3.8'
 
@@ -7,7 +7,7 @@ services:
   # Vision Service - Pest Detection + Disease Detection (H100 16GB Optimized)
   vision-service:
     build:
-      context: ../vision-service
+      context: /builds/222-KPR/ai-thailand-hackathon-2025/ai-services/vision-service
       dockerfile: Dockerfile
       target: ${BUILD_TARGET:-h100-optimized}
       args:
@@ -88,7 +88,7 @@ services:
   # Queue Worker Service - Vision Job Processing
   queue-worker:
     build:
-      context: ../queue-worker
+      context: /builds/222-KPR/ai-thailand-hackathon-2025/ai-services/queue-worker
       dockerfile: Dockerfile
       target: ${BUILD_TARGET:-production}
       args:
@@ -123,7 +123,7 @@ services:
   # Celery Worker - Background Processing
   celery-worker:
     build:
-      context: ../queue-worker
+      context: /builds/222-KPR/ai-thailand-hackathon-2025/ai-services/queue-worker
       dockerfile: Dockerfile
       target: ${BUILD_TARGET:-production}
       args:
@@ -156,7 +156,7 @@ services:
   # Celery Beat - Scheduled Tasks
   celery-beat:
     build:
-      context: ../queue-worker
+      context: /builds/222-KPR/ai-thailand-hackathon-2025/ai-services/queue-worker
       dockerfile: Dockerfile
       target: ${BUILD_TARGET:-production}
       args:
@@ -194,64 +194,6 @@ services:
       interval: 30s
       timeout: 10s
       retries: 3
-    restart: unless-stopped
-
-  # Load Balancer for Vision Service
-  vision-lb:
-    image: nginx:alpine
-    container_name: team10-vision-lb
-    ports:
-      - "${VISION_LB_PORT:-2011}:80"
-    volumes:
-      - team10-root:/root
-      - team10-data:/etc/nginx
-    depends_on:
-      - vision-service
-    networks:
-      - ai-services-network
-    profiles:
-      - load-balancer
-    restart: unless-stopped
-
-  # Monitoring - Prometheus
-  prometheus:
-    image: prom/prometheus:latest
-    container_name: team10-ai-prometheus
-    ports:
-      - "${PROMETHEUS_PORT:-9090}:9090"
-    volumes:
-      - team10-root:/root
-      - team10-data:/prometheus
-    command:
-      - '--config.file=/etc/prometheus/prometheus.yml'
-      - '--storage.tsdb.path=/prometheus'
-      - '--web.console.libraries=/etc/prometheus/console_libraries'
-      - '--web.console.templates=/etc/prometheus/consoles'
-      - '--web.enable-lifecycle'
-    networks:
-      - ai-services-network
-    profiles:
-      - monitoring
-    restart: unless-stopped
-
-  # Monitoring - Grafana
-  grafana:
-    image: grafana/grafana:latest
-    container_name: team10-ai-grafana
-    ports:
-      - "${GRAFANA_PORT:-3001}:3000"
-    environment:
-      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_PASSWORD:-admin}
-      - GF_USERS_ALLOW_SIGN_UP=false
-    volumes:
-      - team10-root:/root
-      - team10-data:/var/lib/grafana
-    depends_on:
-      - prometheus
-    networks:
-      - ai-services-network
-    profiles:
-      - monitoring
     restart: unless-stopped
 
 networks:
