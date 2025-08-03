@@ -1,16 +1,20 @@
 use yew::prelude::*;
 use yew_router::prelude::*;
-use shared::{ChatMessage, Language};
+use crate::types::{ChatMessage, Language};
 use uuid::Uuid;
 
 use crate::i18n::I18nContext;
 use crate::components::ui::*;
+use crate::components::image_analysis::ImageAnalysis;
+use crate::pages::home::HomePage;
 
 /// Main application routes
 #[derive(Clone, Routable, PartialEq)]
 pub enum Route {
     #[at("/")]
     Home,
+    #[at("/camera")]
+    Camera,
     #[not_found]
     #[at("/404")]
     NotFound,
@@ -76,13 +80,12 @@ impl AppState {
 /// Route switch component
 fn switch(routes: Route) -> Html {
     match routes {
-        Route::Home => html! {
-            <div class="home-page">
-                <h1>{ "AI4Thai Crop Guardian" }</h1>
-                <p>{ "Chat interface coming soon..." }</p>
-                <GradientButton onclick={Callback::noop()}>
-                    { "Get Started" }
-                </GradientButton>
+        Route::Home => html! { <HomePage /> },
+        Route::Camera => html! {
+            <div class="camera-page">
+                <h1>{ "ตรวจวินิจฉัยโรคพืช" }</h1>
+                <p>{ "อัปโหลดรูปภาพพืชของคุณเพื่อตรวจจับโรค" }</p>
+                <ImageAnalysis on_uploaded={Callback::noop()} />
             </div>
         },
         Route::NotFound => html! { <div>{"Page Not Found"}</div> },

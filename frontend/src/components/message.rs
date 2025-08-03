@@ -1,6 +1,6 @@
 use yew::prelude::*;
 use chrono::{DateTime, Utc};
-use shared::ChatMessage;
+use crate::types::ChatMessage;
 
 use crate::i18n::I18nContext;
 

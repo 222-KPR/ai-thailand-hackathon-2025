@@ -1,137 +1,238 @@
-use shared::{
-    VisionResponse, LLMResponse, BoundingBox,
-    CropType, Language, DiseaseSeverity,
-    TreatmentPlan, TreatmentStep, TreatmentUrgency,
-    Material, CostEstimate, CostItem
+use crate::types::{
+    ApiError, ChatMessage, CropType, HealthResponse, JobResponse, JobStatus, Language,
+    PestDetectionResult, TreatmentStep, VisionRequest, VisionResponse,
 };
-use uuid::Uuid;
 use chrono::Utc;
+use gloo_net::http::Request;
+use uuid::Uuid;
+use wasm_bindgen::JsValue;
+use web_sys::{FormData, File};
 
-#[derive(Debug, Clone)]
-pub enum ApiError {
-    NetworkError(String),
-    ParseError(String),
-    ServiceUnavailable,
+pub struct ApiService {
+    pub vision_service_url: String,
+    pub queue_service_url: String,
 }
 
-impl std::fmt::Display for ApiError {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            ApiError::NetworkError(msg) => write!(f, "Network error: {msg}"),
-            ApiError::ParseError(msg) => write!(f, "Parse error: {msg}"),
-            ApiError::ServiceUnavailable => write!(f, "Service unavailable"),
+impl Default for ApiService {
+    fn default() -> Self {
+        Self {
+            vision_service_url: "http://localhost:2001".to_string(),
+            queue_service_url: "http://localhost:8001".to_string(),
         }
     }
 }
 
-impl std::error::Error for ApiError {}
-
-pub struct ApiService;
-
 impl ApiService {
-    pub async fn analyze_image(
-        _image_data: String,
+    pub fn new() -> Self {
+        // Get URLs from environment or use defaults
+        let vision_service_url = web_sys::window()
+            .and_then(|w| w.location().origin().ok())
+            .map(|origin| format!("{}:2001", origin.replace(":8080", "")))
+            .unwrap_or_else(|| "http://localhost:2001".to_string());
+
+        let queue_service_url = web_sys::window()
+            .and_then(|w| w.location().origin().ok())
+            .map(|origin| format!("{}:8001", origin.replace(":8080", "")))
+            .unwrap_or_else(|| "http://localhost:8001".to_string());
+
+        Self {
+            vision_service_url,
+            queue_service_url,
+        }
+    }
+
+    // Vision Service - Disease Detection
+    pub async fn analyze_disease(
+        &self,
+        image_data: String,
         crop_type: CropType,
-        _language: Language,
+        confidence_threshold: f64,
     ) -> Result<VisionResponse, ApiError> {
-        // Mock response for development
-        let response = VisionResponse {
-            request_id: Uuid::new_v4(),
-            disease: format!("Mock disease for {crop_type:?}"),
-            confidence: 0.85,
-            severity: DiseaseSeverity::Medium,
-            affected_areas: vec![
-                BoundingBox {
-                    x: 0.2,
-                    y: 0.3,
-                    width: 0.4,
-                    height: 0.3,
-                    confidence: 0.85,
-                }
-            ],
-            processing_time_ms: 1500,
-            model_version: "v1.0.0".to_string(),
-            timestamp: Utc::now(),
+        let request_data = VisionRequest {
+            image_data,
+            crop_type: crop_type.to_string(),
+            confidence_threshold,
         };
 
-        Ok(response)
+        let response = Request::post(&format!("{}/analyze", self.vision_service_url))
+            .header("Content-Type", "application/json")
+            .json(&request_data)
+            .map_err(|e| ApiError::NetworkError(format!("Request creation failed: {:?}", e)))?
+            .send()
+            .await
+            .map_err(|e| ApiError::NetworkError(format!("Request failed: {:?}", e)))?;
+
+        if response.ok() {
+            response
+                .json::<VisionResponse>()
+                .await
+                .map_err(|e| ApiError::ParseError(format!("JSON parse error: {:?}", e)))
+        } else {
+            Err(ApiError::NetworkError(format!(
+                "HTTP error: {}",
+                response.status()
+            )))
+        }
     }
 
-    pub async fn get_treatment_advice(
-        vision_result: &VisionResponse,
+    // Queue Worker - Pest Detection
+    pub async fn submit_pest_detection(
+        &self,
+        image_file: File,
         crop_type: CropType,
-        language: Language,
-    ) -> Result<LLMResponse, ApiError> {
-        // Mock response for development
-        let treatment_text = match language {
-            Language::Thai => format!(
-                "การรักษาโรค {} ในพืช {:?}:\n\n1. ใช้สารเคมีป้องกันโรค\n2. ปรับปรุงการระบายน้ำ\n3. ตัดส่วนที่เป็นโรคออก\n4. เฝ้าระวังและติดตามอาการ",
-                vision_result.disease, crop_type
-            ),
-            Language::English => format!(
-                "Treatment for {} in {:?}:\n\n1. Apply appropriate fungicide\n2. Improve drainage systems\n3. Remove affected plant parts\n4. Monitor progress daily",
-                vision_result.disease, crop_type
-            ),
-        };
+        description: Option<String>,
+    ) -> Result<JobResponse, ApiError> {
+        let form_data = FormData::new().map_err(|_| ApiError::NetworkError("Failed to create FormData".to_string()))?;
 
-        let response = LLMResponse {
-            request_id: Uuid::new_v4(),
-            treatment_plan: TreatmentPlan {
-                steps: vec![
-                    TreatmentStep {
-                        step_number: 1,
-                        description: "Apply fungicide treatment".to_string(),
-                        materials_needed: vec![
-                            Material {
-                                name: "Copper fungicide".to_string(),
-                                quantity: "100ml".to_string(),
-                                estimated_cost_baht: Some(150.0),
-                                where_to_buy: vec!["Local agricultural store".to_string()],
-                            }
-                        ],
-                        timing: "Immediate".to_string(),
-                        warnings: vec!["Wear protective gear".to_string()],
-                    }
-                ],
-                timeline_days: 14,
-                urgency: TreatmentUrgency::Medium,
-                organic_alternative: None,
-            },
-            advice: treatment_text,
-            prevention_tips: vec![
-                "Improve drainage".to_string(),
-                "Monitor regularly".to_string(),
-            ],
-            estimated_cost: Some(CostEstimate {
-                min_baht: 100.0,
-                max_baht: 200.0,
-                breakdown: vec![
-                    CostItem {
-                        item: "Fungicide".to_string(),
-                        cost_baht: 150.0,
-                        is_optional: false,
-                    }
-                ],
-            }),
-            confidence: 0.80,
-            sources: vec!["Agricultural Research Institute".to_string()],
-            timestamp: Utc::now(),
-        };
+        // Add form fields
+        form_data
+            .append_with_blob("image", &image_file)
+            .map_err(|_| ApiError::NetworkError("Failed to append image".to_string()))?;
 
-        Ok(response)
+        form_data
+            .append_with_str("crop_type", &crop_type.to_string())
+            .map_err(|_| ApiError::NetworkError("Failed to append crop_type".to_string()))?;
+
+        if let Some(desc) = description {
+            form_data
+                .append_with_str("description", &desc)
+                .map_err(|_| ApiError::NetworkError("Failed to append description".to_string()))?;
+        }
+
+        let response = Request::post(&format!("{}/api/v1/queue/pest-detection", self.queue_service_url))
+            .body(JsValue::from(form_data))
+            .send()
+            .await
+            .map_err(|e| ApiError::NetworkError(format!("Request failed: {:?}", e)))?;
+
+        if response.ok() {
+            response
+                .json::<JobResponse>()
+                .await
+                .map_err(|e| ApiError::ParseError(format!("JSON parse error: {:?}", e)))
+        } else {
+            Err(ApiError::NetworkError(format!(
+                "HTTP error: {}",
+                response.status()
+            )))
+        }
     }
 
+    // Queue Worker - Disease Detection
+    pub async fn submit_disease_detection(
+        &self,
+        image_file: File,
+        crop_type: CropType,
+        description: Option<String>,
+    ) -> Result<JobResponse, ApiError> {
+        let form_data = FormData::new().map_err(|_| ApiError::NetworkError("Failed to create FormData".to_string()))?;
+
+        // Add form fields
+        form_data
+            .append_with_blob("image", &image_file)
+            .map_err(|_| ApiError::NetworkError("Failed to append image".to_string()))?;
+
+        form_data
+            .append_with_str("crop_type", &crop_type.to_string())
+            .map_err(|_| ApiError::NetworkError("Failed to append crop_type".to_string()))?;
+
+        if let Some(desc) = description {
+            form_data
+                .append_with_str("description", &desc)
+                .map_err(|_| ApiError::NetworkError("Failed to append description".to_string()))?;
+        }
+
+        let response = Request::post(&format!("{}/api/v1/queue/disease-detection", self.queue_service_url))
+            .body(JsValue::from(form_data))
+            .send()
+            .await
+            .map_err(|e| ApiError::NetworkError(format!("Request failed: {:?}", e)))?;
+
+        if response.ok() {
+            response
+                .json::<JobResponse>()
+                .await
+                .map_err(|e| ApiError::ParseError(format!("JSON parse error: {:?}", e)))
+        } else {
+            Err(ApiError::NetworkError(format!(
+                "HTTP error: {}",
+                response.status()
+            )))
+        }
+    }
+
+    // Get job status
+    pub async fn get_job_status(&self, job_id: &str) -> Result<JobStatus, ApiError> {
+        let response = Request::get(&format!("{}/api/v1/jobs/{}", self.queue_service_url, job_id))
+            .send()
+            .await
+            .map_err(|e| ApiError::NetworkError(format!("Request failed: {:?}", e)))?;
+
+        if response.ok() {
+            response
+                .json::<JobStatus>()
+                .await
+                .map_err(|e| ApiError::ParseError(format!("JSON parse error: {:?}", e)))
+        } else {
+            Err(ApiError::NetworkError(format!(
+                "HTTP error: {}",
+                response.status()
+            )))
+        }
+    }
+
+    // Health checks
+    pub async fn check_vision_health(&self) -> Result<HealthResponse, ApiError> {
+        let response = Request::get(&format!("{}/health", self.vision_service_url))
+            .send()
+            .await
+            .map_err(|e| ApiError::NetworkError(format!("Request failed: {:?}", e)))?;
+
+        if response.ok() {
+            response
+                .json::<HealthResponse>()
+                .await
+                .map_err(|e| ApiError::ParseError(format!("JSON parse error: {:?}", e)))
+        } else {
+            Err(ApiError::ServiceUnavailable)
+        }
+    }
+
+    pub async fn check_queue_health(&self) -> Result<HealthResponse, ApiError> {
+        let response = Request::get(&format!("{}/health", self.queue_service_url))
+            .send()
+            .await
+            .map_err(|e| ApiError::NetworkError(format!("Request failed: {:?}", e)))?;
+
+        if response.ok() {
+            response
+                .json::<HealthResponse>()
+                .await
+                .map_err(|e| ApiError::ParseError(format!("JSON parse error: {:?}", e)))
+        } else {
+            Err(ApiError::ServiceUnavailable)
+        }
+    }
+
+    // Mock chat functionality (can be extended to connect to LLM service)
     pub async fn send_chat_message(
-        _message: String,
+        &self,
+        message: String,
         _conversation_id: Uuid,
-        _language: Language,
-    ) -> Result<String, ApiError> {
-        // Mock chat response
-        Ok("This is a mock response from the AI assistant. In a real implementation, this would connect to the LLM service.".to_string())
-    }
+        language: Language,
+    ) -> Result<ChatMessage, ApiError> {
+        // Mock response - in real implementation, this would call an LLM service
+        let response_content = match language {
+            Language::Thai => "นี่คือการตอบกลับจากผู้ช่วย AI ในการพัฒนาจริงจะเชื่อมต่อกับบริการ LLM".to_string(),
+            Language::English => "This is a mock response from the AI assistant. In a real implementation, this would connect to the LLM service.".to_string(),
+        };
 
-    pub async fn check_health() -> Result<(), ApiError> {
-        // Mock health check - always returns OK for development
-        Ok(())
+        Ok(ChatMessage {
+            id: Uuid::new_v4(),
+            content: response_content,
+            is_user: false,
+            timestamp: Utc::now(),
+            language,
+        })
     }
 }

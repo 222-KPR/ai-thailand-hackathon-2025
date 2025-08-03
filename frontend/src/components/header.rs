@@ -1,5 +1,5 @@
 use yew::prelude::*;
-use shared::Language;
+use crate::types::Language;
 
 use crate::app::AppState;
 use crate::i18n::I18nContext;

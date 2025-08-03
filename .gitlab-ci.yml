@@ -28,15 +28,19 @@ build-ai-services:
     # Enable Docker BuildKit for optimized builds and size reduction
     - export DOCKER_BUILDKIT=1
     - export BUILDKIT_PROGRESS=plain
+    # Validate paths before building
+    - echo "Validating deployment paths..."
+    - chmod +x validate-deployment.sh
+    - ./validate-deployment.sh docker-compose.yml || exit 1
   script:
     # Build Vision Service with H100 optimization and size optimization
     - echo "Building Vision Service for H100 16GB VRAM (optimized size)..."
-    - docker build --target h100-optimized --compress --squash -t team10-vision-service:$CI_COMMIT_SHA ../vision-service/
+    - docker build --target h100-optimized --compress --squash -t team10-vision-service:$CI_COMMIT_SHA -f ../vision-service/Dockerfile ../vision-service/
     - docker tag team10-vision-service:$CI_COMMIT_SHA team10-vision-service:latest
 
     # Build Queue Worker (optimized and minimal)
     - echo "Building Queue Worker (minimal)..."
-    - docker build --target production --compress --squash -t team10-queue-worker:$CI_COMMIT_SHA ../queue-worker/
+    - docker build --target production --compress --squash -t team10-queue-worker:$CI_COMMIT_SHA -f ../queue-worker/Dockerfile ../queue-worker/
     - docker tag team10-queue-worker:$CI_COMMIT_SHA team10-queue-worker:latest
 
     # Optimize images by removing intermediate layers and unused data
@@ -66,25 +70,47 @@ deploy-ai-services:
   image: docker:24.0.5
   services:
     - docker:24.0.5-dind
+  dependencies:
+    - build-ai-services
   before_script:
-    - apk add --no-cache docker-compose curl
+    - apk add --no-cache docker-compose curl python3 py3-yaml
     - docker info
     - cd ai-services/deployment
+    # Validate deployment configuration
+    - echo "Pre-deployment validation..."
+    - chmod +x validate-deployment.sh
+    - ./validate-deployment.sh docker-compose.yml || exit 1
   script:
-    # Rebuild images efficiently (fast due to layer caching)
-    - echo "Building Docker images for deployment..."
+    # Generate compose file with correct paths for CI environment
+    - echo "Generating compose file with correct paths..."
+    - chmod +x generate-compose.sh
+    - ./generate-compose.sh docker-compose.ci-generated.yml
+
+    # Use pre-built images instead of rebuilding
+    - echo "Using pre-built Docker images for deployment..."
     - export DOCKER_BUILDKIT=1
+    - export IMAGE_TAG=$CI_COMMIT_SHA
 
-    # Build images with optimizations
-    - docker build --target h100-optimized --compress -t team10-vision-service:latest ../vision-service/
-    - docker build --target production --compress -t team10-queue-worker:latest ../queue-worker/
-
-    # Verify images are built
+    # Verify pre-built images exist
     - docker images | grep team10
+
+    # If images don't exist, build them (fallback)
+    - |
+      if ! docker image inspect team10-vision-service:$CI_COMMIT_SHA >/dev/null 2>&1; then
+        echo "Vision service image not found, building..."
+        docker build --target h100-optimized --compress -t team10-vision-service:$CI_COMMIT_SHA -f ../vision-service/Dockerfile ../vision-service/
+        docker tag team10-vision-service:$CI_COMMIT_SHA team10-vision-service:latest
+      fi
+    - |
+      if ! docker image inspect team10-queue-worker:$CI_COMMIT_SHA >/dev/null 2>&1; then
+        echo "Queue worker image not found, building..."
+        docker build --target production --compress -t team10-queue-worker:$CI_COMMIT_SHA -f ../queue-worker/Dockerfile ../queue-worker/
+        docker tag team10-queue-worker:$CI_COMMIT_SHA team10-queue-worker:latest
+      fi
 
     # Stop existing services if running
     - echo "Stopping existing AI services..."
-    - docker-compose down --remove-orphans || true
+    - docker-compose -f docker-compose.ci-generated.yml down --remove-orphans || true
 
     # Clean up old containers and volumes (optional)
     - docker container prune -f || true
@@ -100,9 +126,9 @@ deploy-ai-services:
     - export VISION_MEMORY_LIMIT=4G
     - export VISION_MEMORY_RESERVATION=2G
 
-    # Deploy AI services
+    # Deploy AI services using generated compose file
     - echo "Deploying AI services..."
-    - docker-compose up -d
+    - docker-compose -f docker-compose.ci-generated.yml up -d
 
     # Wait for services to be healthy
     - echo "Waiting for services to be ready..."

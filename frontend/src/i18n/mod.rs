@@ -1,5 +1,6 @@
 use std::collections::HashMap;
-use shared::Language;
+use yew::prelude::*;
+use crate::types::Language;
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct I18nContext {

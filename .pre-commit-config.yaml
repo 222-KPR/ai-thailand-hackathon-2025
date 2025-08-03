@@ -1,34 +1,60 @@
 # .pre-commit-config.yaml
 repos:
+  # Rust checks for frontend
   - repo: local
     hooks:
-      # Rust formatting
-      - id: rustfmt
-        name: rustfmt
-        entry: cargo fmt
+      # Rust formatting for frontend
+      - id: rustfmt-frontend
+        name: rustfmt (frontend)
+        entry: bash -c 'cd frontend && cargo fmt -- --check'
         language: system
-        files: \.rs$
-        args: ["--all", "--", "--check"]
+        files: ^frontend/.*\.rs$
         pass_filenames: false
 
-      # Rust linting (exclude frontend due to compilation issues)
-      - id: clippy
-        name: clippy
-        entry: cargo clippy
+      # Rust linting for frontend
+      - id: clippy-frontend
+        name: clippy (frontend)
+        entry: bash -c 'cd frontend && cargo clippy --all-targets --all-features -- -D warnings'
         language: system
-        files: \.rs$
-        args: ["--workspace", "--all-targets", "--all-features", "--", "-D", "warnings"]
+        files: ^frontend/.*\.rs$
         pass_filenames: false
 
-      # Cargo fix for automatic fixes (exclude frontend due to compilation issues)
-      - id: cargo-fix
-        name: cargo-fix
-        entry: cargo fix
-        language: system
-        files: \.rs$
-        args: ["--workspace", "--all-targets", "--all-features", "--allow-dirty", "--allow-staged"]
-        pass_filenames: false
+  # Python checks for backend
+  - repo: https://github.com/psf/black
+    rev: 23.12.1
+    hooks:
+      - id: black
+        name: black (backend)
+        files: ^backend/.*\.py$
+        args: ["--line-length=88"]
 
+  - repo: https://github.com/pycqa/isort
+    rev: 5.13.2
+    hooks:
+      - id: isort
+        name: isort (backend)
+        files: ^backend/.*\.py$
+        args: ["--profile", "black"]
+
+  - repo: https://github.com/charliermarsh/ruff-pre-commit
+    rev: v0.1.9
+    hooks:
+      - id: ruff
+        name: ruff (backend)
+        files: ^backend/.*\.py$
+        args: ["--fix"]
+
+      - id: ruff-format
+        name: ruff-format (backend)
+        files: ^backend/.*\.py$
+
+  - repo: https://github.com/pycqa/flake8
+    rev: 7.0.0
+    hooks:
+      - id: flake8
+        name: flake8 (backend)
+        files: ^backend/.*\.py$
+        args: ["--max-line-length=88", "--extend-ignore=E203,W503"]
 
   # Additional hooks for other file types
   - repo: https://github.com/pre-commit/pre-commit-hooks
@@ -40,3 +66,5 @@ repos:
       - id: check-toml
       - id: check-json
       - id: mixed-line-ending
+      - id: check-added-large-files
+        args: ['--maxkb=1000']

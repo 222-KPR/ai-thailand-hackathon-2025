@@ -1,71 +1,52 @@
-# Multi-stage Dockerfile for Yew WASM frontend
-FROM rust:1.88-slim as builder
+# Multi-stage Dockerfile for Yew WebAssembly Frontend
 
-# Install system dependencies with retry and fix-missing
-RUN apt-get update && apt-get install -y --fix-missing \
+# Builder stage - use latest Rust for compatibility
+FROM rust:1.82-slim AS builder
+
+# Set environment variables
+ENV DEBIAN_FRONTEND=noninteractive
+
+# Install minimal system dependencies
+RUN apt-get update && apt-get install -y --no-install-recommends \
     pkg-config \
     libssl-dev \
     curl \
-    build-essential \
-    ca-certificates \
     && rm -rf /var/lib/apt/lists/* \
     && apt-get clean
 
-# Install Node.js 18 LTS
-RUN curl -fsSL https://deb.nodesource.com/setup_18.x | bash - \
-    && apt-get install -y nodejs
-
-# Install Rust WASM target and tools
+# Install Rust WebAssembly target and tools with compatible versions
 RUN rustup target add wasm32-unknown-unknown
-RUN cargo install trunk wasm-bindgen-cli
+RUN cargo install trunk@0.21.14 wasm-bindgen-cli@0.2.100
 
 # Set working directory
 WORKDIR /app
 
-# Copy workspace configuration
-COPY Cargo.toml Cargo.lock ./
+# Copy Cargo files for dependency caching
+COPY Cargo.toml ./
+COPY Cargo.lock* ./
 
-# Create shared directory and copy shared crate
-RUN mkdir -p shared
-COPY shared/ ./shared/
+# Build dependencies first for caching
+RUN cargo fetch
 
-# Create frontend directory and copy frontend source
-RUN mkdir -p frontend
-COPY frontend/ ./frontend/
+# Copy source code
+COPY src/ ./src/
+COPY static/ ./static/
+COPY styles/ ./styles/
+COPY index.html ./
+COPY Trunk.toml ./
 
-# Set working directory to frontend
-WORKDIR /app/frontend
+# Development stage (for live reload)
+FROM builder AS development
+EXPOSE 8080
+CMD ["trunk", "serve", "--address", "0.0.0.0", "--port", "8080"]
 
-# Build the frontend (this will likely fail, but we'll handle it)
-RUN trunk build --release || echo "Build failed as expected due to code issues"
+# Production build stage
+FROM builder AS production-build
+RUN trunk build --release
 
 # Production stage with nginx
-FROM nginx:alpine as production
-
-# Create a simple index.html for now
-RUN echo '<html><body><h1>AI4Thai Frontend - Docker Build Successful</h1><p>Frontend compilation needs code fixes</p></body></html>' > /usr/share/nginx/html/index.html
-
-# Copy nginx configuration
-COPY frontend/nginx.conf /etc/nginx/nginx.conf
-
-EXPOSE 8080
-
+FROM nginx:alpine AS production
+COPY nginx.conf /etc/nginx/nginx.conf
+COPY --from=production-build /app/dist /usr/share/nginx/html
+EXPOSE 80
 CMD ["nginx", "-g", "daemon off;"]
-
-# Development stage
-FROM builder as development
-
-WORKDIR /app/frontend
-
-# Install development dependencies
-RUN cargo install cargo-watch
-
-# Create a simple development server script
-RUN echo '#!/bin/bash\necho "Starting development server..."\necho "Frontend code needs fixes before compilation"\necho "Serving placeholder on port 8080"\npython3 -m http.server 8080' > /start-dev.sh \
-    && chmod +x /start-dev.sh
-
-# Expose development port
-EXPOSE 8080
-
-# Development command
-CMD ["/start-dev.sh"]

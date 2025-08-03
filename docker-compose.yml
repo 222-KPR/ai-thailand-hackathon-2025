@@ -1,124 +1,43 @@
-# AI4Thai Crop Guardian - Main Application
-# This compose file only runs the main application (API Gateway + Frontend)
-# For AI services, use ai-services/deployment/docker-compose.yml
-
-version: '3.8'
-
 services:
-  # Frontend - Yew WebAssembly PWA
   frontend:
     build:
-      context: .
-      dockerfile: frontend/Dockerfile
-      target: production
-    container_name: team10-frontend
+      context: ./frontend
+      dockerfile: Dockerfile
+      target: ${ENVIRONMENT:-production}
     ports:
-      - "${FRONTEND_PORT:-2090}:80"
+      - "${FRONTEND_PORT:-8080}:80"
     environment:
-      - API_GATEWAY_URL=http://api-gateway:3000
+      - VISION_SERVICE_URL=http://vision-service:2001
+      - QUEUE_SERVICE_URL=http://queue-worker:8001
     depends_on:
-      - api-gateway
+      - vision-service
     networks:
       - app-network
-    restart: unless-stopped
 
-  # API Gateway - Rust/Axum
-  api-gateway:
+  vision-service:
     build:
-      context: .
-      dockerfile: api-gateway/Dockerfile
-      target: production
-    container_name: team10-api-gateway
+      context: ./backend/vision-service
+      dockerfile: Dockerfile
     ports:
-      - "${API_GATEWAY_PORT:-2090}:3000"
+      - "${VISION_SERVICE_PORT:-2001}:2001"
     environment:
-      # External AI Services (for demo)
-      - AI4THAI_API_KEY=${AI4THAI_API_KEY}
-      - VISION_SERVICE_URL=${VISION_SERVICE_URL:-https://vision-api.ai4thai.com}
-
-      # Self-hosted AI Services (uncomment if self-hosting)
-      # - VISION_SERVICE_URL=http://vision-service:2001
-      # - QUEUE_WORKER_URL=http://queue-worker:2003
-
-      # Chat storage
-      - REDIS_URL=redis://redis:6379
-
-      # RabbitMQ configuration
-      - RABBITMQ_URL=amqp://guest:guest@rabbitmq:5672
-      - RABBITMQ_QUEUE_NAME=vision_analysis_queue
-      - RABBITMQ_EXCHANGE_NAME=vision_exchange
-      - RABBITMQ_ROUTING_KEY=vision.analysis
-
-      # File storage configuration
-      - FILE_STORAGE_TEMP_DIR=/tmp/vision_uploads
-      - FILE_STORAGE_MAX_FILE_SIZE=10485760
-      - FILE_STORAGE_FILE_TTL=86400
-
-      # Server config
-      - SERVER_HOST=0.0.0.0
-      - SERVER_PORT=3000
-      - RUST_LOG=${RUST_LOG:-info}
-    depends_on:
-      - redis
-      - rabbitmq
-    volumes:
-      - vision_uploads:/tmp/vision_uploads
+      - PORT=2001
+      - LOG_LEVEL=${LOG_LEVEL:-INFO}
     networks:
       - app-network
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-    restart: unless-stopped
 
-  # RabbitMQ - Message Queue
-  rabbitmq:
-    image: rabbitmq:3-management-alpine
-    container_name: team10-rabbitmq
+  queue-worker:
+    build:
+      context: ./backend/queue-worker
+      dockerfile: Dockerfile
     ports:
-      - "${RABBITMQ_PORT:-5672}:5672"
-      - "${RABBITMQ_MANAGEMENT_PORT:-15672}:15672"
+      - "${QUEUE_WORKER_PORT:-8001}:8001"
     environment:
-      - RABBITMQ_DEFAULT_USER=guest
-      - RABBITMQ_DEFAULT_PASS=guest
-    volumes:
-      - rabbitmq_data:/var/lib/rabbitmq
+      - PORT=8001
+      - LOG_LEVEL=${LOG_LEVEL:-INFO}
     networks:
       - app-network
-    healthcheck:
-      test: ["CMD", "rabbitmq-diagnostics", "ping"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-    restart: unless-stopped
-
-  # Redis for chat storage
-  redis:
-    image: redis:7-alpine
-    container_name: team10-redis
-    command: redis-server --appendonly yes --maxmemory 1gb --maxmemory-policy allkeys-lru
-    ports:
-      - "${REDIS_PORT:-6379}:6379"
-    volumes:
-      - redis_data:/data
-    networks:
-      - app-network
-    healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-    restart: unless-stopped
 
 networks:
   app-network:
     driver: bridge
-
-volumes:
-  redis_data:
-    driver: local
-  rabbitmq_data:
-    driver: local
-  vision_uploads:
-    driver: local

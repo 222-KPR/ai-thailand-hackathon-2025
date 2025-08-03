@@ -1,16 +1,10 @@
 //! Components Module
 //!
-//! This module contains all UI components organized by category.
+//! This module contains all UI components.
 
-pub mod layout;
-pub mod ui;
-pub mod chat;
-pub mod camera;
 pub mod header;
 pub mod image;
+pub mod image_analysis;
+#[cfg(test)]
+pub mod image_test;
 pub mod message;
-pub mod welcome;
-pub mod diagnosis;
-
-pub use layout::*;
-pub use ui::*;

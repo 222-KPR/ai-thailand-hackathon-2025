@@ -1,332 +1,249 @@
-# AI4Thai Crop Guardian 🌾
+# 🌾 AI4Thai Crop Guardian
+[![Rust](https://github.com/your-repo/ai4thai-crop-guardian/workflows/Rust/badge.svg)](https://github.com/your-repo/ai4thai-crop-guardian/actions)
+[![Python](https://github.com/your-repo/ai4thai-crop-guardian/workflows/Python/badge.svg)](https://github.com/your-repo/ai4thai-crop-guardian/actions)
+[![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
-> AI-powered crop disease detection and advisory system for Thai farmers
+> Production-ready AI-powered crop disease detection system for Thai farmers
 
-## 🎯 Overview
+AI4Thai Crop Guardian is a comprehensive platform that leverages computer vision and machine learning to help Thai farmers detect and treat crop diseases efficiently. Built with modern web technologies and deployed on cloud infrastructure.
 
-AI4Thai Crop Guardian provides intelligent crop disease detection, multimodal chat interface, and personalized treatment recommendations for Thai farmers using computer vision and AI.
+## 🏗️ Architecture Overview
 
-### Key Features
+```mermaid
+graph TD
+    A[Frontend - Yew WebAssembly] --> B[Vision Service - FastAPI]
+    A --> C[Queue Worker - FastAPI]
+    B --> D[AI Disease Detection Model]
+    C --> E[Background Processing Queue]
 
-- 🔍 **Smart Disease Detection**: High accuracy crop disease identification using computer vision
-- 💬 **Multimodal Chat**: Text, voice, and image-based farmer interaction
-- 🌐 **Thai Language Support**: Native Thai language processing and responses
-- 📱 **PWA Experience**: Offline-capable progressive web application
-- 🚀 **High Performance**: Sub-3 second response times with Rust backend
+    subgraph "Infrastructure"
+        F[Docker Containers]
+        G[Health Checks]
+        H[Load Balancing]
+    end
 
-### Supported Crops
-
-- 🌾 Rice (ข้าว) - Blast, Brown spot, Bacterial blight
-- 🥔 Cassava (มันสำปะหลัง) - Mosaic virus, Root rot
-- 🥭 Durian (ทุเรียน) - Fusarium wilt, Anthracnose
-- 🥭 Mango (มะม่วง) - Anthracnose, Powdery mildew
-- 🌳 Rubber (ยางพารา) - Leaf blight, Tapping panel dryness
-
-## 🏗️ Architecture
-
-The system uses a microservices architecture with two deployment modes:
-
-### Main Application (Always Deployed)
-```
-Frontend PWA         API Gateway         Chat Storage
-(Yew WebAssembly) → (Rust/Axum)    →   (Redis)
-     :8080              :3000            :6379
+    A -.-> F
+    B -.-> F
+    C -.-> F
 ```
 
-### AI Services (Deployed Separately)
-```
-Vision Service       Queue Worker      Background Processing
-(Python/FastAPI)   (Python/FastAPI)   (Celery Workers/Beat)
-     :2001             :2003                + Redis
-                                           :6379
-      |                   |                   |
-┌─────────────────────────────────────────────────┐
-│  Comprehensive Plant Health Analysis Platform  │
-├─────────────────────────────────────────────────┤
-│ • YOLO11s Pest Detection                       │
-│ • LLaVA Disease Identification                 │
-│ • Async Job Processing                         │
-│ • Thai Language Support                       │
-│ • Treatment Recommendations                    │
-└─────────────────────────────────────────────────┘
-```
+### 🎯 Core Components
+
+#### 🖥️ Frontend (`/frontend`)
+- **Technology**: Rust + Yew WebAssembly framework
+- **Purpose**: Progressive Web App with real-time image analysis
+- **Features**:
+  - Responsive image upload interface
+  - Real-time analysis feedback
+  - Thai language localization
+  - Offline-capable PWA
+  - Mobile-optimized UI
+
+#### 🔬 Vision Service (`/backend/vision-service`)
+- **Technology**: Python + FastAPI + Computer Vision
+- **Purpose**: AI-powered crop disease detection
+- **Features**:
+  - Multi-format image processing (JPEG, PNG, WebP)
+  - Disease classification with confidence scores
+  - Treatment recommendations
+  - Performance monitoring
+  - Comprehensive validation
+
+#### ⚡ Queue Worker (`/backend/queue-worker`)
+- **Technology**: Python + FastAPI + Background Processing
+- **Purpose**: Asynchronous job management and processing
+- **Features**:
+  - Non-blocking image analysis
+  - Job status tracking
+  - Result caching
+  - Error handling and retry logic
+  - Thread-safe operations
 
 ## 🚀 Quick Start
 
-### Option 1: Demo with External AI Services
+### Prerequisites
+- Docker & Docker Compose
+- Git
+- Internet connection (for AI model downloads)
+
+### Installation
+
 ```bash
-git clone <repository-url>
+# Clone the repository
+git clone https://github.com/your-repo/ai4thai-crop-guardian.git
 cd ai4thai-crop-guardian
 
-# Configure environment
-cp .env.example .env
-# Edit .env: Set AI4THAI_API_KEY=your_api_key
+# Copy environment template
+cp .env.template .env
 
-# Start demo (main application only)
-./scripts/demo-start.sh
-```
-**Access**: Frontend at http://localhost:8080, API at http://localhost:3000
+# Development (local services with hot reload)
+make dev
 
-### Option 2: Full Self-hosted Deployment
-```bash
-# Deploy AI services first
-cd ai-services/deployment
-docker-compose up -d
+# Production (Docker containers)
+make prod
 
-# Start main application
-cd ../../
-./scripts/setup-dev.sh
-./scripts/dev-start.sh
+# Check service health
+make health
 ```
 
-## 🛠️ Development
+### Development Setup
 
-### Prerequisites
-- Rust 1.70+
-- Node.js 18+
-- Docker & Docker Compose
-- Python 3.9+ (for AI services)
+**Prerequisites:**
+- Docker & Docker Compose (for production)
+- Python 3.8+ (for local development)
+- Rust + Cargo (https://rustup.rs/)
+- Make
 
-### Setup
+**Available Commands:**
 ```bash
-# Install development tools
-./scripts/setup-dev.sh
-
-# Start all services
-./scripts/dev-start.sh
-
-# Stop services
-./scripts/dev-stop.sh
-```
-
-### Build Commands
-```bash
-# Main application
-cargo build --workspace
-cd frontend && trunk build
-
-# AI services (if self-hosting)
-cd ai-services/deployment && docker-compose build
-```
-
-### Testing
-```bash
-./scripts/test-all.sh              # All tests
-cd api-gateway && cargo test       # Backend tests
-cd frontend && wasm-pack test --headless --firefox  # Frontend tests
-cd ai-services && source venv/bin/activate && pytest  # AI services tests
+make help     # Show all available commands
+make dev      # Start development environment
+make prod     # Start production environment
+make test     # Run all tests
+make lint     # Run code quality checks
+make stop     # Stop all services
+make clean    # Clean up containers and build artifacts
 ```
 
 ## 📁 Project Structure
 
 ```
 ai4thai-crop-guardian/
-├── api-gateway/          # Rust API Gateway (main backend)
-├── frontend/             # Yew WebAssembly PWA
-├── shared/               # Common Rust types
-├── ai-services/          # AI Services (deployed separately)
-│   ├── vision-service/   # Computer vision service
-│   ├── queue-worker/     # Background job processing
-│   └── deployment/       # Docker compose for AI services
-├── scripts/              # Development and deployment scripts
-└── .gitlab-ci.yml        # CI/CD pipeline
+├── README.md                   # Project documentation
+├── Makefile                    # Development and deployment commands
+├── docker-compose.yml          # Service orchestration
+├── .env.template               # Environment configuration template
+├── .pre-commit-config.yaml     # Code quality automation
+├── LICENSE                     # MIT license
+│
+├── frontend/                   # Yew WebAssembly Application
+│   ├── src/
+│   │   ├── simple_app.rs      # Main application component
+│   │   ├── components/        # Reusable UI components
+│   │   ├── services/          # HTTP client services
+│   │   └── types.rs           # Type definitions
+│   ├── Dockerfile             # Multi-stage production build
+│   ├── Trunk.toml             # Wasm build configuration
+│   └── Cargo.toml             # Rust dependencies
+│
+└── backend/                    # Python Microservices
+    ├── vision-service/         # AI Disease Detection API
+    │   ├── app.py             # FastAPI application
+    │   ├── Dockerfile         # Production container
+    │   └── requirements.txt   # Python dependencies
+    │
+    └── queue-worker/           # Background Processing Service
+        ├── app.py             # Job queue management
+        ├── Dockerfile         # Production container
+        └── requirements.txt   # Python dependencies
 ```
 
 ## 🔧 Configuration
 
 ### Environment Variables
+
+Copy `.env.template` to `.env` and customize as needed:
+
 ```bash
-# Main Application
-REDIS_URL=redis://localhost:6379
-API_GATEWAY_PORT=3000
+cp .env.template .env
+```
+
+Default configuration:
+```env
+# Service Ports
 FRONTEND_PORT=8080
+VISION_SERVICE_PORT=2001
+QUEUE_WORKER_PORT=8001
 
-# AI Services (External Mode)
-AI4THAI_API_KEY=your_api_key_here
+# Logging
+LOG_LEVEL=INFO
 
-# AI Services (Self-hosted Mode)
-VISION_SERVICE_URL=http://localhost:2001
-QUEUE_WORKER_URL=http://localhost:2003
+# Docker Environment (development/production)
+ENVIRONMENT=development
 ```
 
-### Service Ports
-- **Frontend**: 8080
-- **API Gateway**: 3000
-- **Vision Service**: 2001
-- **Queue Worker**: 2003
-- **Vision Load Balancer**: 2011
-- **Redis**: 6379
-- **Prometheus**: 9090
-- **Grafana**: 3001
+### Service URLs
 
-## 🚀 Deployment
+- **Frontend**: http://localhost:8080
+- **Vision Service**: http://localhost:2001
+- **Queue Worker**: http://localhost:8001
+- **API Documentation**: http://localhost:2001/docs
 
-### GitLab CI/CD Pipeline
-
-The repository includes a GitLab CI/CD pipeline for automated AI services deployment:
+## 🧪 Testing
 
 ```bash
-# Tag and deploy
-git tag v1.0.0
-git push origin v1.0.0
+# Run all tests
+make test
+
+# Run code quality checks
+make lint
+
+# Format code
+make format
 ```
 
-**Pipeline Requirements**:
-- GitLab runner with tag `hackathon-siamai2`
-- Docker and Docker Compose installed
-- 8GB+ RAM, 4+ CPU cores
-- Network access to ports 2001-2011, 6379, 9090, 3001
+## 📈 Performance & Monitoring
 
-**Pipeline Jobs**:
-- `build-ai-services`: Builds Docker images (automatic)
-- `deploy-ai-services`: Deploys services (manual)
-- `cleanup-ai-services`: Cleanup deployment (manual)
-- `health-check`: Service health verification (manual)
+### Health Checks
+```bash
+# Check all services
+make health
 
-### Manual Deployment
+# Manual health checks
+curl http://localhost:2001/health  # Vision Service
+curl http://localhost:8001/health  # Queue Worker
+```
+
+## 🌐 Deployment
+
+### Production Deployment
 
 ```bash
-# AI services deployment
-./scripts/deploy-ai-services.sh deploy
+# Start production environment
+make prod
 
-# Check deployment status
-./scripts/deploy-ai-services.sh status
+# Check deployment health
+make health
 
-# Health checks
-./scripts/deploy-ai-services.sh health
+# Stop services
+make stop
 
-# Cleanup
-./scripts/deploy-ai-services.sh cleanup
+# Clean up
+make clean
 ```
 
-### Deployed Services
-
-| Service | Container Name | Port | Purpose |
-|---------|----------------|------|---------|
-| Vision Service | `team10-vision-service` | 2001 | Computer vision API |
-| Queue Worker | `team10-queue-worker` | 2003 | Background job processing |
-| Celery Worker | `team10-celery-worker` | - | Task processor |
-| Celery Beat | `team10-celery-beat` | - | Task scheduler |
-| Redis | `team10-ai-redis` | 6379 | Cache and job queue |
-| Load Balancer | `team10-vision-lb` | 2011 | Vision service LB |
-| Prometheus | `team10-ai-prometheus` | 9090 | Metrics collection |
-| Grafana | `team10-ai-grafana` | 3001 | Monitoring dashboards |
-
-All services use standardized team10 volumes:
-- `team10-root`: Root access for all services
-- `team10-data`: Data storage (models, configs, databases)
-
-## 📊 API Reference
-
-### Vision Service API (Port 2001)
-
-#### Pest Detection
-- **POST** `/detect/pests` - Detect pests using YOLO11s model
-- **POST** `/analyze` - Alias for pest detection
-- **Parameters**: `image`, `confidence_threshold` (0.01), `return_details` (false)
-
-#### Disease Detection
-- **POST** `/detect/disease` - Detect diseases using LLaVA model
-- **Parameters**: `image`, `custom_prompt` (optional)
-
-#### Comprehensive Analysis
-- **POST** `/analyze/comprehensive` - Combined pest and disease detection
-- **Parameters**: `image`, `pest_confidence`, `pest_details`, `disease_prompt`
-
-#### Health & Info
-- **GET** `/health` - Basic health check
-- **GET** `/health/detailed` - Detailed health with model status
-- **GET** `/info` - Service capabilities and model information
-- **GET** `/` - Service overview
-
-### Queue Worker API (Port 2003)
-
-#### Async Processing
-- **POST** `/analyze/pest` - Queue pest detection job
-- **POST** `/analyze/disease` - Queue disease detection job
-- **POST** `/analyze/comprehensive` - Queue comprehensive analysis
-
-#### Job Management
-- **GET** `/jobs/{job_id}` - Get job status and results
-- **DELETE** `/jobs/{job_id}` - Cancel pending job
-
-#### Monitoring
-- **GET** `/queue/stats` - Queue and worker statistics
-- **GET** `/images/stats` - Image storage statistics
-- **POST** `/maintenance/cleanup` - Trigger cleanup of old data
-
-## 🔍 AI Services
-
-### Vision Service Features
-- **Pest Detection**: YOLO11s model (`underdogquality/yolo11s-pest-detection`)
-- **Disease Detection**: LLaVA model (`YuchengShi/LLaVA-v1.5-7B-Plant-Leaf-Diseases-Detection`)
-- **Thai Language Support**: Results and recommendations in Thai
-- **Real-time Analysis**: Fast async processing with dual model support
-
-### Queue Worker Features
-- **Background Processing**: Celery-based async job processing
-- **Image Management**: Validation, preprocessing, and temporary storage
-- **Job Tracking**: Full lifecycle management with status monitoring
-- **Error Handling**: Automatic retries and comprehensive error reporting
-
-## 🔍 Monitoring & Health Checks
-
-```bash
-# Check running containers
-docker ps --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}" | grep team10
-
-# View logs
-docker logs team10-vision-service
-docker logs team10-queue-worker
-
-# Health checks
-curl -f http://localhost:2001/health  # Vision Service
-curl -f http://localhost:2003/health  # Queue Worker
-
-# Monitor resources
-docker stats $(docker ps --format "{{.Names}}" | grep team10)
-
-# View volumes
-docker volume ls | grep team10
-```
-
-## 🚨 Troubleshooting
-
-### Common Issues
-
-**Build Failures**:
-```bash
-docker info                    # Check Docker daemon
-df -h                         # Check available space
-docker system prune -f        # Clean up Docker
-```
-
-**Deployment Failures**:
-```bash
-docker logs team10-vision-service
-docker logs team10-queue-worker
-netstat -tulpn | grep -E ':(2001|2003|2011|6379|9090|3001)'
-```
-
-**Health Check Failures**:
-```bash
-curl -v http://localhost:2001/health
-curl -v http://localhost:2003/health
-docker ps | grep team10
-```
+### Cloud Deployment
+Support for:
+- **AWS**: ECS, ECR, ALB
+- **Google Cloud**: Cloud Run, GKE
+- **Azure**: Container Instances, AKS
 
 ## 🤝 Contributing
 
 1. Fork the repository
-2. Create feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit changes (`git commit -m 'Add amazing feature'`)
-4. Push to branch (`git push origin feature/amazing-feature`)
-5. Open Pull Request
+2. Create a feature branch: `git checkout -b feature/amazing-feature`
+3. Install pre-commit hooks: `pre-commit install`
+4. Make your changes and commit: `git commit -m 'Add amazing feature'`
+5. Push to branch: `git push origin feature/amazing-feature`
+6. Open a Pull Request
+
+### Code Quality Standards
+- **Rust**: Clippy linting, rustfmt formatting
+- **Python**: Black formatting, isort imports, Ruff linting
+- **Documentation**: Comprehensive docstrings and README updates
+- **Testing**: Unit and integration test coverage
 
 ## 📄 License
 
-MIT License - see [LICENSE](LICENSE) file for details.
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+## 🙏 Acknowledgments
+
+- AI4Thai Hackathon 2025 organizers
+- Thai agricultural research institutions
+- Open source computer vision community
+- Rust and Python ecosystems
 
 ---
 
-Made with ❤️ for Thai farmers by KPR team for AI Thailand Hackathon 2025
+**Built with ❤️ for Thai farmers** 🇹🇭
