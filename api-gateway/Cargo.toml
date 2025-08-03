@@ -27,6 +27,17 @@ tower-timeout = { workspace = true }
 url = "2.4"
 rand = "0.8"
 
+# RabbitMQ integration
+lapin = "3.3"
+futures = "0.3"
+
+# File handling and image processing
+tempfile = "3.8"
+image = "0.25"
+base64 = "0.21"
+sha2 = "0.10"
+hex = "0.4"
+
 # Local dependencies
 shared = { path = "../shared" }
 

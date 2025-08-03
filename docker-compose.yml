@@ -43,16 +43,51 @@ services:
       # Chat storage
       - REDIS_URL=redis://redis:6379
 
+      # RabbitMQ configuration
+      - RABBITMQ_URL=amqp://guest:guest@rabbitmq:5672
+      - RABBITMQ_QUEUE_NAME=vision_analysis_queue
+      - RABBITMQ_EXCHANGE_NAME=vision_exchange
+      - RABBITMQ_ROUTING_KEY=vision.analysis
+
+      # File storage configuration
+      - FILE_STORAGE_TEMP_DIR=/tmp/vision_uploads
+      - FILE_STORAGE_MAX_FILE_SIZE=10485760
+      - FILE_STORAGE_FILE_TTL=86400
+
       # Server config
       - SERVER_HOST=0.0.0.0
       - SERVER_PORT=3000
       - RUST_LOG=${RUST_LOG:-info}
     depends_on:
       - redis
+      - rabbitmq
+    volumes:
+      - vision_uploads:/tmp/vision_uploads
     networks:
       - app-network
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    restart: unless-stopped
+
+  # RabbitMQ - Message Queue
+  rabbitmq:
+    image: rabbitmq:3-management-alpine
+    container_name: team10-rabbitmq
+    ports:
+      - "${RABBITMQ_PORT:-5672}:5672"
+      - "${RABBITMQ_MANAGEMENT_PORT:-15672}:15672"
+    environment:
+      - RABBITMQ_DEFAULT_USER=guest
+      - RABBITMQ_DEFAULT_PASS=guest
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+    networks:
+      - app-network
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "ping"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -82,4 +117,8 @@ networks:
 
 volumes:
   redis_data:
+    driver: local
+  rabbitmq_data:
+    driver: local
+  vision_uploads:
     driver: local

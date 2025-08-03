@@ -6,7 +6,7 @@ pub mod utils;
 
 use config::AppConfig;
 use redis::Client as RedisClient;
-use services::ServiceRegistry;
+use services::{ServiceRegistry, RabbitMQService, FileStorageService};
 
 /// Application state shared across all handlers
 #[derive(Clone, Debug)]
@@ -14,6 +14,8 @@ pub struct AppState {
     pub config: AppConfig,
     pub redis_client: RedisClient,
     pub service_registry: ServiceRegistry,
+    pub rabbitmq_service: RabbitMQService,
+    pub file_storage_service: FileStorageService,
 }
 
 impl AppState {
@@ -22,11 +24,15 @@ impl AppState {
         config: AppConfig,
         redis_client: RedisClient,
         service_registry: ServiceRegistry,
+        rabbitmq_service: RabbitMQService,
+        file_storage_service: FileStorageService,
     ) -> Self {
         Self {
             config,
             redis_client,
             service_registry,
+            rabbitmq_service,
+            file_storage_service,
         }
     }
 
