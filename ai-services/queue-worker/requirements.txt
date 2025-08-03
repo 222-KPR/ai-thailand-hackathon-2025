@@ -25,6 +25,12 @@ opentelemetry-instrumentation-fastapi==0.42b0
 pytest==7.4.3
 pytest-asyncio==0.21.1
 
+<<<<<<< HEAD
 # Security and compatibility (GPU libs not needed in queue worker)
 # bitsandbytes>=0.41.0  # Only needed in vision service
 # huggingface-hub>=0.17.0  # Only needed in vision service
+=======
+# Security and compatibility
+bitsandbytes>=0.41.0  # Ensure compatibility with transformers
+huggingface-hub>=0.17.0  # Ensure compatibility
+>>>>>>> 639de41778311c67b9948845a40655287cf7f315

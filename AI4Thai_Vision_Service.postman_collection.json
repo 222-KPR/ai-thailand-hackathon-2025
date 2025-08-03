@@ -1,0 +1,222 @@
+{
+  "info": {
+    "_postman_id": "ai4thai-vision-service-2025",
+    "name": "AI4Thai Vision Service - AI Services",
+    "description": "Comprehensive API testing for AI4Thai Vision Service (Pest Detection + Disease Detection)",
+    "version": "1.0.0",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "vision_base_url",
+      "value": "http://localhost:2001",
+      "description": "Vision Service Base URL"
+    },
+    {
+      "key": "queue_base_url",
+      "value": "http://localhost:2003",
+      "description": "Queue Worker Base URL"
+    }
+  ],
+  "item": [
+    {
+      "name": "Health Checks",
+      "item": [
+        {
+          "name": "Vision Service Health",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{vision_base_url}}/health",
+              "host": ["{{vision_base_url}}"],
+              "path": ["health"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Detailed Health Check",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{vision_base_url}}/health/detailed",
+              "host": ["{{vision_base_url}}"],
+              "path": ["health", "detailed"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Memory Status",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{vision_base_url}}/health/memory",
+              "host": ["{{vision_base_url}}"],
+              "path": ["health", "memory"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Pest Detection",
+      "item": [
+        {
+          "name": "Basic Pest Detection",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "image",
+                  "type": "file",
+                  "src": []
+                },
+                {
+                  "key": "confidence_threshold",
+                  "value": "0.01",
+                  "type": "text"
+                },
+                {
+                  "key": "return_details",
+                  "value": "true",
+                  "type": "text"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{vision_base_url}}/detect/pests",
+              "host": ["{{vision_base_url}}"],
+              "path": ["detect", "pests"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Disease Detection",
+      "item": [
+        {
+          "name": "Basic Disease Detection",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "image",
+                  "type": "file",
+                  "src": []
+                },
+                {
+                  "key": "custom_prompt",
+                  "value": "Analyze this plant leaf for diseases",
+                  "type": "text"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{vision_base_url}}/detect/disease",
+              "host": ["{{vision_base_url}}"],
+              "path": ["detect", "disease"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Comprehensive Analysis",
+      "item": [
+        {
+          "name": "Full Plant Analysis",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "image",
+                  "type": "file",
+                  "src": []
+                },
+                {
+                  "key": "pest_confidence",
+                  "value": "0.01",
+                  "type": "text"
+                },
+                {
+                  "key": "pest_details",
+                  "value": "true",
+                  "type": "text"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{vision_base_url}}/analyze/comprehensive",
+              "host": ["{{vision_base_url}}"],
+              "path": ["analyze", "comprehensive"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Queue Worker",
+      "item": [
+        {
+          "name": "Queue Health",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{queue_base_url}}/health",
+              "host": ["{{queue_base_url}}"],
+              "path": ["health"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Submit Async Job",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "image",
+                  "type": "file",
+                  "src": []
+                },
+                {
+                  "key": "analysis_type",
+                  "value": "comprehensive",
+                  "type": "text"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{queue_base_url}}/jobs/submit",
+              "host": ["{{queue_base_url}}"],
+              "path": ["jobs", "submit"]
+            }
+          },
+          "response": []
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,130 @@
+{
+  "metadata": {
+    "version": "1.0.0",
+    "description": "AI4Thai Service Configurations",
+    "project": "AI Thailand Hackathon 2025 - Team KPR",
+    "last_updated": "2025-01-03",
+    "constraints": {
+      "port_range": {
+        "min": 2001,
+        "max": 2099,
+        "description": "AI services must use ports in range 2001-2099"
+      },
+      "api_gateway": {
+        "external_access": true,
+        "required_response_format": {
+          "timestamp": "Unix timestamp or ISO format",
+          "detail": "Detailed response information"
+        },
+        "description": "External access goes through provider API gateway with specific response format"
+      }
+    }
+  },
+  "services": {
+    "vision-service": {
+      "package_name": "ai4thai-vision-service",
+      "description": "AI4Thai Crop Guardian - Vision Service for agricultural pest detection and disease identification",
+      "version": "1.0.0",
+      "path": "ai-services/vision-service",
+      "type": "vision-service",
+      "language": "python",
+      "python_version": "3.11",
+      "port": 2001,
+      "external_access": true,
+      "readme_path": "README.md",
+      "keywords": [
+        "agriculture",
+        "computer-vision",
+        "pest-detection",
+        "disease-detection",
+        "ai",
+        "thailand"
+      ],
+      "additional_dependencies": [
+        "# Machine Learning - Optimized for H100 16GB VRAM",
+        "torch==2.2.2",
+        "torchvision==0.17.2",
+        "ultralytics==8.1.47",
+        "transformers==4.39.3",
+        "accelerate==0.29.3",
+        "bitsandbytes==0.43.1",
+        "",
+        "# Image Processing",
+        "Pillow==10.1.0",
+        "opencv-python-headless==4.8.1.78",
+        "numpy==1.24.4",
+        "",
+        "# Additional web dependencies",
+        "python-multipart==0.0.6",
+        "",
+        "# Memory optimization",
+        "psutil==5.9.6",
+        "pynvml==11.5.0"
+      ]
+    },
+    "queue-worker": {
+      "package_name": "ai4thai-queue-worker",
+      "description": "AI4Thai Crop Guardian - Queue Worker for background job processing and image data management",
+      "version": "1.0.0",
+      "path": "ai-services/queue-worker",
+      "type": "queue-worker",
+      "language": "python",
+      "python_version": "3.11",
+      "port": 2003,
+      "external_access": false,
+      "readme_path": "../README.md",
+      "keywords": [
+        "agriculture",
+        "queue",
+        "celery",
+        "background-jobs",
+        "ai",
+        "thailand"
+      ],
+      "additional_dependencies": [
+        "# Queue and caching",
+        "redis==5.0.1",
+        "celery==5.3.4",
+        "kombu==5.3.4",
+        "",
+        "# Image processing (lightweight)",
+        "Pillow==10.1.0",
+        "",
+        "# Monitoring",
+        "prometheus-client==0.19.0"
+      ]
+    }
+  },
+  "shared_dependencies": {
+    "web": [
+      "fastapi==0.104.1",
+      "uvicorn[standard]==0.24.0"
+    ],
+    "config": [
+      "pydantic==2.5.0",
+      "pydantic-settings==2.1.0",
+      "python-dotenv==1.0.0"
+    ],
+    "http": [
+      "httpx==0.25.2",
+      "aiofiles==23.2.1"
+    ],
+    "logging": [
+      "structlog==23.2.0"
+    ]
+  },
+  "templates": {
+    "pyproject.toml": {
+      "source": "pyproject.toml.template",
+      "description": "Python project configuration with dependencies and tooling"
+    },
+    "Dockerfile": {
+      "source": "Dockerfile.python.template",
+      "description": "Multi-stage Docker build for Python services"
+    },
+    "Makefile": {
+      "source": "Makefile.template",
+      "description": "Standardized development commands and tasks"
+    }
+  }
+}
