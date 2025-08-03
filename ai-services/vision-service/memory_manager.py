@@ -11,6 +11,7 @@ import torch
 
 logger = logging.getLogger(__name__)
 
+
 class MemoryManager:
     """
     Memory manager for optimizing GPU/CPU memory usage in vision models
@@ -22,10 +23,7 @@ class MemoryManager:
 
     def get_memory_stats(self) -> dict:
         """Get current memory usage statistics"""
-        stats = {
-            "gpu_available": self.gpu_available,
-            "gpu_count": self.device_count
-        }
+        stats = {"gpu_available": self.gpu_available, "gpu_count": self.device_count}
 
         if self.gpu_available:
             for i in range(self.device_count):
@@ -33,7 +31,7 @@ class MemoryManager:
                 memory_cached = torch.cuda.memory_reserved(i) / 1024**3  # GB
                 stats[f"gpu_{i}"] = {
                     "allocated_gb": round(memory_allocated, 2),
-                    "cached_gb": round(memory_cached, 2)
+                    "cached_gb": round(memory_cached, 2),
                 }
 
         return stats
@@ -98,7 +96,9 @@ class MemoryManager:
             for i in range(self.device_count):
                 allocated_gb = torch.cuda.memory_allocated(i) / 1024**3
                 if allocated_gb > threshold_gb:
-                    logger.warning(f"GPU {i} memory pressure: {allocated_gb:.2f}GB > {threshold_gb}GB")
+                    logger.warning(
+                        f"GPU {i} memory pressure: {allocated_gb:.2f}GB > {threshold_gb}GB"
+                    )
                     return True
             return False
 
@@ -113,7 +113,9 @@ class MemoryManager:
 
         try:
             # Set memory fraction to prevent OOM
-            torch.cuda.set_per_process_memory_fraction(0.9)  # Use 90% of available GPU memory
+            torch.cuda.set_per_process_memory_fraction(
+                0.9
+            )  # Use 90% of available GPU memory
 
             # Enable memory-efficient attention if available
             torch.backends.cuda.enable_flash_sdp(True)
@@ -123,8 +125,10 @@ class MemoryManager:
         except Exception as e:
             logger.warning(f"Memory optimization failed: {e}")
 
+
 # Global memory manager instance
 memory_manager = MemoryManager()
+
 
 def get_memory_manager() -> MemoryManager:
     """Get the global memory manager instance"""

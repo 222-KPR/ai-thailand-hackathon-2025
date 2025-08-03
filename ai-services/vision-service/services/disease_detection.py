@@ -9,10 +9,15 @@ import io
 
 import torch
 from PIL import Image
-from transformers import AutoProcessor, LlavaForConditionalGeneration, BitsAndBytesConfig
+from transformers import (
+    AutoProcessor,
+    LlavaForConditionalGeneration,
+    BitsAndBytesConfig,
+)
 import numpy as np
 
 logger = logging.getLogger(__name__)
+
 
 class DiseaseDetectionService:
     """
@@ -40,9 +45,7 @@ class DiseaseDetectionService:
 
             # Load processor first
             self.processor = await loop.run_in_executor(
-                None,
-                AutoProcessor.from_pretrained,
-                self.model_id
+                None, AutoProcessor.from_pretrained, self.model_id
             )
 
             # Configure aggressive quantization for H100 16GB memory constraints
@@ -51,7 +54,7 @@ class DiseaseDetectionService:
                 bnb_4bit_use_double_quant=True,
                 bnb_4bit_compute_dtype=torch.float16,
                 bnb_4bit_quant_type="nf4",
-                llm_int8_enable_fp32_cpu_offload=True  # Offload to CPU when needed
+                llm_int8_enable_fp32_cpu_offload=True,  # Offload to CPU when needed
             )
 
             # Load model with aggressive memory optimization
@@ -62,9 +65,9 @@ class DiseaseDetectionService:
                     quantization_config=quant_config,
                     device_map="auto",
                     torch_dtype=torch.float16,  # Use FP16 to reduce memory
-                    low_cpu_mem_usage=True,     # Reduce CPU memory during loading
-                    max_memory={0: "12GB", "cpu": "4GB"}  # Limit GPU/CPU memory usage
-                )
+                    low_cpu_mem_usage=True,  # Reduce CPU memory during loading
+                    max_memory={0: "12GB", "cpu": "4GB"},  # Limit GPU/CPU memory usage
+                ),
             )
 
             self._model_loaded = True
@@ -75,9 +78,7 @@ class DiseaseDetectionService:
             raise RuntimeError(f"Disease detection model initialization failed: {e}")
 
     async def detect_disease(
-        self,
-        image_bytes: bytes,
-        custom_prompt: Optional[str] = None
+        self, image_bytes: bytes, custom_prompt: Optional[str] = None
     ) -> Dict[str, Any]:
         """
         Detect diseases in plant leaf images
@@ -95,11 +96,14 @@ class DiseaseDetectionService:
         try:
             # Convert bytes to PIL Image
             image = Image.open(io.BytesIO(image_bytes))
-            if image.mode != 'RGB':
-                image = image.convert('RGB')
+            if image.mode != "RGB":
+                image = image.convert("RGB")
 
             # Prepare conversation
-            prompt_text = custom_prompt or "What disease does this leaf have? Please provide a detailed analysis including the disease name, symptoms, severity, and treatment recommendations."
+            prompt_text = (
+                custom_prompt
+                or "What disease does this leaf have? Please provide a detailed analysis including the disease name, symptoms, severity, and treatment recommendations."
+            )
 
             conversation = [
                 {
@@ -112,15 +116,14 @@ class DiseaseDetectionService:
             ]
 
             # Process conversation template
-            prompt = self.processor.apply_chat_template(conversation, add_generation_prompt=True)
+            prompt = self.processor.apply_chat_template(
+                conversation, add_generation_prompt=True
+            )
 
             # Run inference in thread pool
             loop = asyncio.get_event_loop()
             result = await loop.run_in_executor(
-                None,
-                self._run_inference,
-                image,
-                prompt
+                None, self._run_inference, image, prompt
             )
 
             # Parse result
@@ -129,13 +132,15 @@ class DiseaseDetectionService:
             # Extract structured information (basic parsing)
             disease_info = self._parse_disease_response(response_text)
 
-            logger.info(f"Disease detection completed: {disease_info.get('disease_name', 'Unknown')}")
+            logger.info(
+                f"Disease detection completed: {disease_info.get('disease_name', 'Unknown')}"
+            )
 
             return {
                 "success": True,
                 "raw_response": response_text,
                 "disease_analysis": disease_info,
-                "model": "LLaVA-v1.5-7B-Plant-Leaf-Diseases-Detection"
+                "model": "LLaVA-v1.5-7B-Plant-Leaf-Diseases-Detection",
             }
 
         except Exception as e:
@@ -164,7 +169,7 @@ class DiseaseDetectionService:
                     text=prompt,
                     return_tensors="pt",
                     max_length=512,  # Limit input length
-                    truncation=True
+                    truncation=True,
                 ).to(self.model.device, torch.float16)
 
                 # Generate response with memory constraints
@@ -174,11 +179,13 @@ class DiseaseDetectionService:
                     do_sample=False,
                     temperature=0.1,
                     use_cache=True,
-                    pad_token_id=self.processor.tokenizer.eos_token_id
+                    pad_token_id=self.processor.tokenizer.eos_token_id,
                 )
 
                 # Decode response
-                response = self.processor.decode(output[0][len(inputs['input_ids'][0]):], skip_special_tokens=True)
+                response = self.processor.decode(
+                    output[0][len(inputs["input_ids"][0]) :], skip_special_tokens=True
+                )
 
                 # Clean up tensors
                 del inputs, output
@@ -202,9 +209,21 @@ class DiseaseDetectionService:
 
             # Extract disease name (basic keyword matching)
             diseases = [
-                "leaf spot", "blight", "rust", "mosaic", "wilt",
-                "mildew", "scorch", "rot", "canker", "anthracnose",
-                "bacterial", "fungal", "viral", "healthy", "normal"
+                "leaf spot",
+                "blight",
+                "rust",
+                "mosaic",
+                "wilt",
+                "mildew",
+                "scorch",
+                "rot",
+                "canker",
+                "anthracnose",
+                "bacterial",
+                "fungal",
+                "viral",
+                "healthy",
+                "normal",
             ]
 
             detected_disease = "Unknown"
@@ -215,7 +234,9 @@ class DiseaseDetectionService:
 
             # Determine severity (basic keyword matching)
             severity = "Unknown"
-            if any(word in response_lower for word in ["severe", "serious", "critical"]):
+            if any(
+                word in response_lower for word in ["severe", "serious", "critical"]
+            ):
                 severity = "High"
             elif any(word in response_lower for word in ["moderate", "medium"]):
                 severity = "Medium"
@@ -231,7 +252,11 @@ class DiseaseDetectionService:
             else:
                 thai_summary = f"พบอาการของโรคพืช: {detected_disease}"
                 if severity != "Unknown":
-                    severity_thai = {"High": "รุนแรง", "Medium": "ปานกลาง", "Low": "เล็กน้อย"}.get(severity, severity)
+                    severity_thai = {
+                        "High": "รุนแรง",
+                        "Medium": "ปานกลาง",
+                        "Low": "เล็กน้อย",
+                    }.get(severity, severity)
                     thai_summary += f" ระดับความรุนแรง: {severity_thai}"
 
             return {
@@ -239,8 +264,10 @@ class DiseaseDetectionService:
                 "severity": severity,
                 "confidence": "High" if detected_disease != "Unknown" else "Low",
                 "thai_summary": thai_summary,
-                "recommendations": self._get_recommendations(detected_disease, severity),
-                "is_healthy": detected_disease == "Healthy"
+                "recommendations": self._get_recommendations(
+                    detected_disease, severity
+                ),
+                "is_healthy": detected_disease == "Healthy",
             }
 
         except Exception as e:
@@ -251,34 +278,24 @@ class DiseaseDetectionService:
                 "confidence": "Low",
                 "thai_summary": "ไม่สามารถวิเคราะห์โรคพืชได้",
                 "recommendations": ["ปรึกษาผู้เชี่ยวชาญด้านการเกษตร"],
-                "is_healthy": False
+                "is_healthy": False,
             }
 
     def _get_recommendations(self, disease: str, severity: str) -> list:
         """Get treatment recommendations based on disease and severity"""
         if disease == "Healthy":
-            return [
-                "ดูแลรักษาตามปกติ",
-                "ตรวจสอบต้นพืชเป็นประจำ",
-                "รดน้ำให้เพียงพอ"
-            ]
+            return ["ดูแลรักษาตามปกติ", "ตรวจสอบต้นพืชเป็นประจำ", "รดน้ำให้เพียงพอ"]
 
         recommendations = [
             "แยกต้นพืชที่เป็นโรคออกจากต้นอื่น",
             "ปรึกษาผู้เชี่ยวชาญด้านการเกษตร",
-            "ใช้สารป้องกันกำจัดโรคตามคำแนะนำ"
+            "ใช้สารป้องกันกำจัดโรคตามคำแนะนำ",
         ]
 
         if severity == "High":
-            recommendations.extend([
-                "รีบดำเนินการรักษาทันที",
-                "อาจต้องตัดใบที่เป็นโรคทิ้ง"
-            ])
+            recommendations.extend(["รีบดำเนินการรักษาทันที", "อาจต้องตัดใบที่เป็นโรคทิ้ง"])
         elif severity == "Low":
-            recommendations.extend([
-                "เฝ้าติดตามอาการอย่างใกล้ชิด",
-                "ปรับปรุงการระบายอากาศ"
-            ])
+            recommendations.extend(["เฝ้าติดตามอาการอย่างใกล้ชิด", "ปรับปรุงการระบายอากาศ"])
 
         return recommendations
 
@@ -290,18 +307,16 @@ class DiseaseDetectionService:
                 "model_loaded": self._model_loaded,
                 "model_id": self.model_id,
                 "device": self._device,
-                "gpu_available": torch.cuda.is_available()
+                "gpu_available": torch.cuda.is_available(),
             }
         except Exception as e:
             logger.error(f"Disease detection health check failed: {e}")
-            return {
-                "status": "unhealthy",
-                "model_loaded": False,
-                "error": str(e)
-            }
+            return {"status": "unhealthy", "model_loaded": False, "error": str(e)}
+
 
 # Global service instance
 disease_detection_service = DiseaseDetectionService()
+
 
 async def get_disease_detection_service() -> DiseaseDetectionService:
     """Get the global disease detection service instance"""

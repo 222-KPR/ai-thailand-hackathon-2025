@@ -21,7 +21,7 @@ logger = structlog.get_logger(__name__)
 app = FastAPI(
     title="AI4Thai Vision Queue Worker",
     description="Background job processing and image data management for Vision Service",
-    version="1.0.0"
+    version="1.0.0",
 )
 
 # Add CORS middleware
@@ -38,35 +38,41 @@ celery_app = Celery(
     "vision_queue",
     broker=os.getenv("REDIS_URL", "redis://localhost:6379/0"),
     backend=os.getenv("REDIS_URL", "redis://localhost:6379/0"),
-    include=["tasks"]
+    include=["tasks"],
 )
 
 # Initialize Redis client
 redis_client = redis.from_url(
-    os.getenv("REDIS_URL", "redis://localhost:6379/0"),
-    decode_responses=True
+    os.getenv("REDIS_URL", "redis://localhost:6379/0"), decode_responses=True
 )
+
 
 # Pydantic models
 class JobRequest(BaseModel):
     """Job request model for vision analysis"""
+
     job_type: str  # 'pest_detection', 'disease_detection', 'comprehensive_analysis'
     image_data: str  # base64 encoded image
     parameters: Dict[str, Any] = {}
 
+
 class JobStatus(BaseModel):
     """Job status model"""
+
     job_id: str
     status: str
     result: Optional[Dict[str, Any]] = None
     error: Optional[str] = None
     progress: Optional[Dict[str, Any]] = None
 
+
 class ImageUploadRequest(BaseModel):
     """Image upload request"""
+
     confidence_threshold: Optional[float] = 0.01
     return_details: Optional[bool] = False
     custom_prompt: Optional[str] = None
+
 
 @app.get("/health")
 async def health_check():
@@ -82,110 +88,116 @@ async def health_check():
 
         return {
             "status": "healthy",
-            "services": {
-                "redis": "connected",
-                "celery_workers": worker_count
-            },
-            "timestamp": str(uuid.uuid4())
+            "services": {"redis": "connected", "celery_workers": worker_count},
+            "timestamp": str(uuid.uuid4()),
         }
     except Exception as e:
         logger.error("Health check failed", error=str(e))
         return {"status": "unhealthy", "error": str(e)}
 
+
 @app.post("/analyze/pest", response_model=Dict[str, str])
 async def queue_pest_detection(
     image: UploadFile = File(...),
     confidence_threshold: float = Form(0.01),
-    return_details: bool = Form(False)
+    return_details: bool = Form(False),
 ):
     """Queue pest detection job"""
     try:
         # Read and encode image
         image_data = await image.read()
-        image_b64 = base64.b64encode(image_data).decode('utf-8')
+        image_b64 = base64.b64encode(image_data).decode("utf-8")
 
         # Create Celery task
         task = celery_app.send_task(
             "tasks.process_pest_detection",
-            args=[image_b64, confidence_threshold, return_details]
+            args=[image_b64, confidence_threshold, return_details],
         )
 
-        logger.info("Pest detection job queued", job_id=task.id, image_size=len(image_data))
+        logger.info(
+            "Pest detection job queued", job_id=task.id, image_size=len(image_data)
+        )
         return {"job_id": task.id, "status": "queued", "type": "pest_detection"}
 
     except Exception as e:
         logger.error("Failed to queue pest detection", error=str(e))
         raise HTTPException(status_code=500, detail=str(e))
 
+
 @app.post("/analyze/disease", response_model=Dict[str, str])
 async def queue_disease_detection(
-    image: UploadFile = File(...),
-    custom_prompt: Optional[str] = Form(None)
+    image: UploadFile = File(...), custom_prompt: Optional[str] = Form(None)
 ):
     """Queue disease detection job"""
     try:
         # Read and encode image
         image_data = await image.read()
-        image_b64 = base64.b64encode(image_data).decode('utf-8')
+        image_b64 = base64.b64encode(image_data).decode("utf-8")
 
         # Create Celery task
         task = celery_app.send_task(
-            "tasks.process_disease_detection",
-            args=[image_b64, custom_prompt]
+            "tasks.process_disease_detection", args=[image_b64, custom_prompt]
         )
 
-        logger.info("Disease detection job queued", job_id=task.id, image_size=len(image_data))
+        logger.info(
+            "Disease detection job queued", job_id=task.id, image_size=len(image_data)
+        )
         return {"job_id": task.id, "status": "queued", "type": "disease_detection"}
 
     except Exception as e:
         logger.error("Failed to queue disease detection", error=str(e))
         raise HTTPException(status_code=500, detail=str(e))
 
+
 @app.post("/analyze/comprehensive", response_model=Dict[str, str])
 async def queue_comprehensive_analysis(
     image: UploadFile = File(...),
     pest_confidence: float = Form(0.01),
     pest_details: bool = Form(False),
-    disease_prompt: Optional[str] = Form(None)
+    disease_prompt: Optional[str] = Form(None),
 ):
     """Queue comprehensive analysis (pest + disease detection)"""
     try:
         # Read and encode image
         image_data = await image.read()
-        image_b64 = base64.b64encode(image_data).decode('utf-8')
+        image_b64 = base64.b64encode(image_data).decode("utf-8")
 
         # Create Celery task
         task = celery_app.send_task(
             "tasks.process_comprehensive_analysis",
-            args=[image_b64, pest_confidence, pest_details, disease_prompt]
+            args=[image_b64, pest_confidence, pest_details, disease_prompt],
         )
 
-        logger.info("Comprehensive analysis job queued", job_id=task.id, image_size=len(image_data))
+        logger.info(
+            "Comprehensive analysis job queued",
+            job_id=task.id,
+            image_size=len(image_data),
+        )
         return {"job_id": task.id, "status": "queued", "type": "comprehensive_analysis"}
 
     except Exception as e:
         logger.error("Failed to queue comprehensive analysis", error=str(e))
         raise HTTPException(status_code=500, detail=str(e))
 
+
 @app.post("/images/store", response_model=Dict[str, str])
 async def store_image(
-    image: UploadFile = File(...),
-    metadata: Optional[str] = Form(None)
+    image: UploadFile = File(...), metadata: Optional[str] = Form(None)
 ):
     """Store image data for later processing"""
     try:
         # Read and encode image
         image_data = await image.read()
-        image_b64 = base64.b64encode(image_data).decode('utf-8')
+        image_b64 = base64.b64encode(image_data).decode("utf-8")
 
         # Parse metadata if provided
         import json
+
         meta_dict = json.loads(metadata) if metadata else {}
 
         # Store image
         task = celery_app.send_task(
-            "tasks.store_image_data",
-            args=[image_b64, meta_dict]
+            "tasks.store_image_data", args=[image_b64, meta_dict]
         )
 
         # Get storage key
@@ -197,6 +209,7 @@ async def store_image(
     except Exception as e:
         logger.error("Failed to store image", error=str(e))
         raise HTTPException(status_code=500, detail=str(e))
+
 
 @app.get("/jobs/{job_id}", response_model=JobStatus)
 async def get_job_status(job_id: str):
@@ -216,7 +229,9 @@ async def get_job_status(job_id: str):
             return JobStatus(
                 job_id=job_id,
                 status="retrying",
-                progress={"retry_count": getattr(task.info, 'retries', 0) if task.info else 0}
+                progress={
+                    "retry_count": getattr(task.info, "retries", 0) if task.info else 0
+                },
             )
         else:
             return JobStatus(job_id=job_id, status=task.state.lower())
@@ -224,6 +239,7 @@ async def get_job_status(job_id: str):
     except Exception as e:
         logger.error("Failed to get job status", job_id=job_id, error=str(e))
         return JobStatus(job_id=job_id, status="error", error=str(e))
+
 
 @app.delete("/jobs/{job_id}")
 async def cancel_job(job_id: str):
@@ -237,6 +253,7 @@ async def cancel_job(job_id: str):
         logger.error("Failed to cancel job", job_id=job_id, error=str(e))
         raise HTTPException(status_code=500, detail=str(e))
 
+
 @app.get("/queue/stats")
 async def get_queue_stats():
     """Get queue statistics"""
@@ -248,7 +265,9 @@ async def get_queue_stats():
 
         # Count jobs by worker
         active_count = sum(len(jobs) for jobs in active.values()) if active else 0
-        scheduled_count = sum(len(jobs) for jobs in scheduled.values()) if scheduled else 0
+        scheduled_count = (
+            sum(len(jobs) for jobs in scheduled.values()) if scheduled else 0
+        )
         reserved_count = sum(len(jobs) for jobs in reserved.values()) if reserved else 0
 
         # Get Redis stats
@@ -259,19 +278,22 @@ async def get_queue_stats():
                 "active_jobs": active_count,
                 "scheduled_jobs": scheduled_count,
                 "reserved_jobs": reserved_count,
-                "total_pending": active_count + scheduled_count + reserved_count
+                "total_pending": active_count + scheduled_count + reserved_count,
             },
             "redis_stats": {
                 "connected_clients": redis_info.get("connected_clients", 0),
                 "used_memory_human": redis_info.get("used_memory_human", "0B"),
-                "total_commands_processed": redis_info.get("total_commands_processed", 0)
+                "total_commands_processed": redis_info.get(
+                    "total_commands_processed", 0
+                ),
             },
-            "workers": list(active.keys()) if active else []
+            "workers": list(active.keys()) if active else [],
         }
 
     except Exception as e:
         logger.error("Failed to get queue stats", error=str(e))
         raise HTTPException(status_code=500, detail=str(e))
+
 
 @app.get("/images/stats")
 async def get_image_stats():
@@ -295,12 +317,13 @@ async def get_image_stats():
             "stored_images": len(image_keys),
             "metadata_entries": len(metadata_keys),
             "estimated_memory_bytes": total_memory,
-            "estimated_memory_mb": round(total_memory / (1024 * 1024), 2)
+            "estimated_memory_mb": round(total_memory / (1024 * 1024), 2),
         }
 
     except Exception as e:
         logger.error("Failed to get image stats", error=str(e))
         raise HTTPException(status_code=500, detail=str(e))
+
 
 @app.post("/maintenance/cleanup")
 async def trigger_cleanup():
@@ -316,6 +339,7 @@ async def trigger_cleanup():
         logger.error("Failed to trigger cleanup", error=str(e))
         raise HTTPException(status_code=500, detail=str(e))
 
+
 @app.get("/info")
 async def get_service_info():
     """Get service information"""
@@ -330,7 +354,7 @@ async def get_service_info():
             "Image data storage and management",
             "Job status tracking",
             "Queue statistics",
-            "Automatic cleanup"
+            "Automatic cleanup",
         ],
         "endpoints": {
             "queue_pest": "/analyze/pest",
@@ -339,16 +363,19 @@ async def get_service_info():
             "store_image": "/images/store",
             "job_status": "/jobs/{job_id}",
             "queue_stats": "/queue/stats",
-            "image_stats": "/images/stats"
+            "image_stats": "/images/stats",
         },
         "supported_job_types": [
             "pest_detection",
             "disease_detection",
-            "comprehensive_analysis"
+            "comprehensive_analysis",
         ],
-        "redis_url": os.getenv("REDIS_URL", "redis://localhost:6379/0").split('@')[-1],  # Hide credentials
-        "vision_service_url": os.getenv("VISION_SERVICE_URL", "http://localhost:8001")
+        "redis_url": os.getenv("REDIS_URL", "redis://localhost:6379/0").split("@")[
+            -1
+        ],  # Hide credentials
+        "vision_service_url": os.getenv("VISION_SERVICE_URL", "http://localhost:8001"),
     }
+
 
 @app.get("/")
 async def root():
@@ -360,20 +387,22 @@ async def root():
             "Asynchronous image processing",
             "Vision service job queuing",
             "Image data management",
-            "Job tracking and monitoring"
+            "Job tracking and monitoring",
         ],
         "usage": {
             "queue_job": "POST /analyze/{type} with image file",
             "check_status": "GET /jobs/{job_id}",
-            "get_stats": "GET /queue/stats"
-        }
+            "get_stats": "GET /queue/stats",
+        },
     }
+
 
 if __name__ == "__main__":
     import uvicorn
+
     uvicorn.run(
         "app:app",
         host="0.0.0.0",
         port=int(os.getenv("QUEUE_PORT", "2003")),
-        reload=True
+        reload=True,
     )

@@ -22,6 +22,7 @@ from memory_manager import get_memory_manager
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Application lifespan manager for startup and shutdown events."""
@@ -60,12 +61,13 @@ async def lifespan(app: FastAPI):
     finally:
         logger.info("Shutting down Vision Service...")
 
+
 # Create FastAPI app
 app = FastAPI(
     title="AI4Thai Vision Service",
     description="Agricultural pest detection and disease identification service",
     version="1.0.0",
-    lifespan=lifespan
+    lifespan=lifespan,
 )
 
 # Add CORS middleware
@@ -77,14 +79,16 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+
 @app.get("/health")
 async def health_check():
     """Basic health check endpoint."""
     return {
         "status": "healthy",
         "service": "AI4Thai Vision Service - Pest Detection",
-        "timestamp": time.time()
+        "timestamp": time.time(),
     }
+
 
 @app.get("/health/detailed")
 async def detailed_health_check():
@@ -97,17 +101,18 @@ async def detailed_health_check():
             "status": "healthy",
             "service": "AI4Thai Vision Service - Pest Detection",
             "pest_detection": health_status,
-            "timestamp": time.time()
+            "timestamp": time.time(),
         }
     except Exception as e:
         logger.error(f"Health check failed: {e}")
         raise HTTPException(status_code=503, detail=f"Service unavailable: {str(e)}")
 
+
 @app.post("/detect/pests")
 async def detect_pests(
     image: UploadFile = File(...),
     confidence_threshold: Optional[float] = Form(0.01),
-    return_details: Optional[bool] = Form(False)
+    return_details: Optional[bool] = Form(False),
 ):
     """
     Detect pests in agricultural images using YOLO11s model.
@@ -124,7 +129,7 @@ async def detect_pests(
 
     try:
         # Validate image
-        if not image.content_type or not image.content_type.startswith('image/'):
+        if not image.content_type or not image.content_type.startswith("image/"):
             raise HTTPException(status_code=400, detail="Invalid image file type")
 
         # Read image bytes
@@ -139,12 +144,14 @@ async def detect_pests(
         results = await pest_service.detect_pests_from_bytes(
             image_bytes=image_bytes,
             conf_threshold=confidence_threshold,
-            return_details=return_details
+            return_details=return_details,
         )
 
         processing_time = time.time() - start_time
 
-        logger.info(f"Pest detection completed in {processing_time:.2f}s - Found {results['pest_count']} pests")
+        logger.info(
+            f"Pest detection completed in {processing_time:.2f}s - Found {results['pest_count']} pests"
+        )
 
         return JSONResponse(
             status_code=200,
@@ -152,8 +159,8 @@ async def detect_pests(
                 "success": True,
                 "data": results,
                 "processing_time_ms": round(processing_time * 1000, 2),
-                "timestamp": time.time()
-            }
+                "timestamp": time.time(),
+            },
         )
 
     except HTTPException:
@@ -163,11 +170,12 @@ async def detect_pests(
         logger.error(f"Pest detection failed: {e}")
         raise HTTPException(status_code=500, detail=f"Pest detection failed: {str(e)}")
 
+
 @app.post("/analyze")
 async def analyze_image(
     image: UploadFile = File(...),
     confidence_threshold: Optional[float] = Form(0.01),
-    include_details: Optional[bool] = Form(True)
+    include_details: Optional[bool] = Form(True),
 ):
     """
     Analyze agricultural image for pests (alias for /detect/pests).
@@ -182,10 +190,10 @@ async def analyze_image(
     """
     return await detect_pests(image, confidence_threshold, include_details)
 
+
 @app.post("/detect/disease")
 async def detect_disease(
-    image: UploadFile = File(...),
-    custom_prompt: Optional[str] = Form(None)
+    image: UploadFile = File(...), custom_prompt: Optional[str] = Form(None)
 ):
     """
     Detect diseases in plant leaf images using LLaVA model.
@@ -201,7 +209,7 @@ async def detect_disease(
 
     try:
         # Validate image
-        if not image.content_type or not image.content_type.startswith('image/'):
+        if not image.content_type or not image.content_type.startswith("image/"):
             raise HTTPException(status_code=400, detail="Invalid image file type")
 
         # Read image bytes
@@ -214,13 +222,14 @@ async def detect_disease(
 
         # Run disease detection
         results = await disease_service.detect_disease(
-            image_bytes=image_bytes,
-            custom_prompt=custom_prompt
+            image_bytes=image_bytes, custom_prompt=custom_prompt
         )
 
         processing_time = time.time() - start_time
 
-        logger.info(f"Disease detection completed in {processing_time:.2f}s - Disease: {results['disease_analysis']['disease_name']}")
+        logger.info(
+            f"Disease detection completed in {processing_time:.2f}s - Disease: {results['disease_analysis']['disease_name']}"
+        )
 
         return JSONResponse(
             status_code=200,
@@ -228,8 +237,8 @@ async def detect_disease(
                 "success": True,
                 "data": results,
                 "processing_time_ms": round(processing_time * 1000, 2),
-                "timestamp": time.time()
-            }
+                "timestamp": time.time(),
+            },
         )
 
     except HTTPException:
@@ -237,14 +246,17 @@ async def detect_disease(
     except Exception as e:
         processing_time = time.time() - start_time
         logger.error(f"Disease detection failed: {e}")
-        raise HTTPException(status_code=500, detail=f"Disease detection failed: {str(e)}")
+        raise HTTPException(
+            status_code=500, detail=f"Disease detection failed: {str(e)}"
+        )
+
 
 @app.post("/analyze/comprehensive")
 async def comprehensive_analysis(
     image: UploadFile = File(...),
     pest_confidence: Optional[float] = Form(0.01),
     pest_details: Optional[bool] = Form(False),
-    disease_prompt: Optional[str] = Form(None)
+    disease_prompt: Optional[str] = Form(None),
 ):
     """
     Comprehensive analysis including both pest and disease detection.
@@ -262,7 +274,7 @@ async def comprehensive_analysis(
 
     try:
         # Validate image
-        if not image.content_type or not image.content_type.startswith('image/'):
+        if not image.content_type or not image.content_type.startswith("image/"):
             raise HTTPException(status_code=400, detail="Invalid image file type")
 
         # Read image bytes once
@@ -279,14 +291,13 @@ async def comprehensive_analysis(
             pest_service.detect_pests_from_bytes(
                 image_bytes=image_bytes,
                 conf_threshold=pest_confidence,
-                return_details=pest_details
+                return_details=pest_details,
             )
         )
 
         disease_task = asyncio.create_task(
             disease_service.detect_disease(
-                image_bytes=image_bytes,
-                custom_prompt=disease_prompt
+                image_bytes=image_bytes, custom_prompt=disease_prompt
             )
         )
 
@@ -296,34 +307,27 @@ async def comprehensive_analysis(
         )
 
         # Process results
-        response_data = {
-            "pest_analysis": {},
-            "disease_analysis": {},
-            "summary": {}
-        }
+        response_data = {"pest_analysis": {}, "disease_analysis": {}, "summary": {}}
 
         # Handle pest results
         if isinstance(pest_results, Exception):
             response_data["pest_analysis"] = {
                 "success": False,
-                "error": str(pest_results)
+                "error": str(pest_results),
             }
         else:
-            response_data["pest_analysis"] = {
-                "success": True,
-                "results": pest_results
-            }
+            response_data["pest_analysis"] = {"success": True, "results": pest_results}
 
         # Handle disease results
         if isinstance(disease_results, Exception):
             response_data["disease_analysis"] = {
                 "success": False,
-                "error": str(disease_results)
+                "error": str(disease_results),
             }
         else:
             response_data["disease_analysis"] = {
                 "success": True,
-                "results": disease_results
+                "results": disease_results,
             }
 
         # Create comprehensive summary
@@ -332,17 +336,29 @@ async def comprehensive_analysis(
         recommendations = []
 
         # Check pest results
-        if (response_data["pest_analysis"].get("success") and
-            response_data["pest_analysis"]["results"].get("has_pests")):
+        if response_data["pest_analysis"].get("success") and response_data[
+            "pest_analysis"
+        ]["results"].get("has_pests"):
             issues.append("pests")
-            thai_summaries.append(response_data["pest_analysis"]["results"]["thai_summary"])
+            thai_summaries.append(
+                response_data["pest_analysis"]["results"]["thai_summary"]
+            )
 
         # Check disease results
-        if (response_data["disease_analysis"].get("success") and
-            not response_data["disease_analysis"]["results"]["disease_analysis"].get("is_healthy", True)):
+        if response_data["disease_analysis"].get("success") and not response_data[
+            "disease_analysis"
+        ]["results"]["disease_analysis"].get("is_healthy", True):
             issues.append("disease")
-            thai_summaries.append(response_data["disease_analysis"]["results"]["disease_analysis"]["thai_summary"])
-            recommendations.extend(response_data["disease_analysis"]["results"]["disease_analysis"]["recommendations"])
+            thai_summaries.append(
+                response_data["disease_analysis"]["results"]["disease_analysis"][
+                    "thai_summary"
+                ]
+            )
+            recommendations.extend(
+                response_data["disease_analysis"]["results"]["disease_analysis"][
+                    "recommendations"
+                ]
+            )
 
         # Generate summary
         if not issues:
@@ -350,14 +366,16 @@ async def comprehensive_analysis(
                 "status": "healthy",
                 "issues": [],
                 "thai_summary": "พืชมีสุขภาพดี ไม่พบศัตรูพืชหรือโรคพืช",
-                "recommendations": ["ดูแลรักษาตามปกติ", "ตรวจสอบเป็นประจำ"]
+                "recommendations": ["ดูแลรักษาตามปกติ", "ตรวจสอบเป็นประจำ"],
             }
         else:
             response_data["summary"] = {
                 "status": "issues_detected",
                 "issues": issues,
                 "thai_summary": " และ ".join(thai_summaries),
-                "recommendations": recommendations if recommendations else ["ปรึกษาผู้เชี่ยวชาญการเกษตร"]
+                "recommendations": recommendations
+                if recommendations
+                else ["ปรึกษาผู้เชี่ยวชาญการเกษตร"],
             }
 
         processing_time = time.time() - start_time
@@ -368,8 +386,8 @@ async def comprehensive_analysis(
                 "success": True,
                 "data": response_data,
                 "processing_time_ms": round(processing_time * 1000, 2),
-                "timestamp": time.time()
-            }
+                "timestamp": time.time(),
+            },
         )
 
     except HTTPException:
@@ -378,6 +396,7 @@ async def comprehensive_analysis(
         processing_time = time.time() - start_time
         logger.error(f"Comprehensive analysis failed: {e}")
         raise HTTPException(status_code=500, detail=f"Analysis failed: {str(e)}")
+
 
 @app.get("/health/disease")
 async def disease_detection_health():
@@ -388,7 +407,10 @@ async def disease_detection_health():
         return health_status
     except Exception as e:
         logger.error(f"Disease detection health check failed: {e}")
-        raise HTTPException(status_code=503, detail=f"Disease detection service unavailable: {str(e)}")
+        raise HTTPException(
+            status_code=503, detail=f"Disease detection service unavailable: {str(e)}"
+        )
+
 
 @app.get("/health/memory")
 async def memory_status():
@@ -396,14 +418,13 @@ async def memory_status():
     try:
         memory_manager = get_memory_manager()
         stats = memory_manager.get_memory_stats()
-        return {
-            "status": "healthy",
-            "memory_stats": stats,
-            "timestamp": time.time()
-        }
+        return {"status": "healthy", "memory_stats": stats, "timestamp": time.time()}
     except Exception as e:
         logger.error(f"Memory status check failed: {e}")
-        raise HTTPException(status_code=503, detail=f"Memory status unavailable: {str(e)}")
+        raise HTTPException(
+            status_code=503, detail=f"Memory status unavailable: {str(e)}"
+        )
+
 
 @app.post("/maintenance/cleanup")
 async def manual_cleanup():
@@ -415,11 +436,12 @@ async def manual_cleanup():
         return {
             "status": "completed",
             "memory_stats_after": stats,
-            "timestamp": time.time()
+            "timestamp": time.time(),
         }
     except Exception as e:
         logger.error(f"Manual cleanup failed: {e}")
         raise HTTPException(status_code=500, detail=f"Cleanup failed: {str(e)}")
+
 
 @app.get("/info")
 async def get_service_info():
@@ -442,15 +464,15 @@ async def get_service_info():
                     "source": "underdogquality/yolo11s-pest-detection",
                     "type": "Object Detection",
                     "framework": "Ultralytics",
-                    "purpose": "Pest Detection"
+                    "purpose": "Pest Detection",
                 },
                 {
                     "name": "LLaVA-v1.5-7B",
                     "source": "YuchengShi/LLaVA-v1.5-7B-Plant-Leaf-Diseases-Detection",
                     "type": "Vision-Language Model",
                     "framework": "Transformers",
-                    "purpose": "Disease Detection"
-                }
+                    "purpose": "Disease Detection",
+                },
             ],
             "capabilities": [
                 "Agricultural pest detection",
@@ -461,7 +483,7 @@ async def get_service_info():
                 "Bounding box detection",
                 "Thai language summaries",
                 "Treatment recommendations",
-                "Comprehensive plant health analysis"
+                "Comprehensive plant health analysis",
             ],
             "endpoints": {
                 "pest_detection": "/detect/pests",
@@ -472,21 +494,21 @@ async def get_service_info():
                 "detailed_health": "/health/detailed",
                 "pest_health": "/health/pests",
                 "disease_health": "/health/disease",
-                "info": "/info"
+                "info": "/info",
             },
             "pest_detection": {
                 "status": pest_health.get("status", "unknown"),
                 "model_loaded": pest_health.get("model_loaded", False),
-                "available_classes": pest_health.get("available_classes", 0)
+                "available_classes": pest_health.get("available_classes", 0),
             },
             "disease_detection": {
                 "status": disease_health.get("status", "unknown"),
                 "model_loaded": disease_health.get("model_loaded", False),
-                "device": disease_health.get("device", "unknown")
+                "device": disease_health.get("device", "unknown"),
             },
             "supported_formats": ["image/jpeg", "image/png", "image/webp", "image/bmp"],
             "default_pest_confidence": 0.01,
-            "max_file_size": "10MB"
+            "max_file_size": "10MB",
         }
     except Exception as e:
         logger.error(f"Failed to get service info: {e}")
@@ -494,8 +516,9 @@ async def get_service_info():
             "service": "AI4Thai Vision Service - Pest Detection",
             "version": "1.0.0",
             "status": "error",
-            "error": str(e)
+            "error": str(e),
         }
+
 
 @app.get("/")
 async def root():
@@ -505,7 +528,7 @@ async def root():
         "description": "Comprehensive agricultural pest detection and disease identification service",
         "models": {
             "pest_detection": "YOLO11s from underdogquality/yolo11s-pest-detection",
-            "disease_detection": "LLaVA-v1.5-7B from YuchengShi/LLaVA-v1.5-7B-Plant-Leaf-Diseases-Detection"
+            "disease_detection": "LLaVA-v1.5-7B from YuchengShi/LLaVA-v1.5-7B-Plant-Leaf-Diseases-Detection",
         },
         "endpoints": {
             "pest_detection": "/detect/pests",
@@ -513,26 +536,22 @@ async def root():
             "comprehensive_analysis": "/analyze/comprehensive",
             "analyze_alias": "/analyze",
             "health": "/health",
-            "info": "/info"
+            "info": "/info",
         },
         "usage": {
             "pest_detection": "Upload an image to /detect/pests to identify agricultural pests",
             "disease_detection": "Upload a leaf image to /detect/disease to identify plant diseases",
-            "comprehensive": "Upload an image to /analyze/comprehensive for both pest and disease analysis"
+            "comprehensive": "Upload an image to /analyze/comprehensive for both pest and disease analysis",
         },
         "features": [
             "Agricultural pest detection",
             "Plant disease identification",
             "Thai language summaries",
             "Treatment recommendations",
-            "Parallel processing for comprehensive analysis"
-        ]
+            "Parallel processing for comprehensive analysis",
+        ],
     }
 
+
 if __name__ == "__main__":
-    uvicorn.run(
-        "app:app",
-        host="0.0.0.0",
-        port=2001,
-        reload=True
-    )
+    uvicorn.run("app:app", host="0.0.0.0", port=2001, reload=True)

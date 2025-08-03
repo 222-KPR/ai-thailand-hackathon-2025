@@ -12,6 +12,7 @@ from pathlib import Path
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+
 async def test_service_endpoints():
     """Test the FastAPI service endpoints"""
     base_url = "http://localhost:8001"
@@ -59,6 +60,7 @@ async def test_service_endpoints():
             logger.error(f"Service test failed: {e}")
             return False
 
+
 async def test_local_services():
     """Test the local services"""
     try:
@@ -89,7 +91,9 @@ async def test_local_services():
         if pest_ok and disease_ok:
             logger.info("✅ Both services are ready!")
             logger.info(f"Pest model loaded: {pest_health.get('model_loaded', False)}")
-            logger.info(f"Disease model loaded: {disease_health.get('model_loaded', False)}")
+            logger.info(
+                f"Disease model loaded: {disease_health.get('model_loaded', False)}"
+            )
         else:
             logger.warning("⚠️ Some services have issues")
             if not pest_ok:
@@ -102,6 +106,7 @@ async def test_local_services():
     except Exception as e:
         logger.error(f"Local services test failed: {e}")
         return False
+
 
 async def test_with_sample_requests():
     """Test endpoints with sample requests (if service is running)"""
@@ -139,10 +144,13 @@ async def test_with_sample_requests():
             logger.error(f"Sample requests test failed: {e}")
             return False
 
+
 async def main():
     """Main test function"""
     logger.info("=== AI4Thai Vision Service Test ===")
-    logger.info("Testing comprehensive pest detection and disease identification service")
+    logger.info(
+        "Testing comprehensive pest detection and disease identification service"
+    )
 
     # Test local services
     logger.info("\n1. Testing local services...")
@@ -167,8 +175,12 @@ async def main():
     # Summary
     logger.info("\n=== Test Summary ===")
     logger.info(f"Local services test: {'✅ PASS' if local_success else '❌ FAIL'}")
-    logger.info(f"Service endpoints test: {'✅ PASS' if service_success else '❌ FAIL (or not running)'}")
-    logger.info(f"Sample requests test: {'✅ PASS' if sample_success else '❌ FAIL (or not running)'}")
+    logger.info(
+        f"Service endpoints test: {'✅ PASS' if service_success else '❌ FAIL (or not running)'}"
+    )
+    logger.info(
+        f"Sample requests test: {'✅ PASS' if sample_success else '❌ FAIL (or not running)'}"
+    )
 
     if local_success:
         logger.info("\n🎉 Vision services are working!")
@@ -184,6 +196,7 @@ async def main():
             logger.info("   python app.py")
 
     return local_success
+
 
 if __name__ == "__main__":
     success = asyncio.run(main())
