@@ -1,6 +1,6 @@
-use api_gateway::{config::AppConfig, services::ServiceRegistry, AppState};
+use api_gateway::{config::AppConfig, services::{ServiceRegistry, RabbitMQService, FileStorageService}, AppState};
 use axum::{
-    routing::{get, post},
+    routing::{get, post, delete},
     Router,
 };
 use std::net::SocketAddr;
@@ -28,8 +28,22 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     );
     info!("Service registry initialized");
 
+    // Initialize RabbitMQ service
+    let rabbitmq_service = RabbitMQService::new(&config.rabbitmq).await?;
+    info!("RabbitMQ service initialized");
+
+    // Initialize file storage service
+    let file_storage_service = FileStorageService::new(&config.file_storage)?;
+    info!("File storage service initialized");
+
     // Create application state
-    let app_state = AppState::new(config.clone(), redis_client, service_registry);
+    let app_state = AppState::new(
+        config.clone(),
+        redis_client,
+        service_registry,
+        rabbitmq_service,
+        file_storage_service,
+    );
 
     // Build the application router
     let app = create_router(app_state);
@@ -51,12 +65,21 @@ fn create_router(state: AppState) -> Router {
         .route("/health", get(api_gateway::handlers::health_check))
         .route("/health/ready", get(api_gateway::handlers::readiness_check))
         .route("/health/metrics", get(api_gateway::handlers::metrics))
+        
         // Chat endpoints
         .route("/api/v1/chat", post(api_gateway::handlers::send_message))
         .route(
             "/api/v1/chat/history",
             get(api_gateway::handlers::get_conversation),
         )
+        
+        // Vision analysis endpoints
+        .route("/api/v1/vision/analyze", post(api_gateway::handlers::queue_vision_analysis))
+        .route("/api/v1/vision/jobs/:job_id", get(api_gateway::handlers::get_job_status))
+        .route("/api/v1/vision/jobs/:job_id/cancel", delete(api_gateway::handlers::cancel_job))
+        .route("/api/v1/vision/files/stats", get(api_gateway::handlers::get_file_stats))
+        .route("/api/v1/vision/files/cleanup", post(api_gateway::handlers::cleanup_files))
+        
         // Add middleware
         .layer(
             ServiceBuilder::new()
